@@ -11,11 +11,11 @@
     "lint": "oxlint ."
   },
   "dependencies": {
+    "@netlify/database": "^1.0.0",
     "@tanstack/react-form": "^1.0.0",
     "@tanstack/react-query": "^5.80.0",
     "@tanstack/react-router": "^1.120.0",
     "@tanstack/react-table": "^8.21.0",
-    "@netlify/database": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
