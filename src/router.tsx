@@ -2,11 +2,11 @@ import { Link, Outlet, createRootRoute, createRoute, createRouter, useNavigate }
 import { useClerk } from '@clerk/clerk-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
-import { Eye, EyeOff, FileText, Home, LayoutDashboard, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, UserCog, UserPlus, X } from 'lucide-react';
+import { Copy, Eye, EyeOff, FileText, Home, LayoutDashboard, Link2, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, UserCog, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type React from 'react';
 import { useAuth } from './lib/auth';
-import { createBrief, generateAction, getBrief, getChatMessages, listBriefs, sendChatMessage } from './lib/mockApi';
+import { createBrief, generateAction, getBrief, getChatMessages, getSharedBrief, listBriefs, sendChatMessage, shareBrief } from './lib/mockApi';
 import { extractPdfText } from './lib/pdf';
 import type { BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
 
@@ -54,6 +54,12 @@ const actionsRoute = createRoute({
   component: ActionsPage,
 });
 
+const sharedBriefRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/share/$briefId',
+  component: SharedBriefPage,
+});
+
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
@@ -72,7 +78,7 @@ const accountRoute = createRoute({
   component: AccountPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, newBriefRoute, briefRoute, actionsRoute, loginRoute, registerRoute, accountRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, newBriefRoute, briefRoute, actionsRoute, sharedBriefRoute, loginRoute, registerRoute, accountRoute]);
 
 export const router = createRouter({ routeTree });
 
@@ -734,7 +740,18 @@ function NewBriefPage() {
 
 function BriefPage() {
   const { briefId } = briefRoute.useParams();
+  const queryClient = useQueryClient();
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
   const { data: brief, isLoading } = useQuery({ queryKey: ['brief', briefId], queryFn: () => getBrief(briefId) });
+  const shareMutation = useMutation({
+    mutationFn: () => shareBrief(briefId),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ['brief', briefId] });
+      const absoluteUrl = new URL(result.shareUrl, window.location.origin).toString();
+      await navigator.clipboard?.writeText(absoluteUrl);
+      setShareStatus(`Share link copied: ${absoluteUrl}`);
+    },
+  });
 
   if (isLoading || !brief) return <main className="page-shell">Loading brief...</main>;
 
@@ -745,11 +762,18 @@ function BriefPage() {
           <p className="text-sm font-semibold text-civic-700">{brief.category} · {brief.jurisdiction}</p>
           <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
-        <Link to="/briefs/$briefId/actions" params={{ briefId }} className="btn-primary w-full sm:w-auto">
-          <Send size={16} />
-          Generate action
-        </Link>
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
+          <button className="btn-secondary w-full sm:w-auto" type="button" disabled={shareMutation.isPending} onClick={() => shareMutation.mutate()}>
+            {brief.isPublic ? <Copy size={16} /> : <Link2 size={16} />}
+            {brief.isPublic ? 'Copy share link' : 'Share brief'}
+          </button>
+          <Link to="/briefs/$briefId/actions" params={{ briefId }} className="btn-primary w-full sm:w-auto">
+            <Send size={16} />
+            Generate action
+          </Link>
+        </div>
       </div>
+      {shareStatus ? <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">{shareStatus}</p> : null}
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-4">
           <BriefSection title="Plain-language summary" items={[brief.summary]} />
@@ -761,6 +785,37 @@ function BriefPage() {
         </section>
         <ChatPanel briefId={briefId} />
       </div>
+    </main>
+  );
+}
+
+function SharedBriefPage() {
+  const { briefId } = sharedBriefRoute.useParams();
+  const { data: brief, isLoading } = useQuery({ queryKey: ['shared-brief', briefId], queryFn: () => getSharedBrief(briefId) });
+
+  if (isLoading) return <main className="page-shell">Loading shared brief...</main>;
+  if (!brief) return <main className="page-shell">Shared brief not found.</main>;
+
+  return (
+    <main className="page-shell">
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-civic-700">Shared brief · {brief.category} · {brief.jurisdiction}</p>
+          <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
+        </div>
+        <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
+          <FileText size={16} />
+          Create your own brief
+        </Link>
+      </div>
+      <section className="space-y-4">
+        <BriefSection title="Plain-language summary" items={[brief.summary]} />
+        <BriefSection title="Key points" items={brief.keyPoints} />
+        <BriefSection title="Who is affected" items={brief.affectedGroups} />
+        <BriefSection title="Concerns and risks" items={brief.concerns} />
+        <BriefSection title="Questions citizens should ask" items={brief.citizenQuestions} />
+        <BriefSection title="Suggested next steps" items={brief.nextSteps} />
+      </section>
     </main>
   );
 }

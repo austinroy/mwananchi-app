@@ -1,6 +1,7 @@
-import { useUser } from '@clerk/clerk-react';
+import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { setApiAuthContext } from './mockApi';
 
 export type AuthUser = {
   id: string;
@@ -40,12 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 function ClerkAuthProvider({ children }: { children: ReactNode }) {
+  const { getToken } = useClerkAuth();
   const { isLoaded, isSignedIn, user: clerkUser } = useUser();
   const user = useMemo(() => mapClerkUser(clerkUser), [clerkUser]);
 
   useEffect(() => {
     if (user) void syncUser(user);
   }, [user]);
+
+  useEffect(() => {
+    setApiAuthContext({
+      userId: user?.id,
+      getToken,
+    });
+  }, [getToken, user?.id]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -76,6 +85,13 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
       window.localStorage.removeItem(authStorageKey);
     }
   }, []);
+
+  useEffect(() => {
+    setApiAuthContext({
+      userId: user?.id,
+      getToken: async () => null,
+    });
+  }, [user?.id]);
 
   const localLogin = useCallback(async ({ email }: AuthCredentials) => {
     const nextUser = buildUserFromEmail(email);

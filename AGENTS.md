@@ -58,6 +58,7 @@ Auth status:
 - Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
 - When `npm run api` is running, users, briefs, chat messages, and civic actions are stored in `data/mwananchi.sqlite`.
+- API ownership is derived from auth headers. `CLERK_JWKS_URL` enables Clerk bearer token verification; local fallback headers are development-only.
 - If the API server is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
 - Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.
 
@@ -70,7 +71,7 @@ Near-term priorities:
 3. Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
 4. Replace prototype API persistence with a production database.
 5. Add real AI endpoints for brief analysis, chat, and action generation.
-6. Add save/share brief flows.
+6. Add richer share controls, including private/unlisted toggles and unshare.
 7. Add richer OCR progress and language controls.
 
 ## Suggested File Organization

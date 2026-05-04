@@ -58,6 +58,8 @@ The current Clerk integration uses `@clerk/clerk-react`, opens Clerk's hosted si
 
 For Netlify deploys, use a Clerk key whose allowed origins include the Netlify domain. Clerk development browser handshakes may add `__clerk_db_jwt` during auth; the committed `netlify.toml` rewrites all app routes to `index.html` so React Router can complete those redirects.
 
+The local API derives brief ownership from auth headers instead of trusting a `userId` request body. Set `CLERK_JWKS_URL` on the API server to verify Clerk bearer tokens; without it, the API keeps the development-only local fallback header behavior.
+
 ## Persistence
 
 The project now includes a local API server for prototype database persistence:
@@ -82,6 +84,10 @@ data/mwananchi.sqlite
 The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`.
 
 If the API server is not running, the app falls back to the existing browser mock/localStorage behavior so frontend work can continue.
+
+## Shareable Briefs
+
+Brief owners can make a brief public from the brief detail page. Shared briefs are available at `/share/:briefId` and show the read-only civic brief without chat history or generated actions.
 
 ## PDF Upload
 

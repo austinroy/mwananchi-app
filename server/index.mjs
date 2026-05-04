@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
+import { createPublicKey, verify } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(__dirname, '..', 'data');
@@ -11,6 +12,8 @@ mkdirSync(dataDir, { recursive: true });
 const db = new DatabaseSync(join(dataDir, 'mwananchi.sqlite'));
 const host = process.env.API_HOST || '127.0.0.1';
 const port = Number(process.env.API_PORT || 8787);
+const clerkJwksUrl = process.env.CLERK_JWKS_URL;
+let cachedJwks = null;
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -33,6 +36,7 @@ db.exec(`
     concerns TEXT NOT NULL,
     citizen_questions TEXT NOT NULL,
     next_steps TEXT NOT NULL,
+    is_public INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
   );
 
@@ -56,6 +60,7 @@ db.exec(`
   );
 `);
 
+ensureColumn('briefs', 'is_public', 'INTEGER NOT NULL DEFAULT 0');
 seedSampleBrief();
 
 createServer(async (req, res) => {
@@ -82,24 +87,32 @@ createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url.pathname === '/api/briefs') {
-      sendJson(res, listBriefs(url.searchParams.get('userId') ?? undefined));
+      sendJson(res, listBriefs(await getRequestUserId(req)));
       return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/briefs') {
       const body = await readJson(req);
-      sendJson(res, createBrief(body.input, body.userId));
+      sendJson(res, createBrief(body.input, await getRequestUserId(req)));
       return;
     }
 
     const briefMessagesMatch = url.pathname.match(/^\/api\/briefs\/([^/]+)\/messages$/);
     if (briefMessagesMatch && req.method === 'GET') {
+      if (!canAccessBrief(briefMessagesMatch[1], await getRequestUserId(req))) {
+        sendJson(res, { error: 'Brief not found' }, 404);
+        return;
+      }
       sendJson(res, listMessages(briefMessagesMatch[1]));
       return;
     }
 
     if (briefMessagesMatch && req.method === 'POST') {
       const body = await readJson(req);
+      if (!canAccessBrief(briefMessagesMatch[1], await getRequestUserId(req))) {
+        sendJson(res, { error: 'Brief not found' }, 404);
+        return;
+      }
       sendJson(res, sendMessage(briefMessagesMatch[1], body.content));
       return;
     }
@@ -107,13 +120,40 @@ createServer(async (req, res) => {
     const briefActionsMatch = url.pathname.match(/^\/api\/briefs\/([^/]+)\/actions$/);
     if (briefActionsMatch && req.method === 'POST') {
       const body = await readJson(req);
+      if (!canAccessBrief(briefActionsMatch[1], await getRequestUserId(req))) {
+        sendJson(res, { error: 'Brief not found' }, 404);
+        return;
+      }
       sendJson(res, createAction(briefActionsMatch[1], body));
+      return;
+    }
+
+    const shareBriefMatch = url.pathname.match(/^\/api\/briefs\/([^/]+)\/share$/);
+    if (shareBriefMatch && req.method === 'POST') {
+      const userId = await getRequestUserId(req);
+      const result = shareBrief(shareBriefMatch[1], userId);
+      if (!result) {
+        sendJson(res, { error: 'Brief not found' }, 404);
+        return;
+      }
+      sendJson(res, result);
+      return;
+    }
+
+    const publicBriefMatch = url.pathname.match(/^\/api\/share\/briefs\/([^/]+)$/);
+    if (publicBriefMatch && req.method === 'GET') {
+      const brief = getPublicBrief(publicBriefMatch[1]);
+      if (!brief) {
+        sendJson(res, { error: 'Shared brief not found' }, 404);
+        return;
+      }
+      sendJson(res, brief);
       return;
     }
 
     const briefMatch = url.pathname.match(/^\/api\/briefs\/([^/]+)$/);
     if (briefMatch && req.method === 'GET') {
-      const brief = getBrief(briefMatch[1]);
+      const brief = getBrief(briefMatch[1], await getRequestUserId(req));
       if (!brief) {
         sendJson(res, { error: 'Brief not found' }, 404);
         return;
@@ -132,7 +172,7 @@ createServer(async (req, res) => {
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_ORIGIN || 'http://localhost:5173');
-  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type, authorization, x-mwananchi-user-id');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 }
 
@@ -174,8 +214,17 @@ function listBriefs(userId) {
   return rows.map(mapBriefRow);
 }
 
-function getBrief(briefId) {
-  const row = db.prepare('SELECT * FROM briefs WHERE id = ?').get(briefId);
+function getBrief(briefId, userId) {
+  const row = db.prepare(`
+    SELECT * FROM briefs
+    WHERE id = ?
+      AND (is_public = 1 OR user_id IS NULL OR user_id = ? OR id = ?)
+  `).get(briefId, userId || '', 'brief-sample-budget');
+  return row ? mapBriefRow(row) : null;
+}
+
+function getPublicBrief(briefId) {
+  const row = db.prepare('SELECT * FROM briefs WHERE id = ? AND is_public = 1').get(briefId);
   return row ? mapBriefRow(row) : null;
 }
 
@@ -185,9 +234,9 @@ function createBrief(input, userId) {
   db.prepare(`
     INSERT INTO briefs (
       id, user_id, title, category, jurisdiction, source_text, summary,
-      key_points, affected_groups, concerns, citizen_questions, next_steps, created_at
+      key_points, affected_groups, concerns, citizen_questions, next_steps, is_public, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     brief.id,
     userId || null,
@@ -201,6 +250,7 @@ function createBrief(input, userId) {
     JSON.stringify(brief.concerns),
     JSON.stringify(brief.citizenQuestions),
     JSON.stringify(brief.nextSteps),
+    brief.isPublic ? 1 : 0,
     brief.createdAt,
   );
 
@@ -276,6 +326,18 @@ function createAction(briefId, input) {
   return action;
 }
 
+function shareBrief(briefId, userId) {
+  const row = db.prepare('SELECT * FROM briefs WHERE id = ? AND (user_id = ? OR user_id IS NULL OR id = ?)').get(briefId, userId || '', 'brief-sample-budget');
+  if (!row) return null;
+
+  db.prepare('UPDATE briefs SET is_public = 1 WHERE id = ?').run(briefId);
+  const brief = getPublicBrief(briefId);
+  return {
+    brief,
+    shareUrl: `/share/${briefId}`,
+  };
+}
+
 function insertMessage(message) {
   db.prepare(`
     INSERT INTO chat_messages (id, brief_id, role, content, created_at)
@@ -289,6 +351,7 @@ function buildBrief(input, userId) {
     title: input.title,
     category: input.category,
     jurisdiction: input.jurisdiction,
+    isPublic: false,
     summary: `This ${String(input.category).toLowerCase()} document appears to affect public decision-making in ${input.jurisdiction}. Mwananchi App summarized the submitted text, highlighted who is affected, and prepared citizen questions.`,
     keyPoints: [
       'The document should be translated into plain language before public discussion.',
@@ -335,6 +398,7 @@ function mapBriefRow(row) {
     title: row.title,
     category: row.category,
     jurisdiction: row.jurisdiction,
+    isPublic: Boolean(row.is_public),
     summary: row.summary,
     keyPoints: JSON.parse(row.key_points),
     affectedGroups: JSON.parse(row.affected_groups),
@@ -343,6 +407,67 @@ function mapBriefRow(row) {
     nextSteps: JSON.parse(row.next_steps),
     createdAt: row.created_at,
   };
+}
+
+function canAccessBrief(briefId, userId) {
+  return Boolean(getBrief(briefId, userId));
+}
+
+async function getRequestUserId(req) {
+  const bearerToken = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const tokenUserId = bearerToken ? await getVerifiedUserIdFromJwt(bearerToken) : null;
+  return tokenUserId || req.headers['x-mwananchi-user-id'] || undefined;
+}
+
+async function getVerifiedUserIdFromJwt(token) {
+  if (!clerkJwksUrl) return null;
+
+  const [headerSegment, payloadSegment, signatureSegment] = token.split('.');
+  if (!headerSegment || !payloadSegment || !signatureSegment) return null;
+
+  try {
+    const header = JSON.parse(base64UrlDecode(headerSegment).toString('utf8'));
+    const json = base64UrlDecode(payloadSegment).toString('utf8');
+    const claims = JSON.parse(json);
+    if (claims.exp && Date.now() >= claims.exp * 1000) return null;
+    if (header.alg !== 'RS256' || !header.kid) return null;
+
+    const jwks = await getClerkJwks();
+    const jwk = jwks.keys.find((key) => key.kid === header.kid);
+    if (!jwk) return null;
+
+    const key = createPublicKey({ key: jwk, format: 'jwk' });
+    const isValid = verify(
+      'RSA-SHA256',
+      Buffer.from(`${headerSegment}.${payloadSegment}`),
+      key,
+      base64UrlDecode(signatureSegment),
+    );
+
+    return isValid && typeof claims.sub === 'string' ? claims.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getClerkJwks() {
+  if (cachedJwks) return cachedJwks;
+
+  const response = await fetch(clerkJwksUrl);
+  if (!response.ok) throw new Error('Could not load Clerk JWKS.');
+  cachedJwks = await response.json();
+  return cachedJwks;
+}
+
+function base64UrlDecode(value) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  return Buffer.from(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '='), 'base64');
+}
+
+function ensureColumn(tableName, columnName, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  if (columns.some((column) => column.name === columnName)) return;
+  db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
 }
 
 function seedSampleBrief() {
@@ -355,6 +480,7 @@ function seedSampleBrief() {
     title: 'County Budget Public Notice',
     category: 'Budget',
     jurisdiction: 'Nairobi County',
+    isPublic: true,
     sourceText: 'Sample county budget public notice.',
     summary:
       'The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.',
@@ -384,9 +510,9 @@ function seedSampleBrief() {
   db.prepare(`
     INSERT INTO briefs (
       id, user_id, title, category, jurisdiction, source_text, summary,
-      key_points, affected_groups, concerns, citizen_questions, next_steps, created_at
+      key_points, affected_groups, concerns, citizen_questions, next_steps, is_public, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     sample.id,
     sample.userId,
@@ -400,6 +526,7 @@ function seedSampleBrief() {
     JSON.stringify(sample.concerns),
     JSON.stringify(sample.citizenQuestions),
     JSON.stringify(sample.nextSteps),
+    sample.isPublic ? 1 : 0,
     sample.createdAt,
   );
 
