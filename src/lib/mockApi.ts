@@ -7,6 +7,7 @@ import type {
 } from './types';
 
 const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
+const savedBriefsStorageKey = 'mwananchi_saved_briefs';
 
 const briefs = new Map<string, CivicBrief>();
 const messages = new Map<string, ChatMessage[]>();
@@ -53,19 +54,21 @@ messages.set(seedBrief.id, [
   },
 ]);
 
-export async function listBriefs() {
+export async function listBriefs(userId?: string) {
   await delay(200);
-  return [...briefs.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const storedBriefs = userId ? loadSavedBriefs(userId) : [];
+  return mergeBriefs([...storedBriefs, seedBrief]).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getBrief(briefId: string) {
   await delay(250);
+  hydrateSavedBriefs();
   const brief = briefs.get(briefId);
   if (!brief) throw new Error('Brief not found');
   return brief;
 }
 
-export async function createBrief(input: NewBriefInput) {
+export async function createBrief(input: NewBriefInput, userId?: string) {
   await delay(700);
   const id = `brief-${crypto.randomUUID()}`;
   const brief: CivicBrief = {
@@ -92,12 +95,15 @@ export async function createBrief(input: NewBriefInput) {
     nextSteps: [
       'Ask a follow-up question in the chat panel.',
       'Generate a public comment or representative email.',
-      'Save the brief once persistence is added.',
+      userId ? 'Find this brief again from your dashboard.' : 'Create an account to keep generated briefs across sessions.',
     ],
     createdAt: new Date().toISOString(),
   };
 
   briefs.set(id, brief);
+  if (userId) {
+    saveBriefForUser(userId, brief);
+  }
   messages.set(id, [
     {
       id: crypto.randomUUID(),
@@ -109,6 +115,41 @@ export async function createBrief(input: NewBriefInput) {
   ]);
 
   return brief;
+}
+
+function mergeBriefs(items: CivicBrief[]) {
+  return [...new Map(items.map((brief) => [brief.id, brief])).values()];
+}
+
+function loadSavedBriefs(userId: string) {
+  const savedBriefs = readSavedBriefs();
+  const userBriefs = savedBriefs[userId] ?? [];
+  userBriefs.forEach((brief) => briefs.set(brief.id, brief));
+  return userBriefs;
+}
+
+function saveBriefForUser(userId: string, brief: CivicBrief) {
+  const savedBriefs = readSavedBriefs();
+  savedBriefs[userId] = mergeBriefs([brief, ...(savedBriefs[userId] ?? [])]);
+  window.localStorage.setItem(savedBriefsStorageKey, JSON.stringify(savedBriefs));
+}
+
+function hydrateSavedBriefs() {
+  Object.values(readSavedBriefs()).flat().forEach((brief) => briefs.set(brief.id, brief));
+}
+
+function readSavedBriefs(): Record<string, CivicBrief[]> {
+  if (typeof window === 'undefined') return {};
+
+  const storedValue = window.localStorage.getItem(savedBriefsStorageKey);
+  if (!storedValue) return {};
+
+  try {
+    return JSON.parse(storedValue) as Record<string, CivicBrief[]>;
+  } catch {
+    window.localStorage.removeItem(savedBriefsStorageKey);
+    return {};
+  }
 }
 
 export async function getChatMessages(briefId: string) {

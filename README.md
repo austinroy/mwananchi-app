@@ -21,6 +21,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Chat panel with mock responses
 - Civic action generator
 - Prototype auth with login/register routes and local session storage
+- Logged-in users keep generated briefs in browser local storage
 
 ## Auth Status
 
@@ -40,6 +41,8 @@ Protected routes:
 - `/dashboard`
 
 Guests can create and act on a brief without signing in. Login is currently used for workspace/history-style access.
+
+Generated briefs are currently stored locally in the browser for signed-in users. This is prototype persistence, not a production database.
 
 Replace `src/lib/auth.tsx` with a real provider integration when moving beyond the prototype.
 

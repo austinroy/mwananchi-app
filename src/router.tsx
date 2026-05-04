@@ -370,7 +370,11 @@ function SignedInRedirectCard() {
 }
 
 function DashboardPage() {
-  const { data = [], isLoading } = useQuery({ queryKey: ['briefs'], queryFn: listBriefs });
+  const auth = useAuth();
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['briefs', auth.user?.id],
+    queryFn: () => listBriefs(auth.user?.id),
+  });
 
   return (
     <main className="page-shell">
@@ -425,9 +429,9 @@ function NewBriefPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: createBrief,
+    mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id),
     onSuccess: async (brief) => {
-      await queryClient.invalidateQueries({ queryKey: ['briefs'] });
+      await queryClient.invalidateQueries({ queryKey: ['briefs', auth.user?.id] });
       await navigate({ to: '/briefs/$briefId', params: { briefId: brief.id } });
     },
   });
@@ -446,11 +450,15 @@ function NewBriefPage() {
     <main className="page-shell max-w-4xl">
       <h1 className="text-3xl font-bold">Create a civic brief</h1>
       <p className="mt-2 text-slate-600">Paste a policy, bill, public notice, or civic document.</p>
-      {!auth.isAuthenticated ? (
+      {auth.isAuthenticated ? (
+        <div className="mt-5 rounded-lg border border-civic-100 bg-white p-4 text-sm leading-6 text-slate-700">
+          Generated briefs are saved to your dashboard while prototype local storage is active.
+        </div>
+      ) : (
         <div className="mt-5 rounded-lg border border-signal/30 bg-white p-4 text-sm leading-6 text-slate-700">
           You can create a brief without signing in. Create an account when you want to keep briefs across sessions.
         </div>
-      ) : null}
+      )}
       <form
         className="mt-6 surface rounded-lg p-6"
         onSubmit={(event) => {

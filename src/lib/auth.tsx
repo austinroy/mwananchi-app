@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       register: async ({ email, name }) => {
         const nextUser = {
-          id: crypto.randomUUID(),
+          id: buildUserId(email),
           name: name.trim(),
           email: email.trim().toLowerCase(),
         };
@@ -89,10 +89,14 @@ function buildUserFromEmail(email: string): AuthUser {
   const name = normalizedEmail.split('@')[0]?.replace(/[._-]+/g, ' ') || 'Mwananchi user';
 
   return {
-    id: crypto.randomUUID(),
+    id: buildUserId(normalizedEmail),
     name: titleCase(name),
     email: normalizedEmail,
   };
+}
+
+function buildUserId(email: string) {
+  return `user-${encodeURIComponent(email.trim().toLowerCase())}`;
 }
 
 function titleCase(value: string) {

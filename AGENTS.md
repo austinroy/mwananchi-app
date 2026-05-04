@@ -53,6 +53,8 @@ Auth status:
 - `/dashboard` is protected with `RequireAuth` in `src/router.tsx`.
 - Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
+- Signed-in generated briefs are currently stored in browser `localStorage` under `mwananchi_saved_briefs`.
+- Guest-created briefs are temporary and only live in the in-memory mock API for the current app session.
 - This should be replaced with a real provider such as Supabase, Clerk, or Auth.js before production use.
 
 ## Development Priorities
@@ -62,7 +64,7 @@ Near-term priorities:
 1. Split large route/page code out of `src/router.tsx` into route and component files.
 2. Add proper form validation for title, category, jurisdiction, and document text.
 3. Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
-4. Add persistence with a backend or local storage fallback.
+4. Replace prototype localStorage persistence with backend/database persistence.
 5. Replace local prototype auth with a real provider when backend persistence starts.
 6. Add real AI endpoints for brief analysis, chat, and action generation.
 7. Add PDF upload and parsing.
