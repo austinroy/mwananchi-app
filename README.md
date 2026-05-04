@@ -38,9 +38,9 @@ Public routes:
 
 Protected routes:
 
-- `/dashboard`
+- None during the current dashboard testing pass
 
-Guests can create and act on a brief without signing in. Login is currently used for workspace/history-style access.
+Guests can create and act on a brief without signing in. Dashboard access is temporarily open for testing. Login is currently used for workspace/history-style persistence.
 
 Generated briefs are currently stored locally in the browser for signed-in users. This is prototype persistence, not a production database.
 

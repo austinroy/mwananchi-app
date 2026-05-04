@@ -51,7 +51,7 @@ Auth status:
 
 - Auth is currently a local prototype layer.
 - `src/lib/auth.tsx` stores a mock session in browser `localStorage`.
-- `/dashboard` is protected with `RequireAuth` in `src/router.tsx`.
+- `/dashboard` is temporarily public for testing and should be protected again before production.
 - Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
 - Signed-in generated briefs are currently stored in browser `localStorage` under `mwananchi_saved_briefs`.
