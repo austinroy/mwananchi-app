@@ -30,7 +30,7 @@ const indexRoute = createRoute({
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dashboard',
-  component: () => <RequireAuth><DashboardPage /></RequireAuth>,
+  component: DashboardPage,
 });
 
 const newBriefRoute = createRoute({
@@ -178,9 +178,9 @@ function LandingPage() {
               <FileText size={18} />
               Create a civic brief
             </Link>
-            <Link to={auth.isAuthenticated ? '/dashboard' : '/login'} className="btn-secondary w-full sm:w-auto">
+            <Link to="/dashboard" className="btn-secondary w-full sm:w-auto">
               <Home size={18} />
-              {auth.isAuthenticated ? 'View dashboard' : 'Sign in'}
+              View dashboard
             </Link>
           </div>
         </div>
@@ -380,8 +380,13 @@ function DashboardPage() {
     <main className="page-shell">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-semibold text-civic-700">Workspace</p>
+          <p className="text-sm font-semibold text-civic-700">{auth.isAuthenticated ? 'Workspace' : 'Testing mode'}</p>
           <h1 className="text-3xl font-bold text-ink sm:text-4xl">Civic briefs</h1>
+          {!auth.isAuthenticated ? (
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Dashboard access is temporarily open for testing. Sign in later to save generated briefs to your workspace.
+            </p>
+          ) : null}
         </div>
         <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
           <FileText size={16} />
