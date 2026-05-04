@@ -22,6 +22,8 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Civic action generator
 - Prototype auth with login/register routes and local session storage
 - Logged-in users keep generated briefs in browser local storage
+- SQLite-backed API server for users, briefs, chat messages, and civic actions
+- PDF upload with lightweight text extraction into the brief form
 
 ## Auth Status
 
@@ -42,7 +44,7 @@ Protected routes:
 
 Guests can create and act on a brief without signing in. Dashboard access is temporarily open for testing. Login is currently used for workspace/history-style persistence.
 
-Generated briefs are currently stored locally in the browser for signed-in users. This is prototype persistence, not a production database.
+Generated briefs are stored in SQLite when the API server is running, with browser mock persistence as a fallback during prototype work.
 
 Replace `src/lib/auth.tsx` with a real provider integration when moving beyond the prototype.
 
@@ -52,6 +54,7 @@ Install dependencies, then start the dev server:
 
 ```bash
 npm install
+npm run api
 npm run dev
 ```
 
@@ -59,8 +62,11 @@ If you prefer pnpm:
 
 ```bash
 pnpm install
+pnpm api
 pnpm dev
 ```
+
+The API server listens on `http://localhost:8787` and stores data in `data/mwananchi.sqlite`.
 
 ## Quality Checks
 

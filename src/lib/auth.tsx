@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(user),
       login: async ({ email }) => {
         const nextUser = buildUserFromEmail(email);
+        void syncUser(nextUser);
         persistUser(nextUser);
         setUser(nextUser);
         return nextUser;
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: name.trim(),
           email: email.trim().toLowerCase(),
         };
+        void syncUser(nextUser);
         persistUser(nextUser);
         setUser(nextUser);
         return nextUser;
@@ -83,6 +85,20 @@ export function useAuth() {
 function persistUser(user: AuthUser) {
   window.localStorage.setItem(authStorageKey, JSON.stringify(user));
 }
+
+async function syncUser(user: AuthUser) {
+  try {
+    await fetch(`${apiBaseUrl}/api/users`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(user),
+    });
+  } catch {
+    // The API server is optional during local prototype work.
+  }
+}
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
 
 function buildUserFromEmail(email: string): AuthUser {
   const normalizedEmail = email.trim().toLowerCase();

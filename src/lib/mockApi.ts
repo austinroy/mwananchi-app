@@ -8,6 +8,7 @@ import type {
 
 const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
 const savedBriefsStorageKey = 'mwananchi_saved_briefs';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
 
 const briefs = new Map<string, CivicBrief>();
 const messages = new Map<string, ChatMessage[]>();
@@ -55,12 +56,18 @@ messages.set(seedBrief.id, [
 ]);
 
 export async function listBriefs(userId?: string) {
+  const apiBriefs = await apiRequest<CivicBrief[]>(`/api/briefs${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`);
+  if (apiBriefs) return apiBriefs;
+
   await delay(200);
   const storedBriefs = userId ? loadSavedBriefs(userId) : [];
   return mergeBriefs([...storedBriefs, seedBrief]).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getBrief(briefId: string) {
+  const apiBrief = await apiRequest<CivicBrief>(`/api/briefs/${briefId}`);
+  if (apiBrief) return apiBrief;
+
   await delay(250);
   hydrateSavedBriefs();
   const brief = briefs.get(briefId);
@@ -69,6 +76,12 @@ export async function getBrief(briefId: string) {
 }
 
 export async function createBrief(input: NewBriefInput, userId?: string) {
+  const apiBrief = await apiRequest<CivicBrief>('/api/briefs', {
+    method: 'POST',
+    body: JSON.stringify({ input, userId }),
+  });
+  if (apiBrief) return apiBrief;
+
   await delay(700);
   const id = `brief-${crypto.randomUUID()}`;
   const brief: CivicBrief = {
@@ -153,11 +166,20 @@ function readSavedBriefs(): Record<string, CivicBrief[]> {
 }
 
 export async function getChatMessages(briefId: string) {
+  const apiMessages = await apiRequest<ChatMessage[]>(`/api/briefs/${briefId}/messages`);
+  if (apiMessages) return apiMessages;
+
   await delay(150);
   return messages.get(briefId) ?? [];
 }
 
 export async function sendChatMessage(briefId: string, content: string) {
+  const apiMessage = await apiRequest<ChatMessage>(`/api/briefs/${briefId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+  if (apiMessage) return apiMessage;
+
   await delay(450);
   const thread = messages.get(briefId) ?? [];
   const now = new Date().toISOString();
@@ -182,6 +204,12 @@ export async function sendChatMessage(briefId: string, content: string) {
 }
 
 export async function generateAction(briefId: string, input: CivicActionInput) {
+  const apiAction = await apiRequest<CivicAction>(`/api/briefs/${briefId}/actions`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (apiAction) return apiAction;
+
   await delay(600);
   const action: CivicAction = {
     ...input,
@@ -193,6 +221,23 @@ export async function generateAction(briefId: string, input: CivicActionInput) {
 
   actions.set(briefId, [...(actions.get(briefId) ?? []), action]);
   return action;
+}
+
+async function apiRequest<T>(path: string, init?: RequestInit) {
+  try {
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      ...init,
+      headers: {
+        'content-type': 'application/json',
+        ...init?.headers,
+      },
+    });
+
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
 }
 
 function buildActionDraft(input: CivicActionInput) {

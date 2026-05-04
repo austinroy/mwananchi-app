@@ -2,9 +2,11 @@ import { Link, Outlet, createRootRoute, createRoute, createRouter, useNavigate }
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
 import { FileText, Home, LayoutDashboard, LogIn, LogOut, MessageSquare, Send, Sparkles, UserPlus } from 'lucide-react';
+import { useState } from 'react';
 import type React from 'react';
 import { useAuth } from './lib/auth';
 import { createBrief, generateAction, getBrief, getChatMessages, listBriefs, sendChatMessage } from './lib/mockApi';
+import { extractPdfText } from './lib/pdf';
 import type { BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
 
 const categories: BriefCategory[] = ['Housing', 'Justice', 'Elections', 'Education', 'Health', 'Budget', 'Other'];
@@ -433,6 +435,7 @@ function NewBriefPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [pdfStatus, setPdfStatus] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id),
     onSuccess: async (brief) => {
@@ -502,10 +505,33 @@ function NewBriefPage() {
         </div>
         <form.Field name="documentText">
           {(field) => (
-            <label className="mt-5 block">
-              <span className="text-sm font-semibold">Document text</span>
-              <textarea className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
-            </label>
+            <div className="mt-5">
+              <label className="block">
+                <span className="text-sm font-semibold">Upload PDF</span>
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 bg-white px-3 py-2 text-sm"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+
+                    setPdfStatus('Extracting text from PDF...');
+                    try {
+                      field.handleChange(await extractPdfText(file));
+                      setPdfStatus(`Extracted text from ${file.name}. Review it before generating the brief.`);
+                    } catch (error) {
+                      setPdfStatus(error instanceof Error ? error.message : 'Could not extract text from this PDF.');
+                    }
+                  }}
+                />
+              </label>
+              {pdfStatus ? <p className="mt-2 text-sm leading-6 text-slate-600">{pdfStatus}</p> : null}
+              <label className="mt-5 block">
+                <span className="text-sm font-semibold">Document text</span>
+                <textarea className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+              </label>
+            </div>
           )}
         </form.Field>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
