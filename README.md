@@ -61,3 +61,14 @@ If you prefer pnpm:
 pnpm install
 pnpm dev
 ```
+
+## Quality Checks
+
+Run TypeScript and Oxlint:
+
+```bash
+npm run typecheck
+npm run lint
+```
+
+Oxlint is installed as a dev dependency and uses the committed `.oxlintrc.json` configuration.

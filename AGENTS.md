@@ -23,6 +23,7 @@ The app should feel trustworthy, calm, accessible, and useful for Kenyan civic c
 - TanStack Table, planned for richer dashboard tables
 - Tailwind CSS
 - Lucide React icons
+- Oxlint via `npm run lint`
 
 ## Current App Shape
 
@@ -155,6 +156,7 @@ Common commands:
 ```bash
 npm run dev
 npm run typecheck
+npm run lint
 npm run build
 ```
 
