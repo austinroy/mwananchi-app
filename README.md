@@ -56,6 +56,8 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 
 The current Clerk integration uses `@clerk/clerk-react`, opens Clerk's hosted sign-in/sign-up modals, and syncs authenticated users to the app API.
 
+For Netlify deploys, use a Clerk key whose allowed origins include the Netlify domain. Clerk development browser handshakes may add `__clerk_db_jwt` during auth; the committed `netlify.toml` rewrites all app routes to `index.html` so React Router can complete those redirects.
+
 ## Persistence
 
 The project now includes a local API server for prototype database persistence:
