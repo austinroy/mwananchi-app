@@ -29,6 +29,7 @@ The app should feel trustworthy, calm, accessible, and useful for Kenyan civic c
 Important files:
 
 - `src/main.tsx`: app bootstrap
+- `src/lib/auth.tsx`: local prototype auth provider
 - `src/router.tsx`: current routes and page components
 - `src/lib/mockApi.ts`: mock async API and seed data
 - `src/lib/queryClient.ts`: TanStack Query client
@@ -38,10 +39,23 @@ Important files:
 Current routes:
 
 - `/`: landing page
+- `/login`: sign in page
+- `/register`: account creation page
 - `/dashboard`: civic brief dashboard
 - `/briefs/new`: new brief form
 - `/briefs/$briefId`: brief detail and chat
 - `/briefs/$briefId/actions`: civic action generator
+
+Auth status:
+
+- Auth is currently a local prototype layer.
+- `src/lib/auth.tsx` stores a mock session in browser `localStorage`.
+- `/dashboard` is protected with `RequireAuth` in `src/router.tsx`.
+- Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
+- Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
+- Signed-in generated briefs are currently stored in browser `localStorage` under `mwananchi_saved_briefs`.
+- Guest-created briefs are temporary and only live in the in-memory mock API for the current app session.
+- This should be replaced with a real provider such as Supabase, Clerk, or Auth.js before production use.
 
 ## Development Priorities
 
@@ -50,10 +64,11 @@ Near-term priorities:
 1. Split large route/page code out of `src/router.tsx` into route and component files.
 2. Add proper form validation for title, category, jurisdiction, and document text.
 3. Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
-4. Add persistence with a backend or local storage fallback.
-5. Add real AI endpoints for brief analysis, chat, and action generation.
-6. Add PDF upload and parsing.
-7. Add save/share brief flows.
+4. Replace prototype localStorage persistence with backend/database persistence.
+5. Replace local prototype auth with a real provider when backend persistence starts.
+6. Add real AI endpoints for brief analysis, chat, and action generation.
+7. Add PDF upload and parsing.
+8. Add save/share brief flows.
 
 ## Suggested File Organization
 
