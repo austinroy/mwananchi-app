@@ -79,14 +79,14 @@ function AppShell() {
   return (
     <div className="min-h-screen bg-civic-50">
       <header className="border-b border-civic-100 bg-white">
-        <nav className="page-shell flex items-center justify-between py-4">
-          <Link to="/" className="flex items-center gap-2 text-lg font-bold text-civic-900">
-            <span className="grid size-9 place-items-center rounded-md bg-civic-700 text-white">
+        <nav className="page-shell flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <Link to="/" className="flex min-w-0 items-center gap-2 text-lg font-bold text-civic-900">
+            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-civic-700 text-white">
               <Sparkles size={18} />
             </span>
-            Mwananchi App
+            <span className="truncate">Mwananchi App</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             {auth.isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" icon={<LayoutDashboard size={16} />} label="Dashboard" />
@@ -94,7 +94,7 @@ function AppShell() {
                   <FileText size={16} />
                   New brief
                 </Link>
-                <button className="btn-secondary" type="button" onClick={auth.logout}>
+                <button className="btn-secondary col-span-2 sm:col-span-1" type="button" onClick={auth.logout}>
                   <LogOut size={16} />
                   Sign out
                 </button>
@@ -137,19 +137,19 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="page-shell grid min-h-[70vh] place-items-center">
-      <section className="surface w-full max-w-xl rounded-lg p-8 text-center">
+      <section className="surface w-full max-w-xl rounded-lg p-5 text-center sm:p-8">
         <div className="mx-auto grid size-12 place-items-center rounded-md bg-civic-700 text-white">
           <LogIn size={22} />
         </div>
-        <h1 className="mt-5 text-3xl font-bold text-ink">Sign in to continue</h1>
+        <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">Sign in to continue</h1>
         <p className="mt-3 text-slate-600">
           Mwananchi App saves briefs, chat history, and generated actions to your workspace.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to="/login" className="btn-primary">
+        <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
+          <Link to="/login" className="btn-primary w-full sm:w-auto">
             Sign in
           </Link>
-          <Link to="/register" className="btn-secondary">
+          <Link to="/register" className="btn-secondary w-full sm:w-auto">
             Create account
           </Link>
         </div>
@@ -163,28 +163,28 @@ function LandingPage() {
 
   return (
     <main className="page-shell">
-      <section className="grid min-h-[72vh] items-center gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid items-center gap-8 py-6 sm:min-h-[72vh] sm:py-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-civic-700">Civic intelligence for citizens</p>
-          <h1 className="max-w-3xl text-5xl font-bold leading-tight text-ink sm:text-6xl">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-civic-700 sm:text-sm sm:tracking-[0.18em]">Civic intelligence for citizens</p>
+          <h1 className="max-w-3xl text-4xl font-bold leading-tight text-ink sm:text-5xl lg:text-6xl">
             Turn public documents into public understanding.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">
+          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:mt-6 sm:text-lg sm:leading-8">
             Mwananchi App helps citizens, journalists, students, and community groups explain policies,
             ask sharper questions, and draft practical civic actions.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/briefs/new" className="btn-primary">
+          <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+            <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
               <FileText size={18} />
               Create a civic brief
             </Link>
-            <Link to={auth.isAuthenticated ? '/dashboard' : '/login'} className="btn-secondary">
+            <Link to={auth.isAuthenticated ? '/dashboard' : '/login'} className="btn-secondary w-full sm:w-auto">
               <Home size={18} />
               {auth.isAuthenticated ? 'View dashboard' : 'Sign in'}
             </Link>
           </div>
         </div>
-        <div className="surface rounded-lg p-6">
+        <div className="surface rounded-lg p-4 sm:p-6">
           <div className="rounded-md bg-civic-900 p-5 text-white">
             <p className="text-sm text-civic-100">Sample brief</p>
             <h2 className="mt-2 text-2xl font-bold">County Budget Public Notice</h2>
@@ -345,9 +345,9 @@ function AuthFormShell({
 }) {
   return (
     <main className="page-shell grid min-h-[72vh] place-items-center">
-      <section className="surface w-full max-w-md rounded-lg p-6">
+      <section className="surface w-full max-w-md rounded-lg p-5 sm:p-6">
         <p className="text-sm font-semibold text-civic-700">{eyebrow}</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">{title}</h1>
+        <h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">{title}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
         <div className="mt-6">{children}</div>
         <p className="mt-6 text-center text-sm text-slate-600">{footer}</p>
@@ -359,9 +359,9 @@ function AuthFormShell({
 function SignedInRedirectCard() {
   return (
     <main className="page-shell grid min-h-[72vh] place-items-center">
-      <section className="surface w-full max-w-md rounded-lg p-6 text-center">
+      <section className="surface w-full max-w-md rounded-lg p-5 text-center sm:p-6">
         <h1 className="text-2xl font-bold text-ink">You are already signed in</h1>
-        <Link to="/dashboard" className="btn-primary mt-5">
+        <Link to="/dashboard" className="btn-primary mt-5 w-full sm:w-auto">
           Go to dashboard
         </Link>
       </section>
@@ -381,15 +381,15 @@ function DashboardPage() {
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-semibold text-civic-700">Workspace</p>
-          <h1 className="text-3xl font-bold text-ink">Civic briefs</h1>
+          <h1 className="text-3xl font-bold text-ink sm:text-4xl">Civic briefs</h1>
         </div>
-        <Link to="/briefs/new" className="btn-primary">
+        <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
           <FileText size={16} />
           Start new brief
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {categories.slice(0, 6).map((category) => (
           <div key={category} className="surface rounded-lg p-5">
             <p className="font-semibold text-civic-900">{category}</p>
@@ -399,7 +399,7 @@ function DashboardPage() {
       </div>
 
       <section className="mt-8 surface rounded-lg">
-        <div className="border-b border-civic-100 p-5">
+        <div className="border-b border-civic-100 p-4 sm:p-5">
           <h2 className="text-xl font-bold">Recent briefs</h2>
         </div>
         <div className="divide-y divide-civic-100">
@@ -407,9 +407,9 @@ function DashboardPage() {
             <p className="p-5 text-slate-600">Loading briefs...</p>
           ) : (
             data.map((brief) => (
-              <Link key={brief.id} to="/briefs/$briefId" params={{ briefId: brief.id }} className="block p-5 transition hover:bg-civic-50">
+              <Link key={brief.id} to="/briefs/$briefId" params={{ briefId: brief.id }} className="block p-4 transition hover:bg-civic-50 sm:p-5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-ink">{brief.title}</p>
                     <p className="mt-1 text-sm text-slate-600">{brief.category} · {brief.jurisdiction}</p>
                   </div>
@@ -448,7 +448,7 @@ function NewBriefPage() {
 
   return (
     <main className="page-shell max-w-4xl">
-      <h1 className="text-3xl font-bold">Create a civic brief</h1>
+      <h1 className="text-3xl font-bold sm:text-4xl">Create a civic brief</h1>
       <p className="mt-2 text-slate-600">Paste a policy, bill, public notice, or civic document.</p>
       {auth.isAuthenticated ? (
         <div className="mt-5 rounded-lg border border-civic-100 bg-white p-4 text-sm leading-6 text-slate-700">
@@ -460,7 +460,7 @@ function NewBriefPage() {
         </div>
       )}
       <form
-        className="mt-6 surface rounded-lg p-6"
+        className="mt-6 surface rounded-lg p-4 sm:p-6"
         onSubmit={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -499,13 +499,13 @@ function NewBriefPage() {
           {(field) => (
             <label className="mt-5 block">
               <span className="text-sm font-semibold">Document text</span>
-              <textarea className="mt-2 min-h-64 w-full rounded-md border border-civic-100 px-3 py-2 leading-7" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+              <textarea className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
             </label>
           )}
         </form.Field>
-        <div className="mt-6 flex items-center justify-between gap-4">
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">MVP note: mock analysis is active until the AI backend is connected.</p>
-          <button className="btn-primary" disabled={mutation.isPending} type="submit">
+          <button className="btn-primary w-full sm:w-auto" disabled={mutation.isPending} type="submit">
             <Sparkles size={16} />
             {mutation.isPending ? 'Generating...' : 'Generate brief'}
           </button>
@@ -524,11 +524,11 @@ function BriefPage() {
   return (
     <main className="page-shell">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">{brief.category} · {brief.jurisdiction}</p>
-          <h1 className="text-3xl font-bold">{brief.title}</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
-        <Link to="/briefs/$briefId/actions" params={{ briefId }} className="btn-primary">
+        <Link to="/briefs/$briefId/actions" params={{ briefId }} className="btn-primary w-full sm:w-auto">
           <Send size={16} />
           Generate action
         </Link>
@@ -550,7 +550,7 @@ function BriefPage() {
 
 function BriefSection({ title, items }: { title: string; items: string[] }) {
   return (
-    <article className="surface rounded-lg p-5">
+    <article className="surface rounded-lg p-4 sm:p-5">
       <h2 className="font-bold text-civic-900">{title}</h2>
       <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
         {items.map((item) => <li key={item}>{item}</li>)}
@@ -576,16 +576,16 @@ function ChatPanel({ briefId }: { briefId: string }) {
   });
 
   return (
-    <aside className="surface flex min-h-[560px] flex-col rounded-lg">
+    <aside className="surface flex min-h-[520px] flex-col rounded-lg lg:min-h-[560px]">
       <div className="border-b border-civic-100 p-4">
         <h2 className="flex items-center gap-2 font-bold">
           <MessageSquare size={18} />
           Ask about this brief
         </h2>
       </div>
-      <div className="flex-1 space-y-3 overflow-auto p-4">
+      <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-4">
         {data.map((message) => (
-          <div key={message.id} className={message.role === 'user' ? 'ml-8 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white' : 'mr-8 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700'}>
+          <div key={message.id} className={message.role === 'user' ? 'ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8' : 'mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8'}>
             {message.content}
           </div>
         ))}
@@ -627,12 +627,12 @@ function ActionsPage() {
   return (
     <main className="page-shell max-w-5xl">
       <Link to="/briefs/$briefId" params={{ briefId }} className="text-sm font-semibold text-civic-700">Back to brief</Link>
-      <h1 className="mt-3 text-3xl font-bold">Generate civic action</h1>
+      <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Generate civic action</h1>
       <p className="mt-2 text-slate-600">{brief?.title ?? 'Brief'} · choose a format and audience.</p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <form
-          className="surface rounded-lg p-5"
+          className="surface rounded-lg p-4 sm:p-5"
           onSubmit={(event) => {
             event.preventDefault();
             void form.handleSubmit();
@@ -670,7 +670,7 @@ function ActionsPage() {
             {mutation.isPending ? 'Drafting...' : 'Draft action'}
           </button>
         </form>
-        <section className="surface rounded-lg p-5">
+        <section className="surface rounded-lg p-4 sm:p-5">
           <h2 className="font-bold">Generated draft</h2>
           <pre className="mt-4 whitespace-pre-wrap rounded-md bg-civic-50 p-4 text-sm leading-7 text-slate-800">
             {mutation.data?.content ?? 'Your civic action draft will appear here.'}

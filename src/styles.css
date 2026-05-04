@@ -24,7 +24,7 @@ select {
 
 @layer components {
   .page-shell {
-    @apply mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8;
   }
 
   .surface {
@@ -32,10 +32,10 @@ select {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-md bg-civic-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-civic-900 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-civic-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-civic-900 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-md border border-civic-100 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-civic-50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-civic-100 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-civic-50 disabled:cursor-not-allowed disabled:opacity-60;
   }
 }
