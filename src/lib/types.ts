@@ -12,6 +12,7 @@ export type CivicBrief = {
   title: string;
   category: BriefCategory;
   jurisdiction: string;
+  isPublic: boolean;
   summary: string;
   keyPoints: string[];
   affectedGroups: string[];
@@ -19,6 +20,11 @@ export type CivicBrief = {
   citizenQuestions: string[];
   nextSteps: string[];
   createdAt: string;
+};
+
+export type ShareBriefResult = {
+  brief: CivicBrief;
+  shareUrl: string;
 };
 
 export type NewBriefInput = {

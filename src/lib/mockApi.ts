@@ -4,6 +4,7 @@ import type {
   CivicActionInput,
   CivicBrief,
   NewBriefInput,
+  ShareBriefResult,
 } from './types';
 
 const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,12 +14,14 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
 const briefs = new Map<string, CivicBrief>();
 const messages = new Map<string, ChatMessage[]>();
 const actions = new Map<string, CivicAction[]>();
+let apiAuthContext: ApiAuthContext = {};
 
 const seedBrief: CivicBrief = {
   id: 'brief-sample-budget',
   title: 'County Budget Public Notice',
   category: 'Budget',
   jurisdiction: 'Nairobi County',
+  isPublic: true,
   summary:
     'The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.',
   keyPoints: [
@@ -55,8 +58,12 @@ messages.set(seedBrief.id, [
   },
 ]);
 
+export function setApiAuthContext(context: ApiAuthContext) {
+  apiAuthContext = context;
+}
+
 export async function listBriefs(userId?: string) {
-  const apiBriefs = await apiRequest<CivicBrief[]>(`/api/briefs${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`);
+  const apiBriefs = await apiRequest<CivicBrief[]>('/api/briefs');
   if (apiBriefs) return apiBriefs;
 
   await delay(200);
@@ -75,10 +82,21 @@ export async function getBrief(briefId: string) {
   return brief;
 }
 
+export async function getSharedBrief(briefId: string) {
+  const apiBrief = await apiRequest<CivicBrief>(`/api/share/briefs/${briefId}`);
+  if (apiBrief) return apiBrief;
+
+  await delay(250);
+  hydrateSavedBriefs();
+  const brief = briefs.get(briefId);
+  if (!brief?.isPublic) throw new Error('Shared brief not found');
+  return brief;
+}
+
 export async function createBrief(input: NewBriefInput, userId?: string) {
   const apiBrief = await apiRequest<CivicBrief>('/api/briefs', {
     method: 'POST',
-    body: JSON.stringify({ input, userId }),
+    body: JSON.stringify({ input }),
   });
   if (apiBrief) return apiBrief;
 
@@ -89,6 +107,7 @@ export async function createBrief(input: NewBriefInput, userId?: string) {
     title: input.title,
     category: input.category,
     jurisdiction: input.jurisdiction,
+    isPublic: false,
     summary: `This ${input.category.toLowerCase()} document appears to affect public decision-making in ${input.jurisdiction}. Mwananchi App would summarize the official text, highlight who is affected, and help citizens prepare informed questions.`,
     keyPoints: [
       'The document should be translated into plain language before public discussion.',
@@ -223,12 +242,36 @@ export async function generateAction(briefId: string, input: CivicActionInput) {
   return action;
 }
 
+export async function shareBrief(briefId: string) {
+  const apiResult = await apiRequest<ShareBriefResult>(`/api/briefs/${briefId}/share`, {
+    method: 'POST',
+  });
+  if (apiResult) return apiResult;
+
+  await delay(250);
+  hydrateSavedBriefs();
+  const brief = briefs.get(briefId);
+  if (!brief) throw new Error('Brief not found');
+
+  const sharedBrief = { ...brief, isPublic: true };
+  briefs.set(briefId, sharedBrief);
+  if (apiAuthContext.userId) saveBriefForUser(apiAuthContext.userId, sharedBrief);
+
+  return {
+    brief: sharedBrief,
+    shareUrl: `${window.location.origin}/share/${briefId}`,
+  };
+}
+
 async function apiRequest<T>(path: string, init?: RequestInit) {
   try {
+    const token = await apiAuthContext.getToken?.();
     const response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
       headers: {
         'content-type': 'application/json',
+        ...(apiAuthContext.userId ? { 'x-mwananchi-user-id': apiAuthContext.userId } : {}),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...init?.headers,
       },
     });
@@ -239,6 +282,11 @@ async function apiRequest<T>(path: string, init?: RequestInit) {
     return null;
   }
 }
+
+type ApiAuthContext = {
+  userId?: string;
+  getToken?: () => Promise<string | null>;
+};
 
 function buildActionDraft(input: CivicActionInput) {
   if (input.actionType === 'whatsapp_summary') {
