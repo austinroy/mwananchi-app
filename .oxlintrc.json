@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
+  },
+  "plugins": ["typescript", "react", "react-hooks", "import"],
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**"],
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "error",
+    "eqeqeq": "error",
+    "react/jsx-key": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
