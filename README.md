@@ -10,6 +10,8 @@ Mwananchi App is a civic participation web app for turning public documents into
 - TanStack Form
 - Tailwind CSS
 - Lucide React icons
+- Local Node API using built-in `node:sqlite`
+- Oxlint
 
 ## Current MVP
 
@@ -22,6 +24,8 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Civic action generator
 - Prototype auth with login/register routes and local session storage
 - Logged-in users keep generated briefs in browser local storage
+- SQLite-backed API server for users, briefs, chat messages, and civic actions
+- PDF upload with lightweight text extraction into the brief form
 
 ## Auth Status
 
@@ -42,9 +46,43 @@ Protected routes:
 
 Guests can create and act on a brief without signing in. Dashboard access is temporarily open for testing. Login is currently used for workspace/history-style persistence.
 
-Generated briefs are currently stored locally in the browser for signed-in users. This is prototype persistence, not a production database.
+Generated briefs are stored in SQLite when the API server is running, with browser mock persistence as a fallback during prototype work.
 
 Replace `src/lib/auth.tsx` with a real provider integration when moving beyond the prototype.
+
+## Persistence
+
+The project now includes a local API server for prototype database persistence:
+
+- Users
+- Civic briefs
+- Chat messages
+- Civic action drafts
+
+Run it with:
+
+```bash
+npm run api
+```
+
+The API listens on `http://localhost:8787` and stores local data in:
+
+```bash
+data/mwananchi.sqlite
+```
+
+The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`.
+
+If the API server is not running, the app falls back to the existing browser mock/localStorage behavior so frontend work can continue.
+
+## PDF Upload
+
+The new brief form supports uploading a PDF. The app extracts selectable text from the PDF and places it into the document text area for review before generating a brief.
+
+Current limitation:
+
+- Text-based PDFs are supported.
+- Scanned/image-only PDFs need OCR, which is not wired in yet.
 
 ## Run Locally
 
@@ -52,6 +90,7 @@ Install dependencies, then start the dev server:
 
 ```bash
 npm install
+npm run api
 npm run dev
 ```
 
@@ -59,8 +98,11 @@ If you prefer pnpm:
 
 ```bash
 pnpm install
+pnpm api
 pnpm dev
 ```
+
+The API server listens on `http://localhost:8787` and stores data in `data/mwananchi.sqlite`.
 
 ## Quality Checks
 
