@@ -8,7 +8,7 @@ import type {
 
 const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
 const savedBriefsStorageKey = 'mwananchi_saved_briefs';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 const briefs = new Map<string, CivicBrief>();
 const messages = new Map<string, ChatMessage[]>();
@@ -56,7 +56,7 @@ messages.set(seedBrief.id, [
 ]);
 
 export async function listBriefs(userId?: string) {
-  const apiBriefs = await apiRequest<CivicBrief[]>(`/api/briefs${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`);
+  const apiBriefs = await apiRequest<CivicBrief[]>(`/briefs${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`);
   if (apiBriefs) return apiBriefs;
 
   await delay(200);
@@ -65,7 +65,7 @@ export async function listBriefs(userId?: string) {
 }
 
 export async function getBrief(briefId: string) {
-  const apiBrief = await apiRequest<CivicBrief>(`/api/briefs/${briefId}`);
+  const apiBrief = await apiRequest<CivicBrief>(`/briefs/${briefId}`);
   if (apiBrief) return apiBrief;
 
   await delay(250);
@@ -76,7 +76,7 @@ export async function getBrief(briefId: string) {
 }
 
 export async function createBrief(input: NewBriefInput, userId?: string) {
-  const apiBrief = await apiRequest<CivicBrief>('/api/briefs', {
+  const apiBrief = await apiRequest<CivicBrief>('/briefs', {
     method: 'POST',
     body: JSON.stringify({ input, userId }),
   });
@@ -166,7 +166,7 @@ function readSavedBriefs(): Record<string, CivicBrief[]> {
 }
 
 export async function getChatMessages(briefId: string) {
-  const apiMessages = await apiRequest<ChatMessage[]>(`/api/briefs/${briefId}/messages`);
+  const apiMessages = await apiRequest<ChatMessage[]>(`/briefs/${briefId}/messages`);
   if (apiMessages) return apiMessages;
 
   await delay(150);
@@ -174,7 +174,7 @@ export async function getChatMessages(briefId: string) {
 }
 
 export async function sendChatMessage(briefId: string, content: string) {
-  const apiMessage = await apiRequest<ChatMessage>(`/api/briefs/${briefId}/messages`, {
+  const apiMessage = await apiRequest<ChatMessage>(`/briefs/${briefId}/messages`, {
     method: 'POST',
     body: JSON.stringify({ content }),
   });
@@ -204,7 +204,7 @@ export async function sendChatMessage(briefId: string, content: string) {
 }
 
 export async function generateAction(briefId: string, input: CivicActionInput) {
-  const apiAction = await apiRequest<CivicAction>(`/api/briefs/${briefId}/actions`, {
+  const apiAction = await apiRequest<CivicAction>(`/briefs/${briefId}/actions`, {
     method: 'POST',
     body: JSON.stringify(input),
   });

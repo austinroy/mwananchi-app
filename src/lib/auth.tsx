@@ -88,7 +88,7 @@ function persistUser(user: AuthUser) {
 
 async function syncUser(user: AuthUser) {
   try {
-    await fetch(`${apiBaseUrl}/api/users`, {
+    await fetch(`${apiBaseUrl}/users`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(user),
@@ -98,7 +98,7 @@ async function syncUser(user: AuthUser) {
   }
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 function buildUserFromEmail(email: string): AuthUser {
   const normalizedEmail = email.trim().toLowerCase();

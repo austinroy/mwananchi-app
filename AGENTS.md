@@ -24,7 +24,8 @@ The app should feel trustworthy, calm, accessible, and useful for Kenyan civic c
 - Tailwind CSS
 - Lucide React icons
 - Oxlint via `npm run lint`
-- Node API server using built-in `node:sqlite`
+- Netlify Functions
+- Netlify Database/Postgres via `@netlify/database`
 
 ## Current App Shape
 
@@ -34,7 +35,9 @@ Important files:
 - `src/lib/auth.tsx`: local prototype auth provider
 - `src/router.tsx`: current routes and page components
 - `src/lib/mockApi.ts`: mock async API and seed data
-- `server/index.mjs`: local SQLite API for users, briefs, chat messages, and civic actions
+- `server/netlifyDb.mjs`: Netlify Postgres query helpers
+- `netlify/functions/api.mjs`: Netlify Function API for users, briefs, chat messages, and civic actions
+- `netlify/database/migrations/0001_initial_schema/migration.sql`: Postgres schema migration
 - `src/lib/queryClient.ts`: TanStack Query client
 - `src/lib/types.ts`: shared product types
 - `src/styles.css`: global styles and Tailwind component classes
@@ -56,8 +59,8 @@ Auth status:
 - `/dashboard` is temporarily public for testing and should be protected again before production.
 - Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
-- When `npm run api` is running, users, briefs, chat messages, and civic actions are stored in `data/mwananchi.sqlite`.
-- If the API server is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
+- When Netlify Functions and Netlify Database are available, users, briefs, chat messages, and civic actions are stored in Netlify Postgres.
+- If the Netlify API/database is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
 - This should be replaced with a real provider such as Supabase, Clerk, or Auth.js before production use.
 
 ## Development Priorities
@@ -157,7 +160,7 @@ Common commands:
 
 ```bash
 npm run dev
-npm run api
+netlify dev
 npm run typecheck
 npm run lint
 npm run build

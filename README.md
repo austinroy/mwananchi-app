@@ -10,7 +10,8 @@ Mwananchi App is a civic participation web app for turning public documents into
 - TanStack Form
 - Tailwind CSS
 - Lucide React icons
-- Local Node API using built-in `node:sqlite`
+- Netlify Functions
+- Netlify Database/Postgres through `@netlify/database`
 - Oxlint
 
 ## Current MVP
@@ -24,7 +25,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Civic action generator
 - Prototype auth with login/register routes and local session storage
 - Logged-in users keep generated briefs in browser local storage
-- SQLite-backed API server for users, briefs, chat messages, and civic actions
+- Netlify Postgres persistence for users, briefs, chat messages, and civic actions
 - PDF upload with lightweight text extraction into the brief form
 
 ## Auth Status
@@ -46,34 +47,34 @@ Protected routes:
 
 Guests can create and act on a brief without signing in. Dashboard access is temporarily open for testing. Login is currently used for workspace/history-style persistence.
 
-Generated briefs are stored in SQLite when the API server is running, with browser mock persistence as a fallback during prototype work.
+Generated briefs are stored in Netlify Postgres when Netlify Functions and Netlify Database are available, with browser mock persistence as a fallback during prototype work.
 
 Replace `src/lib/auth.tsx` with a real provider integration when moving beyond the prototype.
 
 ## Persistence
 
-The project now includes a local API server for prototype database persistence:
+The project uses Netlify Database, a managed Postgres database, through Netlify Functions for persistence:
 
 - Users
 - Civic briefs
 - Chat messages
 - Civic action drafts
 
-Run it with:
+Schema lives in:
 
 ```bash
-npm run api
+netlify/database/migrations/0001_initial_schema/migration.sql
 ```
 
-The API listens on `http://localhost:8787` and stores local data in:
+API routes are served by:
 
 ```bash
-data/mwananchi.sqlite
+netlify/functions/api.mjs
 ```
 
-The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`.
+The frontend calls `/api/*`, and `netlify.toml` rewrites those requests to the Netlify Function.
 
-If the API server is not running, the app falls back to the existing browser mock/localStorage behavior so frontend work can continue.
+If the Netlify API/database is unavailable, the app falls back to the existing browser mock/localStorage behavior so frontend work can continue.
 
 ## PDF Upload
 
@@ -86,23 +87,28 @@ Current limitation:
 
 ## Run Locally
 
-Install dependencies, then start the dev server:
+Install dependencies, then start the Netlify dev server:
 
 ```bash
 npm install
-npm run api
-npm run dev
+netlify dev
 ```
 
 If you prefer pnpm:
 
 ```bash
 pnpm install
-pnpm api
-pnpm dev
+netlify dev
 ```
 
-The API server listens on `http://localhost:8787` and stores data in `data/mwananchi.sqlite`.
+Before using the database locally or in deploy previews, initialize Netlify Database for the linked site:
+
+```bash
+netlify database init --yes
+netlify database migrations apply
+```
+
+Netlify applies migrations automatically during deploys.
 
 ## Quality Checks
 
