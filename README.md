@@ -22,14 +22,14 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Brief detail page
 - Chat panel with mock responses
 - Civic action generator
-- Prototype auth with login/register routes and local session storage
+- Clerk-ready auth with local development fallback
 - Logged-in users keep generated briefs in browser local storage
 - SQLite-backed API server for users, briefs, chat messages, and civic actions
 - PDF upload with lightweight text extraction into the brief form
 
 ## Auth Status
 
-Auth is currently a local prototype layer. It stores a mock user session in browser `localStorage` and protects the app workspace routes.
+Auth uses Clerk when a publishable key is configured. Without Clerk configuration, the app falls back to the previous local development session stored in browser `localStorage`.
 
 Public routes:
 
@@ -48,7 +48,13 @@ Guests can create and act on a brief without signing in. Dashboard access is tem
 
 Generated briefs are stored in SQLite when the API server is running, with browser mock persistence as a fallback during prototype work.
 
-Replace `src/lib/auth.tsx` with a real provider integration when moving beyond the prototype.
+To enable Clerk, add this environment variable:
+
+```bash
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+```
+
+The current Clerk integration uses `@clerk/clerk-react`, opens Clerk's hosted sign-in/sign-up modals, and syncs authenticated users to the app API.
 
 ## Persistence
 
@@ -79,10 +85,13 @@ If the API server is not running, the app falls back to the existing browser moc
 
 The new brief form supports uploading a PDF. The app extracts selectable text from the PDF and places it into the document text area for review before generating a brief.
 
-Current limitation:
+If no selectable text is found, the browser falls back to OCR for scanned PDFs using the installed `pdfjs-dist` and `tesseract.js` packages. Vite serves the local Tesseract worker and core assets under `/ocr`. OCR is intentionally capped for responsiveness.
 
-- Text-based PDFs are supported.
-- Scanned/image-only PDFs need OCR, which is not wired in yet.
+Optional OCR configuration:
+
+```bash
+VITE_OCR_MAX_PAGES=4
+```
 
 ## Run Locally
 

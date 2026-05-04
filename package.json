@@ -12,6 +12,7 @@
     "lint": "oxlint ."
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.6",
     "@tanstack/react-form": "^1.0.0",
     "@tanstack/react-query": "^5.80.0",
     "@tanstack/react-router": "^1.120.0",
@@ -19,9 +20,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
+    "pdfjs-dist": "^5.7.284",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

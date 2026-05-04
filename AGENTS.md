@@ -31,7 +31,8 @@ The app should feel trustworthy, calm, accessible, and useful for Kenyan civic c
 Important files:
 
 - `src/main.tsx`: app bootstrap
-- `src/lib/auth.tsx`: local prototype auth provider
+- `src/lib/auth.tsx`: Clerk-ready auth provider with local development fallback
+- `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
 - `src/router.tsx`: current routes and page components
 - `src/lib/mockApi.ts`: mock async API and seed data
 - `server/index.mjs`: local SQLite API for users, briefs, chat messages, and civic actions
@@ -51,14 +52,14 @@ Current routes:
 
 Auth status:
 
-- Auth is currently a local prototype layer.
-- `src/lib/auth.tsx` stores a mock session in browser `localStorage`.
+- Auth uses Clerk when `VITE_CLERK_PUBLISHABLE_KEY` is configured.
+- `src/lib/auth.tsx` falls back to a mock browser `localStorage` session when Clerk is not configured.
 - `/dashboard` is temporarily public for testing and should be protected again before production.
 - Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
 - When `npm run api` is running, users, briefs, chat messages, and civic actions are stored in `data/mwananchi.sqlite`.
 - If the API server is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
-- This should be replaced with a real provider such as Supabase, Clerk, or Auth.js before production use.
+- Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.
 
 ## Development Priorities
 
@@ -67,11 +68,10 @@ Near-term priorities:
 1. Split large route/page code out of `src/router.tsx` into route and component files.
 2. Add proper form validation for title, category, jurisdiction, and document text.
 3. Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
-4. Replace prototype API/auth persistence with a production database and provider.
-5. Replace local prototype auth with a real provider when backend persistence starts.
-6. Add real AI endpoints for brief analysis, chat, and action generation.
-7. Add PDF upload and parsing.
-8. Add save/share brief flows.
+4. Replace prototype API persistence with a production database.
+5. Add real AI endpoints for brief analysis, chat, and action generation.
+6. Add save/share brief flows.
+7. Add richer OCR progress and language controls.
 
 ## Suggested File Organization
 

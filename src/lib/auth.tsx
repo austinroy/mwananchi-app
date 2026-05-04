@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
 export type AuthUser = {
@@ -10,9 +11,11 @@ export type AuthUser = {
 type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (input: AuthCredentials) => Promise<AuthUser>;
-  register: (input: RegisterCredentials) => Promise<AuthUser>;
-  logout: () => void;
+  isClerkEnabled: boolean;
+  isLoading: boolean;
+  localLogin: (input: AuthCredentials) => Promise<AuthUser>;
+  localRegister: (input: RegisterCredentials) => Promise<AuthUser>;
+  localLogout: () => Promise<void>;
 };
 
 type AuthCredentials = {
@@ -26,8 +29,41 @@ type RegisterCredentials = AuthCredentials & {
 
 const authStorageKey = 'mwananchi_auth_user';
 const AuthContext = createContext<AuthContextValue | null>(null);
+export const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  if (clerkPublishableKey) {
+    return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
+  }
+
+  return <LocalAuthProvider>{children}</LocalAuthProvider>;
+}
+
+function ClerkAuthProvider({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
+  const user = useMemo(() => mapClerkUser(clerkUser), [clerkUser]);
+
+  useEffect(() => {
+    if (user) void syncUser(user);
+  }, [user]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      isAuthenticated: Boolean(isSignedIn && user),
+      isClerkEnabled: true,
+      isLoading: !isLoaded,
+      localLogin: rejectClerkOwnedAction,
+      localRegister: rejectClerkOwnedAction,
+      localLogout: rejectClerkOwnedAction,
+    }),
+    [isLoaded, isSignedIn, user],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function LocalAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -41,34 +77,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const localLogin = useCallback(async ({ email }: AuthCredentials) => {
+    const nextUser = buildUserFromEmail(email);
+    void syncUser(nextUser);
+    persistUser(nextUser);
+    setUser(nextUser);
+    return nextUser;
+  }, []);
+
+  const localRegister = useCallback(async ({ email, name }: RegisterCredentials) => {
+    const nextUser = {
+      id: buildUserId(email),
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+    };
+    void syncUser(nextUser);
+    persistUser(nextUser);
+    setUser(nextUser);
+    return nextUser;
+  }, []);
+
+  const localLogout = useCallback(async () => {
+    window.localStorage.removeItem(authStorageKey);
+    setUser(null);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: Boolean(user),
-      login: async ({ email }) => {
-        const nextUser = buildUserFromEmail(email);
-        void syncUser(nextUser);
-        persistUser(nextUser);
-        setUser(nextUser);
-        return nextUser;
-      },
-      register: async ({ email, name }) => {
-        const nextUser = {
-          id: buildUserId(email),
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-        };
-        void syncUser(nextUser);
-        persistUser(nextUser);
-        setUser(nextUser);
-        return nextUser;
-      },
-      logout: () => {
-        window.localStorage.removeItem(authStorageKey);
-        setUser(null);
-      },
+      isClerkEnabled: false,
+      isLoading: false,
+      localLogin,
+      localRegister,
+      localLogout,
     }),
-    [user],
+    [localLogin, localLogout, localRegister, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -117,4 +161,20 @@ function buildUserId(email: string) {
 
 function titleCase(value: string) {
   return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+async function rejectClerkOwnedAction(): Promise<never> {
+  throw new Error('This auth action is handled by Clerk.');
+}
+
+function mapClerkUser(user: ReturnType<typeof useUser>['user']): AuthUser | null {
+  if (!user) return null;
+
+  const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? '';
+
+  return {
+    id: user.id,
+    name: user.fullName ?? buildUserFromEmail(email).name,
+    email,
+  };
 }
