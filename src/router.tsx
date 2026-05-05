@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Globe,
   Home,
   KeyRound,
   Laptop,
@@ -1476,19 +1477,49 @@ function BriefPage() {
               }`}
               disabled={visibilityMutation.isPending}
               onClick={() => visibilityMutation.mutate("private")}
+              title="Only you can see this"
             >
               <EyeOff size={14} /> Private
             </button>
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded transition ${
-                brief.visibility === "unlisted" ? "bg-white shadow-sm text-civic-700" : "text-slate-500 hover:text-slate-900"
+                brief.visibility === "unlisted" ? "bg-white shadow-sm text-blue-700" : "text-slate-500 hover:text-slate-900"
               }`}
               disabled={visibilityMutation.isPending}
               onClick={() => visibilityMutation.mutate("unlisted")}
+              title="Anyone with the link can see this"
             >
               <Link2 size={14} /> Unlisted
             </button>
+            <button
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded transition ${
+                brief.visibility === "public" ? "bg-white shadow-sm text-civic-700" : "text-slate-500 hover:text-slate-900"
+              }`}
+              disabled={visibilityMutation.isPending}
+              onClick={() => visibilityMutation.mutate("public")}
+              title="Visible to everyone"
+            >
+              <Globe size={14} /> Public
+            </button>
           </div>
+
+          {brief.visibility !== "private" && (
+            <button
+              className="btn-secondary mr-2"
+              type="button"
+              onClick={async () => {
+                const absoluteUrl = new URL(
+                  `/share/${brief.id}`,
+                  window.location.origin,
+                ).toString();
+                await navigator.clipboard?.writeText(absoluteUrl);
+                setVisibilityStatus(`Link copied: ${absoluteUrl}`);
+              }}
+            >
+              <Copy size={16} />
+              Copy link
+            </button>
+          )}
           <Link
             to="/briefs/$briefId/actions"
             params={{ briefId }}
