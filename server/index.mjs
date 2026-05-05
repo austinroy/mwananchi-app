@@ -97,6 +97,20 @@ createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/ai/lmstudio/models') {
+      const body = await readJson(req);
+      sendJson(res, await listLmStudioModels(body.baseUrl));
+      return;
+    }
+
+    const providerModelsMatch = url.pathname.match(/^\/api\/ai\/providers\/([^/]+)\/models$/);
+    if (providerModelsMatch && req.method === 'GET') {
+      const userId = await getRequiredRequestUserId(req, res);
+      if (!userId) return;
+      sendJson(res, await listConfiguredProviderModels(providerModelsMatch[1], userId));
+      return;
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/users') {
       const body = await readJson(req);
       sendJson(res, upsertUser(body));
@@ -336,7 +350,7 @@ function getApiKeyEncryptionKey() {
 }
 
 function normalizeProvider(provider) {
-  return ['openai', 'openrouter', 'anthropic', 'custom'].includes(provider) ? provider : null;
+  return ['openai', 'openrouter', 'anthropic', 'lmstudio', 'custom'].includes(provider) ? provider : null;
 }
 
 function listBriefs(userId) {
@@ -626,6 +640,7 @@ Questions: ${brief.citizenQuestions.join('; ')}`,
 async function generateAiText({ ai, userId, instructions, input }) {
   const selection = normalizeAiSelection(ai);
   const userApiKey = userId ? getDecryptedUserAiKey(userId, selection.provider) : null;
+  const isConfigured = isAiProviderConfigured(selection, userApiKey);
 
   try {
     let text = null;
@@ -639,14 +654,22 @@ async function generateAiText({ ai, userId, instructions, input }) {
 
     return {
       text,
-      error: text ? undefined : getMissingKeyMessage(selection.provider),
+      error: text ? undefined : getNoTextMessage(selection, isConfigured),
     };
   } catch (error) {
     return {
       text: null,
-      error: getAiErrorMessage(selection, error),
+      error: getAiErrorMessage(selection, error, isConfigured),
     };
   }
+}
+
+function isAiProviderConfigured(selection, userApiKey) {
+  if (selection.provider === 'openai') return Boolean(userApiKey || process.env.OPENAI_API_KEY);
+  if (selection.provider === 'anthropic') return Boolean(userApiKey || process.env.ANTHROPIC_API_KEY);
+  if (selection.provider === 'openrouter') return Boolean(userApiKey || process.env.OPENROUTER_API_KEY);
+  if (selection.provider === 'lmstudio') return Boolean(selection.baseUrl || process.env.LM_STUDIO_BASE_URL);
+  return Boolean((userApiKey || process.env.CUSTOM_AI_API_KEY) && process.env.CUSTOM_AI_BASE_URL);
 }
 
 async function callOpenAiResponses(model, instructions, input, userApiKey) {
@@ -668,7 +691,7 @@ async function callOpenAiResponses(model, instructions, input, userApiKey) {
 }
 
 async function callOpenAiCompatible(selection, instructions, input, userApiKey) {
-  const config = getCompatibleProviderConfig(selection.provider, userApiKey);
+  const config = getCompatibleProviderConfig(selection, userApiKey);
   if (!config.apiKey || !config.baseUrl) return null;
 
   const response = await fetch(`${config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
@@ -716,28 +739,38 @@ async function callAnthropicMessages(model, instructions, input, userApiKey) {
   return payload.content?.map((item) => item.text).filter(Boolean).join('\n').trim() || null;
 }
 
-function getAiErrorMessage(selection, error) {
+function getAiErrorMessage(selection, error, isConfigured) {
   const rawMessage = error instanceof Error ? error.message : '';
   const status = rawMessage.match(/\b(\d{3})\b/)?.[1];
   const providerName = getProviderLabel(selection.provider);
+  const prefix = isConfigured ? `Configured ${providerName}` : providerName;
+
+  if (!isConfigured) {
+    return getMissingKeyMessage(selection.provider);
+  }
 
   if (status === '401' || status === '403') {
-    return `${providerName} rejected the API key. Check the stored key or server environment key.`;
+    return `${prefix} rejected the API key. Check the stored key or server environment key.`;
   }
 
   if (status === '404') {
-    return `${providerName} could not find model "${selection.model}". Choose a different model and try again.`;
+    return `${prefix} could not find model "${selection.model}". Choose a different model and try again.`;
   }
 
   if (status === '429') {
-    return `${providerName} rate limits or quota were reached. Try again later or switch providers.`;
+    return `${prefix} rate limits or quota were reached. Try again later or switch providers.`;
   }
 
   if (status && Number(status) >= 500) {
-    return `${providerName} is temporarily unavailable. Mwananchi App used the prototype fallback instead.`;
+    return `${prefix} is temporarily unavailable. Mwananchi App used the prototype fallback instead.`;
   }
 
-  return `${providerName} could not complete the request. Check the provider settings, model name, and network availability.`;
+  return `${prefix} threw an error before completing the request. Check the provider settings, model name, and network availability.`;
+}
+
+function getNoTextMessage(selection, isConfigured) {
+  if (!isConfigured) return getMissingKeyMessage(selection.provider);
+  return `Configured ${getProviderLabel(selection.provider)} returned an empty response. Mwananchi App used the prototype fallback instead.`;
 }
 
 function getMissingKeyMessage(provider) {
@@ -749,16 +782,25 @@ function getProviderLabel(provider) {
     openai: 'OpenAI',
     openrouter: 'OpenRouter',
     anthropic: 'Anthropic',
+    lmstudio: 'LM Studio',
     custom: 'custom provider',
   };
   return labels[provider] || 'AI provider';
 }
 
-function getCompatibleProviderConfig(provider, userApiKey) {
+function getCompatibleProviderConfig(selection, userApiKey) {
+  const provider = selection.provider;
   if (provider === 'openrouter') {
     return {
       apiKey: userApiKey || process.env.OPENROUTER_API_KEY,
       baseUrl: 'https://openrouter.ai/api/v1',
+    };
+  }
+
+  if (provider === 'lmstudio') {
+    return {
+      apiKey: userApiKey || process.env.LM_STUDIO_API_KEY || 'lm-studio',
+      baseUrl: selection.baseUrl || process.env.LM_STUDIO_BASE_URL || 'http://127.0.0.1:1234/v1',
     };
   }
 
@@ -768,18 +810,99 @@ function getCompatibleProviderConfig(provider, userApiKey) {
   };
 }
 
+async function listConfiguredProviderModels(providerValue, userId) {
+  const provider = normalizeProvider(providerValue);
+  if (!provider) throw new Error('Unsupported AI provider.');
+  if (provider === 'lmstudio') throw new Error('LM Studio models are loaded directly from the browser.');
+
+  const userApiKey = getDecryptedUserAiKey(userId, provider);
+  const models = await fetchProviderModels(provider, userApiKey);
+  return { models };
+}
+
+async function fetchProviderModels(provider, userApiKey) {
+  if (provider === 'openai') {
+    const apiKey = userApiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OpenAI is not configured.');
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
+    if (!response.ok) throw new Error(`OpenAI model request failed with ${response.status}`);
+    const payload = await response.json();
+    return normalizeModelList(payload.data);
+  }
+
+  if (provider === 'openrouter') {
+    const apiKey = userApiKey || process.env.OPENROUTER_API_KEY;
+    if (!apiKey) throw new Error('OpenRouter is not configured.');
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
+    if (!response.ok) throw new Error(`OpenRouter model request failed with ${response.status}`);
+    const payload = await response.json();
+    return normalizeModelList(payload.data);
+  }
+
+  if (provider === 'anthropic') {
+    const apiKey = userApiKey || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error('Anthropic is not configured.');
+    const response = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+    });
+    if (!response.ok) throw new Error(`Anthropic model request failed with ${response.status}`);
+    const payload = await response.json();
+    return normalizeModelList(payload.data);
+  }
+
+  const config = getCompatibleProviderConfig({ provider, model: '' }, userApiKey);
+  if (!config.apiKey || !config.baseUrl) throw new Error('Custom provider is not configured.');
+  const response = await fetch(`${config.baseUrl.replace(/\/$/, '')}/models`, {
+    headers: { authorization: `Bearer ${config.apiKey}` },
+  });
+  if (!response.ok) throw new Error(`Custom provider model request failed with ${response.status}`);
+  const payload = await response.json();
+  return normalizeModelList(payload.data);
+}
+
+function normalizeModelList(value) {
+  return Array.isArray(value)
+    ? value
+      .map((model) => typeof model.id === 'string' ? model.id : '')
+      .filter(Boolean)
+    : [];
+}
+
+async function listLmStudioModels(baseUrlValue) {
+  const baseUrl = String(baseUrlValue || process.env.LM_STUDIO_BASE_URL || 'http://127.0.0.1:1234/v1').trim();
+  const response = await fetch(`${baseUrl.replace(/\/$/, '')}/models`, {
+    headers: {
+      authorization: `Bearer ${process.env.LM_STUDIO_API_KEY || 'lm-studio'}`,
+    },
+  });
+
+  if (!response.ok) throw new Error(`LM Studio model request failed with ${response.status}`);
+
+  const payload = await response.json();
+  return { models: normalizeModelList(payload.data) };
+}
+
 function normalizeAiSelection(ai) {
-  const provider = ['openai', 'openrouter', 'anthropic', 'custom'].includes(ai?.provider) ? ai.provider : 'openai';
+  const provider = ['openai', 'openrouter', 'anthropic', 'lmstudio', 'custom'].includes(ai?.provider) ? ai.provider : 'openai';
   const fallbackModels = {
     openai: 'gpt-5.4-mini',
     openrouter: 'openai/gpt-5.4-mini',
     anthropic: 'claude-sonnet-4-5',
+    lmstudio: 'local-model',
     custom: 'gpt-4.1',
   };
 
   return {
     provider,
     model: typeof ai?.model === 'string' && ai.model.trim() ? ai.model.trim() : fallbackModels[provider],
+    ...(provider === 'lmstudio' && typeof ai?.baseUrl === 'string' && ai.baseUrl.trim() ? { baseUrl: ai.baseUrl.trim() } : {}),
   };
 }
 

@@ -3,21 +3,26 @@ import type {
   CivicAction,
   CivicActionInput,
   CivicBrief,
-  AiApiKeyStatus,
   AiModelSelection,
-  AiProviderId,
   NewBriefInput,
-  ShareBriefResult,
 } from './types';
+import {
+  createApiBrief,
+  generateApiAction,
+  getApiBrief,
+  getApiChatMessages,
+  getApiSharedBrief,
+  listApiBriefs,
+  sendApiChatMessage,
+  shareApiBrief,
+} from './api';
 
 const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
 const savedBriefsStorageKey = 'mwananchi_saved_briefs';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
 
 const briefs = new Map<string, CivicBrief>();
 const messages = new Map<string, ChatMessage[]>();
 const actions = new Map<string, CivicAction[]>();
-let apiAuthContext: ApiAuthContext = {};
 
 const seedBrief: CivicBrief = {
   id: 'brief-sample-budget',
@@ -61,12 +66,8 @@ messages.set(seedBrief.id, [
   },
 ]);
 
-export function setApiAuthContext(context: ApiAuthContext) {
-  apiAuthContext = context;
-}
-
 export async function listBriefs(userId?: string) {
-  const apiBriefs = await apiRequest<CivicBrief[]>('/api/briefs');
+  const apiBriefs = await listApiBriefs();
   if (apiBriefs) return apiBriefs;
 
   await delay(200);
@@ -75,7 +76,7 @@ export async function listBriefs(userId?: string) {
 }
 
 export async function getBrief(briefId: string) {
-  const apiBrief = await apiRequest<CivicBrief>(`/api/briefs/${briefId}`);
+  const apiBrief = await getApiBrief(briefId);
   if (apiBrief) return apiBrief;
 
   await delay(250);
@@ -86,7 +87,7 @@ export async function getBrief(briefId: string) {
 }
 
 export async function getSharedBrief(briefId: string) {
-  const apiBrief = await apiRequest<CivicBrief>(`/api/share/briefs/${briefId}`);
+  const apiBrief = await getApiSharedBrief(briefId);
   if (apiBrief) return apiBrief;
 
   await delay(250);
@@ -97,10 +98,7 @@ export async function getSharedBrief(briefId: string) {
 }
 
 export async function createBrief(input: NewBriefInput, userId?: string, ai?: AiModelSelection) {
-  const apiBrief = await apiRequest<CivicBrief>('/api/briefs', {
-    method: 'POST',
-    body: JSON.stringify({ input, ai }),
-  });
+  const apiBrief = await createApiBrief(input, ai);
   if (apiBrief) return apiBrief;
 
   await delay(700);
@@ -188,7 +186,7 @@ function readSavedBriefs(): Record<string, CivicBrief[]> {
 }
 
 export async function getChatMessages(briefId: string) {
-  const apiMessages = await apiRequest<ChatMessage[]>(`/api/briefs/${briefId}/messages`);
+  const apiMessages = await getApiChatMessages(briefId);
   if (apiMessages) return apiMessages;
 
   await delay(150);
@@ -196,10 +194,7 @@ export async function getChatMessages(briefId: string) {
 }
 
 export async function sendChatMessage(briefId: string, content: string, ai?: AiModelSelection) {
-  const apiMessage = await apiRequest<ChatMessage>(`/api/briefs/${briefId}/messages`, {
-    method: 'POST',
-    body: JSON.stringify({ content, ai }),
-  });
+  const apiMessage = await sendApiChatMessage(briefId, content, ai);
   if (apiMessage) return apiMessage;
 
   await delay(450);
@@ -226,10 +221,7 @@ export async function sendChatMessage(briefId: string, content: string, ai?: AiM
 }
 
 export async function generateAction(briefId: string, input: CivicActionInput) {
-  const apiAction = await apiRequest<CivicAction>(`/api/briefs/${briefId}/actions`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  const apiAction = await generateApiAction(briefId, input);
   if (apiAction) return apiAction;
 
   await delay(600);
@@ -246,9 +238,7 @@ export async function generateAction(briefId: string, input: CivicActionInput) {
 }
 
 export async function shareBrief(briefId: string) {
-  const apiResult = await apiRequest<ShareBriefResult>(`/api/briefs/${briefId}/share`, {
-    method: 'POST',
-  });
+  const apiResult = await shareApiBrief(briefId);
   if (apiResult) return apiResult;
 
   await delay(250);
@@ -258,61 +248,13 @@ export async function shareBrief(briefId: string) {
 
   const sharedBrief = { ...brief, isPublic: true };
   briefs.set(briefId, sharedBrief);
-  if (apiAuthContext.userId) saveBriefForUser(apiAuthContext.userId, sharedBrief);
+  hydrateSavedBriefs();
 
   return {
     brief: sharedBrief,
     shareUrl: `${window.location.origin}/share/${briefId}`,
   };
 }
-
-export async function listAiApiKeyStatuses() {
-  const apiStatuses = await apiRequest<AiApiKeyStatus[]>('/api/users/me/ai-keys');
-  if (apiStatuses) return apiStatuses;
-  return [];
-}
-
-export async function saveAiApiKey(provider: AiProviderId, apiKey: string) {
-  const apiStatus = await apiRequest<AiApiKeyStatus>('/api/users/me/ai-keys', {
-    method: 'PUT',
-    body: JSON.stringify({ provider, apiKey }),
-  });
-  if (!apiStatus) throw new Error('Could not save API key. Make sure the API server is running and API_KEY_ENCRYPTION_SECRET is configured.');
-  return apiStatus;
-}
-
-export async function deleteAiApiKey(provider: AiProviderId) {
-  const result = await apiRequest<{ ok: boolean }>(`/api/users/me/ai-keys/${provider}`, {
-    method: 'DELETE',
-  });
-  if (!result) throw new Error('Could not remove API key.');
-  return result;
-}
-
-async function apiRequest<T>(path: string, init?: RequestInit) {
-  try {
-    const token = await apiAuthContext.getToken?.();
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-      ...init,
-      headers: {
-        'content-type': 'application/json',
-        ...(apiAuthContext.userId ? { 'x-mwananchi-user-id': apiAuthContext.userId } : {}),
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
-        ...init?.headers,
-      },
-    });
-
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
-type ApiAuthContext = {
-  userId?: string;
-  getToken?: () => Promise<string | null>;
-};
 
 function buildActionDraft(input: CivicActionInput) {
   if (input.actionType === 'whatsapp_summary') {
