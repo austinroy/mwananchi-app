@@ -2,13 +2,14 @@ import { Link, Outlet, createRootRoute, createRoute, createRouter, useNavigate }
 import { useClerk } from '@clerk/clerk-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
-import { Copy, Eye, EyeOff, FileText, Home, LayoutDashboard, Link2, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, UserCog, UserPlus, X } from 'lucide-react';
+import { Copy, Eye, EyeOff, FileText, Home, KeyRound, LayoutDashboard, Link2, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, Trash2, UserCog, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type React from 'react';
 import { useAuth } from './lib/auth';
-import { createBrief, generateAction, getBrief, getChatMessages, getSharedBrief, listBriefs, sendChatMessage, shareBrief } from './lib/mockApi';
+import { aiProviderOptions, getProviderModels, readAiDefaults, saveAiDefaults } from './lib/aiSettings';
+import { createBrief, deleteAiApiKey, generateAction, getBrief, getChatMessages, getSharedBrief, listAiApiKeyStatuses, listBriefs, saveAiApiKey, sendChatMessage, shareBrief } from './lib/mockApi';
 import { extractPdfText } from './lib/pdf';
-import type { BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
+import type { AiApiKeyStatus, AiModelSelection, AiProviderId, BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
 
 const categories: BriefCategory[] = ['Housing', 'Justice', 'Elections', 'Education', 'Health', 'Budget', 'Other'];
 const actionTypes: { value: CivicActionType; label: string }[] = [
@@ -219,8 +220,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function LandingPage() {
-  const auth = useAuth();
-
   return (
     <main className="page-shell">
       <section className="grid items-center gap-8 py-6 sm:min-h-[72vh] sm:py-10 lg:grid-cols-[1.05fr_0.95fr]">
@@ -553,8 +552,159 @@ function AccountPage() {
             </div>
           </section>
         </div>
+        <section className="surface mt-6 rounded-lg p-5 sm:p-6">
+          <h2 className="text-xl font-bold text-ink">Default AI model</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Choose the provider and model Mwananchi App should use by default. Chat and action drafts can override this per request.
+          </p>
+          <AiDefaultsForm />
+        </section>
+        <section className="surface mt-6 rounded-lg p-5 sm:p-6">
+          <h2 className="text-xl font-bold text-ink">User API keys</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Store your own provider keys for logged-in AI requests. Keys are encrypted by the API server and are never shown again after saving.
+          </p>
+          <AiApiKeysForm />
+        </section>
       </main>
     </RequireAuth>
+  );
+}
+
+function AiDefaultsForm() {
+  const [selection, setSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const [status, setStatus] = useState<string | null>(null);
+
+  const updateSelection = (nextSelection: AiModelSelection) => {
+    setSelection(nextSelection);
+    setStatus(null);
+  };
+
+  return (
+    <div className="mt-5">
+      <AiModelSelector selection={selection} onChange={updateSelection} />
+      <button
+        className="btn-primary mt-5 w-full sm:w-auto"
+        type="button"
+        onClick={() => {
+          saveAiDefaults(selection);
+          setStatus('Default AI model saved.');
+        }}
+      >
+        Save AI defaults
+      </button>
+      {status ? <p className="mt-3 text-sm font-semibold text-civic-700">{status}</p> : null}
+    </div>
+  );
+}
+
+function AiApiKeysForm() {
+  const queryClient = useQueryClient();
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['ai-api-key-statuses'],
+    queryFn: listAiApiKeyStatuses,
+  });
+  const [provider, setProvider] = useState<AiProviderId>('openai');
+  const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const configuredProviders = new Map(data.map((item: AiApiKeyStatus) => [item.provider, item]));
+  const selectedStatus = configuredProviders.get(provider);
+
+  const saveMutation = useMutation({
+    mutationFn: () => saveAiApiKey(provider, apiKey),
+    onSuccess: async () => {
+      setApiKey('');
+      setStatus('API key saved.');
+      await queryClient.invalidateQueries({ queryKey: ['ai-api-key-statuses'] });
+    },
+    onError: (error) => setStatus(error instanceof Error ? error.message : 'Could not save API key.'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (nextProvider: AiProviderId) => deleteAiApiKey(nextProvider),
+    onSuccess: async () => {
+      setStatus('API key removed.');
+      await queryClient.invalidateQueries({ queryKey: ['ai-api-key-statuses'] });
+    },
+    onError: (error) => setStatus(error instanceof Error ? error.message : 'Could not remove API key.'),
+  });
+
+  return (
+    <div className="mt-5 grid gap-5">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_1fr]">
+        <label className="text-sm font-semibold text-slate-700">
+          Provider
+          <select
+            className="mt-2 w-full rounded-md border border-civic-100 bg-white px-3 py-2 text-sm"
+            value={provider}
+            onChange={(event) => {
+              setProvider(event.target.value as AiProviderId);
+              setStatus(null);
+            }}
+          >
+            {aiProviderOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          API key
+          <div className="mt-2 flex rounded-md border border-civic-100 bg-white focus-within:ring-2 focus-within:ring-civic-100">
+            <input
+              className="min-w-0 flex-1 rounded-l-md px-3 py-2 text-sm outline-none"
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(event) => {
+                setApiKey(event.target.value);
+                setStatus(null);
+              }}
+              placeholder={selectedStatus ? 'Enter a new key to replace the stored key' : 'Paste provider API key'}
+            />
+            <button className="grid w-11 place-items-center text-slate-500" type="button" onClick={() => setShowKey((value) => !value)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
+              {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </label>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <button
+          className="btn-primary w-full sm:w-auto"
+          type="button"
+          disabled={!apiKey.trim() || saveMutation.isPending}
+          onClick={() => saveMutation.mutate()}
+        >
+          <KeyRound size={16} />
+          {selectedStatus ? 'Replace key' : 'Save encrypted key'}
+        </button>
+        {selectedStatus ? (
+          <button
+            className="btn-secondary w-full sm:w-auto"
+            type="button"
+            disabled={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate(provider)}
+          >
+            <Trash2 size={16} />
+            Remove stored key
+          </button>
+        ) : null}
+        <span className="text-sm text-slate-600">
+          {isLoading ? 'Checking stored keys...' : selectedStatus ? `Configured ${new Date(selectedStatus.updatedAt).toLocaleDateString()}` : 'No key stored for this provider.'}
+        </span>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {aiProviderOptions.map((option) => {
+          const item = configuredProviders.get(option.value);
+          return (
+            <div key={option.value} className="rounded-md border border-civic-100 bg-civic-50/60 px-3 py-2 text-sm">
+              <span className="font-semibold text-ink">{option.label}</span>
+              <span className="ml-2 text-slate-600">{item ? 'Configured' : 'Not configured'}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {status ? <p className="text-sm font-semibold text-civic-700">{status}</p> : null}
+    </div>
   );
 }
 
@@ -623,8 +773,9 @@ function NewBriefPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pdfStatus, setPdfStatus] = useState<string | null>(null);
+  const [aiSelection] = useState<AiModelSelection>(() => readAiDefaults());
   const mutation = useMutation({
-    mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id),
+    mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id, aiSelection),
     onSuccess: async (brief) => {
       await queryClient.invalidateQueries({ queryKey: ['briefs', auth.user?.id] });
       await navigate({ to: '/briefs/$briefId', params: { briefId: brief.id } });
@@ -831,11 +982,54 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
   );
 }
 
+function AiModelSelector({
+  selection,
+  onChange,
+  compact = false,
+}: {
+  selection: AiModelSelection;
+  onChange: (selection: AiModelSelection) => void;
+  compact?: boolean;
+}) {
+  const models = getProviderModels(selection.provider);
+
+  return (
+    <div className={compact ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}>
+      <label className="block">
+        <span className="text-sm font-semibold">Provider</span>
+        <select
+          className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+          value={selection.provider}
+          onChange={(event) => {
+            const provider = event.target.value as AiModelSelection['provider'];
+            onChange({ provider, model: getProviderModels(provider)[0] ?? selection.model });
+          }}
+        >
+          {aiProviderOptions.map((provider) => <option key={provider.value} value={provider.value}>{provider.label}</option>)}
+        </select>
+      </label>
+      <label className="block">
+        <span className="text-sm font-semibold">Model</span>
+        <input
+          className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+          list={`models-${selection.provider}`}
+          value={selection.model}
+          onChange={(event) => onChange({ ...selection, model: event.target.value })}
+        />
+        <datalist id={`models-${selection.provider}`}>
+          {models.map((model) => <option key={model} value={model} />)}
+        </datalist>
+      </label>
+    </div>
+  );
+}
+
 function ChatPanel({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
   const { data = [] } = useQuery({ queryKey: ['brief-chat', briefId], queryFn: () => getChatMessages(briefId) });
   const mutation = useMutation({
-    mutationFn: (content: string) => sendChatMessage(briefId, content),
+    mutationFn: (content: string) => sendChatMessage(briefId, content, aiSelection),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brief-chat', briefId] }),
   });
   const form = useForm({
@@ -854,6 +1048,9 @@ function ChatPanel({ briefId }: { briefId: string }) {
           <MessageSquare size={18} />
           Ask about this brief
         </h2>
+        <div className="mt-3">
+          <AiModelSelector selection={aiSelection} onChange={setAiSelection} compact />
+        </div>
       </div>
       <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-4">
         {data.map((message) => (
@@ -886,6 +1083,7 @@ function ActionsPage() {
   const { briefId } = actionsRoute.useParams();
   const { data: brief } = useQuery({ queryKey: ['brief', briefId], queryFn: () => getBrief(briefId) });
   const mutation = useMutation({ mutationFn: (input: CivicActionInput) => generateAction(briefId, input) });
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
   const form = useForm({
     defaultValues: {
       actionType: 'email' as CivicActionType,
@@ -893,7 +1091,7 @@ function ActionsPage() {
       audience: 'County official',
       extraContext: '',
     },
-    onSubmit: ({ value }) => mutation.mutate(value),
+    onSubmit: ({ value }) => mutation.mutate({ ...value, ai: aiSelection }),
   });
 
   return (
@@ -910,6 +1108,7 @@ function ActionsPage() {
             void form.handleSubmit();
           }}
         >
+          <AiModelSelector selection={aiSelection} onChange={setAiSelection} />
           <form.Field name="actionType">
             {(field) => (
               <label className="block">

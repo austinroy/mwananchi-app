@@ -22,6 +22,19 @@ export type CivicBrief = {
   createdAt: string;
 };
 
+export type AiProviderId = 'openai' | 'openrouter' | 'anthropic' | 'custom';
+
+export type AiModelSelection = {
+  provider: AiProviderId;
+  model: string;
+};
+
+export type AiApiKeyStatus = {
+  provider: AiProviderId;
+  isConfigured: boolean;
+  updatedAt: string;
+};
+
 export type ShareBriefResult = {
   brief: CivicBrief;
   shareUrl: string;
@@ -54,6 +67,7 @@ export type CivicActionInput = {
   tone: 'Respectful' | 'Firm' | 'Youth-friendly' | 'Professional';
   audience: string;
   extraContext?: string;
+  ai?: AiModelSelection;
 };
 
 export type CivicAction = CivicActionInput & {

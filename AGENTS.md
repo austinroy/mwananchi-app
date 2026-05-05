@@ -32,6 +32,7 @@ Important files:
 
 - `src/main.tsx`: app bootstrap
 - `src/lib/auth.tsx`: Clerk-ready auth provider with local development fallback
+- `src/lib/aiSettings.ts`: browser-stored default AI provider/model settings
 - `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
 - `src/router.tsx`: current routes and page components
 - `src/lib/mockApi.ts`: mock async API and seed data
@@ -61,6 +62,9 @@ Auth status:
 - API ownership is derived from auth headers. `CLERK_JWKS_URL` enables Clerk bearer token verification; local fallback headers are development-only.
 - If the API server is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
 - Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.
+- Real AI integration lives in `server/index.mjs`. OpenAI uses the Responses API, OpenRouter and custom providers use OpenAI-compatible chat completions, and Anthropic uses the Messages API. Missing provider keys intentionally fall back to prototype responses.
+- User AI defaults are stored in browser `localStorage` from the account page. Chat and action generation support on-the-fly provider/model overrides.
+- Logged-in users can store user-owned AI provider keys. The API stores encrypted key material in the `ai_api_keys` SQLite table, using AES-256-GCM with `API_KEY_ENCRYPTION_SECRET`. The browser only receives configured/not-configured status.
 
 ## Development Priorities
 
@@ -70,9 +74,9 @@ Near-term priorities:
 2. Add proper form validation for title, category, jurisdiction, and document text.
 3. Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
 4. Replace prototype API persistence with a production database.
-5. Add real AI endpoints for brief analysis, chat, and action generation.
-6. Add richer share controls, including private/unlisted toggles and unshare.
-7. Add richer OCR progress and language controls.
+5. Add richer share controls, including private/unlisted toggles and unshare.
+6. Add richer OCR progress and language controls.
+7. Add server-side persistence for user AI model defaults once account settings move fully out of browser storage.
 
 ## Suggested File Organization
 
