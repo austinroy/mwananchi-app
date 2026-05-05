@@ -1123,6 +1123,137 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
   );
 }
 
+function FormattedAiText({ content }: { content: string }) {
+  const blocks = parseAiTextBlocks(content);
+
+  return (
+    <div className="ai-response">
+      {blocks.map((block, index) => {
+        if (block.type === 'heading') return <h3 key={index}>{formatInlineMarkdown(block.content)}</h3>;
+        if (block.type === 'code') return <pre key={index}><code>{block.content}</code></pre>;
+        if (block.type === 'list') {
+          const ListTag = block.ordered ? 'ol' : 'ul';
+          return (
+            <ListTag key={index}>
+              {block.items.map((item) => <li key={item}>{formatInlineMarkdown(item)}</li>)}
+            </ListTag>
+          );
+        }
+        return <p key={index}>{formatInlineMarkdown(block.content)}</p>;
+      })}
+    </div>
+  );
+}
+
+function formatInlineMarkdown(content: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  const pattern = /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_)/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(content))) {
+    if (match.index > cursor) nodes.push(content.slice(cursor, match.index));
+
+    const [raw, , linkLabel, linkUrl, code, boldA, boldB, italicA, italicB] = match;
+    const key = `${match.index}-${raw}`;
+    if (linkLabel && linkUrl) {
+      nodes.push(<a key={key} href={linkUrl} target="_blank" rel="noreferrer">{linkLabel}</a>);
+    } else if (code) {
+      nodes.push(<code key={key}>{code}</code>);
+    } else if (boldA || boldB) {
+      nodes.push(<strong key={key}>{boldA || boldB}</strong>);
+    } else if (italicA || italicB) {
+      nodes.push(<em key={key}>{italicA || italicB}</em>);
+    }
+
+    cursor = match.index + raw.length;
+  }
+
+  if (cursor < content.length) nodes.push(content.slice(cursor));
+  return nodes;
+}
+
+function parseAiTextBlocks(content: string): AiTextBlock[] {
+  const blocks: AiTextBlock[] = [];
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  let paragraph: string[] = [];
+  let listItems: string[] = [];
+  let listOrdered = false;
+  let codeLines: string[] = [];
+  let inCode = false;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    blocks.push({ type: 'paragraph', content: paragraph.join(' ') });
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!listItems.length) return;
+    blocks.push({ type: 'list', ordered: listOrdered, items: listItems });
+    listItems = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('```')) {
+      if (inCode) {
+        blocks.push({ type: 'code', content: codeLines.join('\n') });
+        codeLines = [];
+        inCode = false;
+      } else {
+        flushParagraph();
+        flushList();
+        inCode = true;
+      }
+      return;
+    }
+
+    if (inCode) {
+      codeLines.push(line);
+      return;
+    }
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    if (bulletMatch || orderedMatch) {
+      flushParagraph();
+      const ordered = Boolean(orderedMatch);
+      if (listItems.length && listOrdered !== ordered) flushList();
+      listOrdered = ordered;
+      listItems.push((bulletMatch?.[1] ?? orderedMatch?.[1] ?? '').trim());
+      return;
+    }
+
+    if (/^#{1,3}\s+/.test(trimmed)) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: 'heading', content: trimmed.replace(/^#{1,3}\s+/, '') });
+      return;
+    }
+
+    paragraph.push(trimmed);
+  });
+
+  if (inCode) blocks.push({ type: 'code', content: codeLines.join('\n') });
+  flushParagraph();
+  flushList();
+
+  return blocks.length ? blocks : [{ type: 'paragraph', content }];
+}
+
+type AiTextBlock =
+  | { type: 'paragraph'; content: string }
+  | { type: 'heading'; content: string }
+  | { type: 'code'; content: string }
+  | { type: 'list'; ordered: boolean; items: string[] };
+
 function AiErrorNotice({ message, className = '' }: { message?: string; className?: string }) {
   if (!message) return null;
   const isConfiguredFailure = message.startsWith('Configured ');
@@ -1252,12 +1383,15 @@ function AiModelSelector({
 function ChatPanel({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
   const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const configured = useConfiguredAiProviders();
   const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
   const { data = [] } = useQuery({ queryKey: ['brief-chat', briefId], queryFn: () => getChatMessages(briefId) });
   const mutation = useMutation({
     mutationFn: (content: string) => sendChatMessage(briefId, content, resolveConfiguredAiSelection(aiSelection, configured)),
+    onMutate: (content) => setPendingMessage(content),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brief-chat', briefId] }),
+    onSettled: () => setPendingMessage(null),
   });
   const form = useForm({
     defaultValues: { message: '' },
@@ -1282,7 +1416,7 @@ function ChatPanel({ briefId }: { briefId: string }) {
       <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-4">
         {data.map((message) => (
           <div key={message.id} className={message.role === 'user' ? 'ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8' : 'mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8'}>
-            <p>{message.content}</p>
+            {message.role === 'assistant' ? <FormattedAiText content={message.content} /> : <p>{message.content}</p>}
             {message.aiError ? (
               <div className={`mt-3 rounded-md border p-2 text-xs leading-5 text-slate-700 ${message.aiError.startsWith('Configured ') ? 'border-red-200 bg-red-50' : 'border-signal/30 bg-white/80'}`}>
                 <span className="font-semibold">{message.aiError.startsWith('Configured ') ? 'AI provider error detected: ' : 'AI provider notice: '}</span>
@@ -1291,6 +1425,20 @@ function ChatPanel({ briefId }: { briefId: string }) {
             ) : null}
           </div>
         ))}
+        {pendingMessage ? (
+          <>
+            <div className="ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8">
+              <p>{pendingMessage}</p>
+            </div>
+            <div className="mr-4 inline-flex rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8">
+              <span className="typing-dots" aria-label="Assistant is processing">
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
+          </>
+        ) : null}
       </div>
       <form
         className="border-t border-civic-100 p-4"
@@ -1381,9 +1529,9 @@ function ActionsPage() {
         <section className="surface rounded-lg p-4 sm:p-5">
           <h2 className="font-bold">Generated draft</h2>
           <AiErrorNotice message={mutation.data?.aiError} className="mt-4" />
-          <pre className="mt-4 whitespace-pre-wrap rounded-md bg-civic-50 p-4 text-sm leading-7 text-slate-800">
-            {mutation.data?.content ?? 'Your civic action draft will appear here.'}
-          </pre>
+          <div className="mt-4 rounded-md bg-civic-50 p-4 text-sm leading-7 text-slate-800">
+            {mutation.data?.content ? <FormattedAiText content={mutation.data.content} /> : 'Your civic action draft will appear here.'}
+          </div>
         </section>
       </div>
     </main>
