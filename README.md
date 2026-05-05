@@ -172,3 +172,12 @@ npm run lint
 ```
 
 Oxlint is installed as a dev dependency and uses the committed `.oxlintrc.json` configuration.
+
+## Formatting
+
+Prettier is included as a dev dependency. Use these npm scripts to format or check formatting:
+
+```bash
+npm run format
+npm run format:check
+```
