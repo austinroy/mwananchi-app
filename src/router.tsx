@@ -1106,9 +1106,9 @@ const briefColumns = [
     cell: (info) => {
       const brief = info.row.original;
       return (
-        <div className="flex justify-end">
-          <details className="dropdown relative">
-            <summary className="btn-ghost p-1 cursor-pointer list-none">
+        <div className="flex justify-end pr-2">
+          <details className="dropdown relative inline-block">
+            <summary className="btn-ghost p-1 cursor-pointer list-none outline-none">
               <MoreVertical size={18} />
             </summary>
             <div className="absolute right-0 z-50 mt-1 min-w-[120px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
@@ -1205,7 +1205,7 @@ function DashboardPage() {
           />
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-24">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
               {table.getHeaderGroups().map((headerGroup) => (
