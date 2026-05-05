@@ -254,7 +254,7 @@ createServer(async (req, res) => {
       const userId = await getRequestUserId(req);
       const result = updateBriefVisibility(visibilityMatch[1], userId, body.visibility);
       if (!result) {
-        sendJson(res, { error: "Brief not found or forbidden" }, 404);
+        sendJson(res, { error: "Brief not found" }, 404);
         return;
       }
       sendJson(res, result);
@@ -1507,7 +1507,7 @@ function seedSampleBrief() {
     title: "County Budget Public Notice",
     category: "Budget",
     jurisdiction: "Nairobi County",
-    isPublic: true,
+    visibility: "unlisted",
     sourceText: "Sample county budget public notice.",
     summary:
       "The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.",

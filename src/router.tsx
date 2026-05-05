@@ -1082,7 +1082,7 @@ const briefColumns = [
   columnHelper.accessor("visibility", {
     header: "Visibility",
     cell: (info) => {
-      const val = info.getValue();
+      const val = info.getValue() || "private";
       const style =
         val === "private"
           ? "bg-slate-100 text-slate-700"
