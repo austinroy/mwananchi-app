@@ -1,7 +1,14 @@
-import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import { setApiAuthContext } from './api';
+import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import type { ReactNode } from "react";
+import { setApiAuthContext } from "./api";
 
 export type AuthUser = {
   id: string;
@@ -28,7 +35,7 @@ type RegisterCredentials = AuthCredentials & {
   name: string;
 };
 
-const authStorageKey = 'mwananchi_auth_user';
+const authStorageKey = "mwananchi_auth_user";
 const AuthContext = createContext<AuthContextValue | null>(null);
 export const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -101,17 +108,20 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
     return nextUser;
   }, []);
 
-  const localRegister = useCallback(async ({ email, name }: RegisterCredentials) => {
-    const nextUser = {
-      id: buildUserId(email),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-    };
-    void syncUser(nextUser);
-    persistUser(nextUser);
-    setUser(nextUser);
-    return nextUser;
-  }, []);
+  const localRegister = useCallback(
+    async ({ email, name }: RegisterCredentials) => {
+      const nextUser = {
+        id: buildUserId(email),
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+      };
+      void syncUser(nextUser);
+      persistUser(nextUser);
+      setUser(nextUser);
+      return nextUser;
+    },
+    [],
+  );
 
   const localLogout = useCallback(async () => {
     window.localStorage.removeItem(authStorageKey);
@@ -137,7 +147,7 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const auth = useContext(AuthContext);
   if (!auth) {
-    throw new Error('useAuth must be used inside AuthProvider');
+    throw new Error("useAuth must be used inside AuthProvider");
   }
   return auth;
 }
@@ -149,8 +159,8 @@ function persistUser(user: AuthUser) {
 async function syncUser(user: AuthUser) {
   try {
     await fetch(`${apiBaseUrl}/api/users`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(user),
     });
   } catch {
@@ -158,11 +168,12 @@ async function syncUser(user: AuthUser) {
   }
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
 
 function buildUserFromEmail(email: string): AuthUser {
   const normalizedEmail = email.trim().toLowerCase();
-  const name = normalizedEmail.split('@')[0]?.replace(/[._-]+/g, ' ') || 'Mwananchi user';
+  const name =
+    normalizedEmail.split("@")[0]?.replace(/[._-]+/g, " ") || "Mwananchi user";
 
   return {
     id: buildUserId(normalizedEmail),
@@ -180,13 +191,18 @@ function titleCase(value: string) {
 }
 
 async function rejectClerkOwnedAction(): Promise<never> {
-  throw new Error('This auth action is handled by Clerk.');
+  throw new Error("This auth action is handled by Clerk.");
 }
 
-function mapClerkUser(user: ReturnType<typeof useUser>['user']): AuthUser | null {
+function mapClerkUser(
+  user: ReturnType<typeof useUser>["user"],
+): AuthUser | null {
   if (!user) return null;
 
-  const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? '';
+  const email =
+    user.primaryEmailAddress?.emailAddress ??
+    user.emailAddresses[0]?.emailAddress ??
+    "";
 
   return {
     id: user.id,
