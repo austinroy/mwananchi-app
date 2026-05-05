@@ -925,6 +925,7 @@ function BriefPage() {
         </div>
       </div>
       {shareStatus ? <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">{shareStatus}</p> : null}
+      <AiErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-4">
           <BriefSection title="Plain-language summary" items={[brief.summary]} />
@@ -979,6 +980,17 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
         {items.map((item) => <li key={item}>{item}</li>)}
       </ul>
     </article>
+  );
+}
+
+function AiErrorNotice({ message, className = '' }: { message?: string; className?: string }) {
+  if (!message) return null;
+
+  return (
+    <div className={`rounded-md border border-signal/30 bg-white p-3 text-sm leading-6 text-slate-700 ${className}`}>
+      <p className="font-semibold text-civic-900">AI provider notice</p>
+      <p className="mt-1">{message}</p>
+    </div>
   );
 }
 
@@ -1055,7 +1067,13 @@ function ChatPanel({ briefId }: { briefId: string }) {
       <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-4">
         {data.map((message) => (
           <div key={message.id} className={message.role === 'user' ? 'ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8' : 'mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8'}>
-            {message.content}
+            <p>{message.content}</p>
+            {message.aiError ? (
+              <div className="mt-3 rounded-md border border-signal/30 bg-white/80 p-2 text-xs leading-5 text-slate-700">
+                <span className="font-semibold">AI provider notice: </span>
+                {message.aiError}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -1143,6 +1161,7 @@ function ActionsPage() {
         </form>
         <section className="surface rounded-lg p-4 sm:p-5">
           <h2 className="font-bold">Generated draft</h2>
+          <AiErrorNotice message={mutation.data?.aiError} className="mt-4" />
           <pre className="mt-4 whitespace-pre-wrap rounded-md bg-civic-50 p-4 text-sm leading-7 text-slate-800">
             {mutation.data?.content ?? 'Your civic action draft will appear here.'}
           </pre>

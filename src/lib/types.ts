@@ -19,6 +19,7 @@ export type CivicBrief = {
   concerns: string[];
   citizenQuestions: string[];
   nextSteps: string[];
+  aiError?: string;
   createdAt: string;
 };
 
@@ -52,6 +53,7 @@ export type ChatMessage = {
   briefId: string;
   role: 'user' | 'assistant';
   content: string;
+  aiError?: string;
   createdAt: string;
 };
 
@@ -74,5 +76,6 @@ export type CivicAction = CivicActionInput & {
   id: string;
   briefId: string;
   content: string;
+  aiError?: string;
   createdAt: string;
 };

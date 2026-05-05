@@ -36,6 +36,7 @@ db.exec(`
     concerns TEXT NOT NULL,
     citizen_questions TEXT NOT NULL,
     next_steps TEXT NOT NULL,
+    ai_error TEXT,
     is_public INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
   );
@@ -45,6 +46,7 @@ db.exec(`
     brief_id TEXT NOT NULL,
     role TEXT NOT NULL,
     content TEXT NOT NULL,
+    ai_error TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -56,6 +58,7 @@ db.exec(`
     audience TEXT NOT NULL,
     extra_context TEXT,
     content TEXT NOT NULL,
+    ai_error TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -72,6 +75,9 @@ db.exec(`
 `);
 
 ensureColumn('briefs', 'is_public', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('briefs', 'ai_error', 'TEXT');
+ensureColumn('chat_messages', 'ai_error', 'TEXT');
+ensureColumn('civic_actions', 'ai_error', 'TEXT');
 seedSampleBrief();
 
 createServer(async (req, res) => {
@@ -361,9 +367,9 @@ async function createBrief(input, userId, ai) {
   db.prepare(`
     INSERT INTO briefs (
       id, user_id, title, category, jurisdiction, source_text, summary,
-      key_points, affected_groups, concerns, citizen_questions, next_steps, is_public, created_at
+      key_points, affected_groups, concerns, citizen_questions, next_steps, ai_error, is_public, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     brief.id,
     userId || null,
@@ -377,6 +383,7 @@ async function createBrief(input, userId, ai) {
     JSON.stringify(brief.concerns),
     JSON.stringify(brief.citizenQuestions),
     JSON.stringify(brief.nextSteps),
+    brief.aiError || null,
     brief.isPublic ? 1 : 0,
     brief.createdAt,
   );
@@ -401,6 +408,7 @@ function listMessages(briefId) {
       briefId: row.brief_id,
       role: row.role,
       content: row.content,
+      aiError: row.ai_error || undefined,
       createdAt: row.created_at,
     }));
 }
@@ -419,7 +427,7 @@ async function sendMessage(briefId, content, ai, userId) {
     id: crypto.randomUUID(),
     briefId,
     role: 'assistant',
-    content: await buildChatReply(briefId, content, ai, userId),
+    ...await buildChatReply(briefId, content, ai, userId),
     createdAt: now,
   };
   insertMessage(assistantMessage);
@@ -427,17 +435,19 @@ async function sendMessage(briefId, content, ai, userId) {
 }
 
 async function createAction(briefId, input, userId) {
+  const draft = await buildActionDraft(briefId, input, userId);
   const action = {
     ...input,
     id: crypto.randomUUID(),
     briefId,
-    content: await buildActionDraft(briefId, input, userId),
+    content: draft.content,
+    aiError: draft.aiError,
     createdAt: new Date().toISOString(),
   };
 
   db.prepare(`
-    INSERT INTO civic_actions (id, brief_id, action_type, tone, audience, extra_context, content, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO civic_actions (id, brief_id, action_type, tone, audience, extra_context, content, ai_error, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     action.id,
     briefId,
@@ -446,6 +456,7 @@ async function createAction(briefId, input, userId) {
     action.audience,
     action.extraContext || null,
     action.content,
+    action.aiError || null,
     action.createdAt,
   );
 
@@ -466,13 +477,13 @@ function shareBrief(briefId, userId) {
 
 function insertMessage(message) {
   db.prepare(`
-    INSERT INTO chat_messages (id, brief_id, role, content, created_at)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(message.id, message.briefId, message.role, message.content, message.createdAt);
+    INSERT INTO chat_messages (id, brief_id, role, content, ai_error, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(message.id, message.briefId, message.role, message.content, message.aiError || null, message.createdAt);
 }
 
 async function buildBrief(input, userId, ai) {
-  const aiBrief = await generateBriefWithAi(input, ai, userId);
+  const { brief: aiBrief, error: aiError } = await generateBriefWithAi(input, ai, userId);
 
   return {
     id: `brief-${crypto.randomUUID()}`,
@@ -501,30 +512,37 @@ async function buildBrief(input, userId, ai) {
       'Generate a public comment or representative email.',
       userId ? 'Find this brief again from your dashboard.' : 'Create an account to keep generated briefs across sessions.',
     ],
+    aiError,
     createdAt: new Date().toISOString(),
   };
 }
 
 async function buildActionDraft(briefId, input, userId) {
-  const aiDraft = await generateActionWithAi(briefId, input, userId);
-  if (aiDraft) return aiDraft;
+  const { text: aiDraft, error: aiError } = await generateActionWithAi(briefId, input, userId);
+  if (aiDraft) return { content: aiDraft, aiError };
 
   if (input.actionType === 'whatsapp_summary') {
-    return 'Public document summary: this proposal may affect local services and citizen participation. Ask what changes, who is affected, how feedback will be used, and where official comments should be sent.';
+    return {
+      content: 'Public document summary: this proposal may affect local services and citizen participation. Ask what changes, who is affected, how feedback will be used, and where official comments should be sent.',
+      aiError,
+    };
   }
 
-  return `Dear ${input.audience || 'public official'},
+  return {
+    content: `Dear ${input.audience || 'public official'},
 
 I am writing to request a clear explanation of the proposal, including who is affected, what tradeoffs were considered, and how public feedback will influence the final decision.
 
 Please share the official submission process, deadline, and any ward-level or community-level details citizens should review.
 
 Regards,
-A concerned mwananchi`;
+A concerned mwananchi`,
+    aiError,
+  };
 }
 
 async function generateBriefWithAi(input, ai, userId) {
-  const text = await generateAiText({
+  const result = await generateAiText({
     ai,
     userId,
     instructions: 'You are a careful civic document explainer. Do not invent facts. If the document is unclear, say what is uncertain. Return only valid JSON.',
@@ -538,17 +556,21 @@ Document:
 ${input.documentText.slice(0, 24000)}`,
   });
 
-  if (!text) return null;
+  const text = result.text;
+  if (!text) return { brief: null, error: result.error };
   const parsed = parseJsonObject(text);
-  if (!parsed) return null;
+  if (!parsed) return { brief: null, error: 'The AI provider returned a response that could not be parsed as a structured civic brief.' };
 
   return {
-    summary: String(parsed.summary || '').trim(),
-    keyPoints: normalizeStringArray(parsed.keyPoints),
-    affectedGroups: normalizeStringArray(parsed.affectedGroups),
-    concerns: normalizeStringArray(parsed.concerns),
-    citizenQuestions: normalizeStringArray(parsed.citizenQuestions),
-    nextSteps: normalizeStringArray(parsed.nextSteps),
+    brief: {
+      summary: String(parsed.summary || '').trim(),
+      keyPoints: normalizeStringArray(parsed.keyPoints),
+      affectedGroups: normalizeStringArray(parsed.affectedGroups),
+      concerns: normalizeStringArray(parsed.concerns),
+      citizenQuestions: normalizeStringArray(parsed.citizenQuestions),
+      nextSteps: normalizeStringArray(parsed.nextSteps),
+    },
+    error: result.error,
   };
 }
 
@@ -563,7 +585,7 @@ Key points: ${brief.keyPoints.join('; ')}
 Concerns: ${brief.concerns.join('; ')}
 Source text excerpt: ${brief.sourceText.slice(0, 12000)}` : '';
 
-  const text = await generateAiText({
+  const result = await generateAiText({
     ai,
     userId,
     instructions: 'You answer questions about a civic brief. Ground answers in the provided brief/source text. If unsupported, say the brief does not include enough information.',
@@ -575,12 +597,15 @@ ${thread.map((message) => `${message.role}: ${message.content}`).join('\n')}
 User question: ${content}`,
   });
 
-  return text || 'Based on the stored brief, focus on the practical effect, public participation deadline, and accountable office. A real AI backend should cite the source text before making stronger claims.';
+  return {
+    content: result.text || 'Based on the stored brief, focus on the practical effect, public participation deadline, and accountable office. A real AI backend should cite the source text before making stronger claims.',
+    aiError: result.error,
+  };
 }
 
 async function generateActionWithAi(briefId, input, userId) {
   const brief = getBriefForAi(briefId);
-  if (!brief) return null;
+  if (!brief) return { text: null, error: 'The brief could not be loaded for AI generation.' };
 
   return generateAiText({
     ai: input.ai,
@@ -603,17 +628,24 @@ async function generateAiText({ ai, userId, instructions, input }) {
   const userApiKey = userId ? getDecryptedUserAiKey(userId, selection.provider) : null;
 
   try {
+    let text = null;
     if (selection.provider === 'openai') {
-      return callOpenAiResponses(selection.model, instructions, input, userApiKey);
+      text = await callOpenAiResponses(selection.model, instructions, input, userApiKey);
+    } else if (selection.provider === 'anthropic') {
+      text = await callAnthropicMessages(selection.model, instructions, input, userApiKey);
+    } else {
+      text = await callOpenAiCompatible(selection, instructions, input, userApiKey);
     }
 
-    if (selection.provider === 'anthropic') {
-      return callAnthropicMessages(selection.model, instructions, input, userApiKey);
-    }
-
-    return callOpenAiCompatible(selection, instructions, input, userApiKey);
-  } catch {
-    return null;
+    return {
+      text,
+      error: text ? undefined : getMissingKeyMessage(selection.provider),
+    };
+  } catch (error) {
+    return {
+      text: null,
+      error: getAiErrorMessage(selection, error),
+    };
   }
 }
 
@@ -682,6 +714,44 @@ async function callAnthropicMessages(model, instructions, input, userApiKey) {
   if (!response.ok) throw new Error(`Anthropic request failed with ${response.status}`);
   const payload = await response.json();
   return payload.content?.map((item) => item.text).filter(Boolean).join('\n').trim() || null;
+}
+
+function getAiErrorMessage(selection, error) {
+  const rawMessage = error instanceof Error ? error.message : '';
+  const status = rawMessage.match(/\b(\d{3})\b/)?.[1];
+  const providerName = getProviderLabel(selection.provider);
+
+  if (status === '401' || status === '403') {
+    return `${providerName} rejected the API key. Check the stored key or server environment key.`;
+  }
+
+  if (status === '404') {
+    return `${providerName} could not find model "${selection.model}". Choose a different model and try again.`;
+  }
+
+  if (status === '429') {
+    return `${providerName} rate limits or quota were reached. Try again later or switch providers.`;
+  }
+
+  if (status && Number(status) >= 500) {
+    return `${providerName} is temporarily unavailable. Mwananchi App used the prototype fallback instead.`;
+  }
+
+  return `${providerName} could not complete the request. Check the provider settings, model name, and network availability.`;
+}
+
+function getMissingKeyMessage(provider) {
+  return `No ${getProviderLabel(provider)} API key is configured for this request. Mwananchi App used the prototype fallback instead.`;
+}
+
+function getProviderLabel(provider) {
+  const labels = {
+    openai: 'OpenAI',
+    openrouter: 'OpenRouter',
+    anthropic: 'Anthropic',
+    custom: 'custom provider',
+  };
+  return labels[provider] || 'AI provider';
 }
 
 function getCompatibleProviderConfig(provider, userApiKey) {
@@ -762,6 +832,7 @@ function mapBriefRow(row) {
     concerns: JSON.parse(row.concerns),
     citizenQuestions: JSON.parse(row.citizen_questions),
     nextSteps: JSON.parse(row.next_steps),
+    aiError: row.ai_error || undefined,
     createdAt: row.created_at,
   };
 }
@@ -876,9 +947,9 @@ function seedSampleBrief() {
   db.prepare(`
     INSERT INTO briefs (
       id, user_id, title, category, jurisdiction, source_text, summary,
-      key_points, affected_groups, concerns, citizen_questions, next_steps, is_public, created_at
+      key_points, affected_groups, concerns, citizen_questions, next_steps, ai_error, is_public, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     sample.id,
     sample.userId,
@@ -892,6 +963,7 @@ function seedSampleBrief() {
     JSON.stringify(sample.concerns),
     JSON.stringify(sample.citizenQuestions),
     JSON.stringify(sample.nextSteps),
+    null,
     sample.isPublic ? 1 : 0,
     sample.createdAt,
   );
