@@ -1,9 +1,6 @@
 import type {
-  ChatMessage,
-  CivicAction,
-  CivicActionInput,
-  CivicBrief,
   AiModelSelection,
+  CivicActionInput,
   NewBriefInput,
 } from "./types";
 import {
@@ -19,14 +16,7 @@ import {
   shareApiBrief,
 } from "./api";
 
-const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
-const savedBriefsStorageKey = "mwananchi_saved_briefs";
-
-const briefs = new Map<string, CivicBrief>();
-const messages = new Map<string, ChatMessage[]>();
-const actions = new Map<string, CivicAction[]>();
-
-const seedBrief: CivicBrief = {
+export const seedBrief: import("./types").CivicBrief = {
   id: "brief-sample-budget",
   title: "County Budget Public Notice",
   category: "Budget",
@@ -62,49 +52,21 @@ const seedBrief: CivicBrief = {
   createdAt: new Date().toISOString(),
 };
 
-briefs.set(seedBrief.id, seedBrief);
-messages.set(seedBrief.id, [
-  {
-    id: "msg-1",
-    briefId: seedBrief.id,
-    role: "assistant",
-    content:
-      "Ask me what this notice means for residents, budgets, or public participation.",
-    createdAt: new Date().toISOString(),
-  },
-]);
-
 export async function listBriefs(userId?: string) {
   const apiBriefs = await listApiBriefs();
-  if (apiBriefs) return apiBriefs;
-
-  await delay(200);
-  const storedBriefs = userId ? loadSavedBriefs(userId) : [];
-  return mergeBriefs([...storedBriefs, seedBrief]).sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
-  );
+  return apiBriefs ?? [];
 }
 
 export async function getBrief(briefId: string) {
   const apiBrief = await getApiBrief(briefId);
-  if (apiBrief) return apiBrief;
-
-  await delay(250);
-  hydrateSavedBriefs();
-  const brief = briefs.get(briefId);
-  if (!brief) throw new Error("Brief not found");
-  return brief;
+  if (!apiBrief) throw new Error("Brief not found");
+  return apiBrief;
 }
 
 export async function getSharedBrief(briefId: string) {
   const apiBrief = await getApiSharedBrief(briefId);
-  if (apiBrief) return apiBrief;
-
-  await delay(250);
-  hydrateSavedBriefs();
-  const brief = briefs.get(briefId);
-  if (!brief?.isPublic) throw new Error("Shared brief not found");
-  return brief;
+  if (!apiBrief) throw new Error("Shared brief not found");
+  return apiBrief;
 }
 
 export async function createBrief(
@@ -113,122 +75,13 @@ export async function createBrief(
   ai?: AiModelSelection,
 ) {
   const apiBrief = await createApiBrief(input, ai);
-  if (apiBrief) return apiBrief;
-
-  await delay(700);
-  const id = `brief-${crypto.randomUUID()}`;
-  const brief: CivicBrief = {
-    id,
-    title: input.title,
-    category: input.category,
-    jurisdiction: input.jurisdiction,
-    isPublic: false,
-    summary: `This ${input.category.toLowerCase()} document appears to affect public decision-making in ${input.jurisdiction}. Mwananchi App would summarize the official text, highlight who is affected, and help citizens prepare informed questions.`,
-    keyPoints: [
-      "The document should be translated into plain language before public discussion.",
-      "Citizens need to know deadlines, responsible offices, and practical effects.",
-      "Any unclear claims should be checked against the original public source.",
-    ],
-    affectedGroups: [
-      "Citizens",
-      "Community organizers",
-      "Journalists",
-      "Civil society groups",
-    ],
-    concerns: [
-      "Important details may be hidden in technical wording.",
-      "The current MVP uses mock analysis until an AI backend is connected.",
-    ],
-    citizenQuestions: [
-      "What decision is the public being asked to influence?",
-      "Who benefits, who carries costs, and who might be left out?",
-      "Where can citizens submit official feedback?",
-    ],
-    nextSteps: [
-      "Ask a follow-up question in the chat panel.",
-      "Generate a public comment or representative email.",
-      userId
-        ? "Find this brief again from your dashboard."
-        : "Create an account to keep generated briefs across sessions.",
-    ],
-    createdAt: new Date().toISOString(),
-  };
-
-  briefs.set(id, brief);
-  if (userId) {
-    saveBriefForUser(userId, brief);
-  }
-  messages.set(id, [
-    {
-      id: crypto.randomUUID(),
-      briefId: id,
-      role: "assistant",
-      content:
-        "I created the first plain-language brief. What would you like to understand next?",
-      createdAt: new Date().toISOString(),
-    },
-  ]);
-
-  return brief;
-}
-
-function mergeBriefs(items: CivicBrief[]) {
-  return [...new Map(items.map((brief) => [brief.id, brief])).values()];
-}
-
-function loadSavedBriefs(userId: string) {
-  const savedBriefs = readSavedBriefs();
-  const userBriefs = savedBriefs[userId] ?? [];
-  userBriefs.forEach((brief) => briefs.set(brief.id, brief));
-  return userBriefs;
-}
-
-function saveBriefForUser(userId: string, brief: CivicBrief) {
-  const savedBriefs = readSavedBriefs();
-  savedBriefs[userId] = mergeBriefs([brief, ...(savedBriefs[userId] ?? [])]);
-  window.localStorage.setItem(
-    savedBriefsStorageKey,
-    JSON.stringify(savedBriefs),
-  );
-}
-
-function removeBriefForUser(userId: string, briefId: string) {
-  const savedBriefs = readSavedBriefs();
-  savedBriefs[userId] = (savedBriefs[userId] ?? []).filter(
-    (brief) => brief.id !== briefId,
-  );
-  window.localStorage.setItem(
-    savedBriefsStorageKey,
-    JSON.stringify(savedBriefs),
-  );
-}
-
-function hydrateSavedBriefs() {
-  Object.values(readSavedBriefs())
-    .flat()
-    .forEach((brief) => briefs.set(brief.id, brief));
-}
-
-function readSavedBriefs(): Record<string, CivicBrief[]> {
-  if (typeof window === "undefined") return {};
-
-  const storedValue = window.localStorage.getItem(savedBriefsStorageKey);
-  if (!storedValue) return {};
-
-  try {
-    return JSON.parse(storedValue) as Record<string, CivicBrief[]>;
-  } catch {
-    window.localStorage.removeItem(savedBriefsStorageKey);
-    return {};
-  }
+  if (!apiBrief) throw new Error("Failed to create brief");
+  return apiBrief;
 }
 
 export async function getChatMessages(briefId: string) {
   const apiMessages = await getApiChatMessages(briefId);
-  if (apiMessages) return apiMessages;
-
-  await delay(150);
-  return messages.get(briefId) ?? [];
+  return apiMessages ?? [];
 }
 
 export async function sendChatMessage(
@@ -237,120 +90,30 @@ export async function sendChatMessage(
   ai?: AiModelSelection,
 ) {
   const apiMessage = await sendApiChatMessage(briefId, content, ai);
-  if (apiMessage) return apiMessage;
-
-  await delay(450);
-  const thread = messages.get(briefId) ?? [];
-  const now = new Date().toISOString();
-  const userMessage: ChatMessage = {
-    id: crypto.randomUUID(),
-    briefId,
-    role: "user",
-    content,
-    createdAt: now,
-  };
-  const assistantMessage: ChatMessage = {
-    id: crypto.randomUUID(),
-    briefId,
-    role: "assistant",
-    content:
-      "Based on the brief, focus on the practical effect, the public participation deadline, and which office is accountable. A real AI backend should quote or cite the source text before making stronger claims.",
-    createdAt: now,
-  };
-
-  messages.set(briefId, [...thread, userMessage, assistantMessage]);
-  return assistantMessage;
+  if (!apiMessage) throw new Error("Failed to send message");
+  return apiMessage;
 }
 
 export async function clearChatMessages(briefId: string) {
   const apiResult = await clearApiChatMessages(briefId);
-  if (apiResult) {
-    messages.set(briefId, []);
-    return apiResult;
-  }
-
-  await delay(250);
-  messages.set(briefId, []);
-  return { ok: true };
+  if (!apiResult) throw new Error("Failed to clear messages");
+  return apiResult;
 }
 
 export async function generateAction(briefId: string, input: CivicActionInput) {
   const apiAction = await generateApiAction(briefId, input);
-  if (apiAction) return apiAction;
-
-  await delay(600);
-  const action: CivicAction = {
-    ...input,
-    id: crypto.randomUUID(),
-    briefId,
-    content: buildActionDraft(input),
-    createdAt: new Date().toISOString(),
-  };
-
-  actions.set(briefId, [...(actions.get(briefId) ?? []), action]);
-  return action;
+  if (!apiAction) throw new Error("Failed to generate action");
+  return apiAction;
 }
 
 export async function shareBrief(briefId: string) {
   const apiResult = await shareApiBrief(briefId);
-  if (apiResult) return apiResult;
-
-  await delay(250);
-  hydrateSavedBriefs();
-  const brief = briefs.get(briefId);
-  if (!brief) throw new Error("Brief not found");
-
-  const sharedBrief = { ...brief, isPublic: true };
-  briefs.set(briefId, sharedBrief);
-  hydrateSavedBriefs();
-
-  return {
-    brief: sharedBrief,
-    shareUrl: `${window.location.origin}/share/${briefId}`,
-  };
+  if (!apiResult) throw new Error("Failed to share brief");
+  return apiResult;
 }
 
 export async function deleteBrief(briefId: string, userId?: string) {
-  let apiResult: { ok: boolean } | null = null;
-  let apiError: Error | null = null;
-  try {
-    apiResult = await deleteApiBrief(briefId);
-  } catch (error) {
-    if (error instanceof TypeError) {
-      apiError = error;
-    } else if (error instanceof Error) {
-      apiError = error;
-      if (error.message !== "Brief not found") throw error;
-    } else {
-      throw error;
-    }
-  }
-  if (apiResult) return apiResult;
-
-  await delay(250);
-  hydrateSavedBriefs();
-  if (!briefs.has(briefId) || briefId === seedBrief.id)
-    throw apiError || new Error("Brief not found");
-
-  briefs.delete(briefId);
-  messages.delete(briefId);
-  actions.delete(briefId);
-  if (userId) removeBriefForUser(userId, briefId);
-
-  return { ok: true };
-}
-
-function buildActionDraft(input: CivicActionInput) {
-  if (input.actionType === "whatsapp_summary") {
-    return "Public document summary: this proposal may affect local services and citizen participation. Ask what changes, who is affected, how feedback will be used, and where official comments should be sent.";
-  }
-
-  return `Dear ${input.audience || "public official"},
-
-I am writing to request a clear explanation of the proposal, including who is affected, what tradeoffs were considered, and how public feedback will influence the final decision.
-
-Please share the official submission process, deadline, and any ward-level or community-level details citizens should review.
-
-Regards,
-A concerned mwananchi`;
+  const apiResult = await deleteApiBrief(briefId);
+  if (!apiResult) throw new Error("Failed to delete brief");
+  return apiResult;
 }

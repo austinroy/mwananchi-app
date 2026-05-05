@@ -63,7 +63,7 @@ Auth status:
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
 - When `npm run api` is running, users, briefs, chat messages, and civic actions are stored in `data/mwananchi.sqlite`.
 - API ownership is derived from auth headers. `CLERK_JWKS_URL` enables Clerk bearer token verification; local fallback headers are development-only.
-- If the API server is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
+- The app now strictly relies on the SQLite API for persistence. `src/lib/mockApi.ts` acts as a direct wrapper for the API calls and local storage fallbacks have been removed.
 - Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.
 - Real AI integration lives in `server/index.mjs`. OpenAI uses the Responses API, OpenRouter, LM Studio, and custom providers use OpenAI-compatible chat completions, and Anthropic uses the Messages API. Missing provider keys intentionally fall back to prototype responses.
 - User AI defaults are stored server-side for signed-in users through `/api/users/me/ai-defaults`, with browser `localStorage` retained as guest/offline fallback. Chat and action generation support on-the-fly provider/model overrides.
@@ -182,10 +182,10 @@ npm install
 
 ## Working Notes For Future Agents
 
-- The current MVP uses mock API functions in `src/lib/mockApi.ts`.
+- The current MVP uses API functions through `src/lib/mockApi.ts` without local storage fallback.
 - Typecheck was passing after the initial scaffold.
 - Do not remove the TanStack direction; the user specifically requested TanStack.
 - Do not introduce Next.js unless the user explicitly changes direction.
 - Keep the app name as `Mwananchi App`.
 - Prefer incremental, working slices over large speculative rewrites.
-- Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API and mock storage.
+- Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
