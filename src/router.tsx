@@ -9,6 +9,14 @@ import { useClerk } from "@clerk/clerk-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
   Copy,
   Eye,
   EyeOff,
@@ -61,7 +69,7 @@ import {
   getSharedBrief,
   listBriefs,
   sendChatMessage,
-  shareBrief,
+  updateBriefVisibility,
 } from "./lib/mockApi";
 import { extractPdfText } from "./lib/pdf";
 import type {
@@ -71,6 +79,7 @@ import type {
   BriefCategory,
   CivicActionInput,
   CivicActionType,
+  CivicBrief,
   NewBriefInput,
 } from "./lib/types";
 
@@ -1049,11 +1058,69 @@ function LmStudioModal({
   );
 }
 
+const columnHelper = createColumnHelper<CivicBrief>();
+
+const briefColumns = [
+  columnHelper.accessor("title", {
+    header: "Title",
+    cell: (info) => (
+      <Link
+        to="/briefs/$briefId"
+        params={{ briefId: info.row.original.id }}
+        className="font-semibold text-civic-800 hover:underline"
+      >
+        {info.getValue()}
+      </Link>
+    ),
+  }),
+  columnHelper.accessor("category", {
+    header: "Category",
+  }),
+  columnHelper.accessor("jurisdiction", {
+    header: "Jurisdiction",
+  }),
+  columnHelper.accessor("visibility", {
+    header: "Visibility",
+    cell: (info) => {
+      const val = info.getValue();
+      const style =
+        val === "private"
+          ? "bg-slate-100 text-slate-700"
+          : val === "unlisted"
+            ? "bg-blue-100 text-blue-800"
+            : "bg-civic-100 text-civic-800";
+      return (
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${style}`}>
+          {val.charAt(0).toUpperCase() + val.slice(1)}
+        </span>
+      );
+    },
+  }),
+  columnHelper.accessor("createdAt", {
+    header: "Created Date",
+    cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+  }),
+];
+
 function DashboardPage() {
   const auth = useAuth();
   const { data = [], isLoading } = useQuery({
     queryKey: ["briefs", auth.user?.id],
     queryFn: () => listBriefs(auth.user?.id),
+  });
+
+  const [globalFilter, setGlobalFilter] = useState("");
+
+  const table = useReactTable({
+    data,
+    columns: briefColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter,
+    },
+    onGlobalFilterChange: setGlobalFilter,
   });
 
   return (
@@ -1091,34 +1158,72 @@ function DashboardPage() {
       </div>
 
       <section className="mt-8 surface rounded-lg">
-        <div className="border-b border-civic-100 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 border-b border-civic-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <h2 className="text-xl font-bold">Recent briefs</h2>
+          <input
+            type="text"
+            placeholder="Search briefs..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-civic-500 focus:ring-1 focus:ring-civic-500"
+          />
         </div>
-        <div className="divide-y divide-civic-100">
-          {isLoading ? (
-            <p className="p-5 text-slate-600">Loading briefs...</p>
-          ) : (
-            data.map((brief) => (
-              <Link
-                key={brief.id}
-                to="/briefs/$briefId"
-                params={{ briefId: brief.id }}
-                className="block p-4 transition hover:bg-civic-50 sm:p-5"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">{brief.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {brief.category} · {brief.jurisdiction}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-civic-700">
-                    Open brief
-                  </span>
-                </div>
-              </Link>
-            ))
-          )}
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="cursor-pointer px-4 py-3 font-medium transition hover:bg-slate-100"
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center gap-2">
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: " ↑",
+                          desc: " ↓",
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={briefColumns.length} className="p-5 text-center text-slate-600">
+                    Loading briefs...
+                  </td>
+                </tr>
+              ) : table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td colSpan={briefColumns.length} className="p-5 text-center text-slate-600">
+                    No briefs found.
+                  </td>
+                </tr>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="transition hover:bg-slate-50">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-3">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
     </main>
@@ -1309,23 +1414,32 @@ function BriefPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [visibilityStatus, setVisibilityStatus] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const { data: brief, isLoading } = useQuery({
     queryKey: ["brief", briefId],
     queryFn: () => getBrief(briefId),
   });
-  const shareMutation = useMutation({
-    mutationFn: () => shareBrief(briefId),
+  const visibilityMutation = useMutation({
+    mutationFn: (nextVisibility: "private" | "unlisted" | "public") =>
+      updateBriefVisibility(briefId, nextVisibility),
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["brief", briefId] });
-      const absoluteUrl = new URL(
-        result.shareUrl,
-        window.location.origin,
-      ).toString();
-      await navigator.clipboard?.writeText(absoluteUrl);
-      setShareStatus(`Share link copied: ${absoluteUrl}`);
+      await queryClient.invalidateQueries({ queryKey: ["briefs", auth.user?.id] });
+      if (result.visibility === "unlisted" || result.visibility === "public") {
+        const absoluteUrl = new URL(
+          `/share/${briefId}`,
+          window.location.origin,
+        ).toString();
+        await navigator.clipboard?.writeText(absoluteUrl);
+        setVisibilityStatus(`Link copied! Brief is now ${result.visibility}: ${absoluteUrl}`);
+      } else {
+        setVisibilityStatus("Brief is now private. Only you can access it.");
+      }
     },
+    onError: (error) => {
+      setVisibilityStatus(error instanceof Error ? error.message : "Could not update visibility.");
+    }
   });
   const deleteMutation = useMutation({
     mutationFn: () => deleteBrief(briefId, auth.user?.id),
@@ -1355,15 +1469,26 @@ function BriefPage() {
           <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
         <div className="grid gap-2 sm:flex sm:flex-wrap">
-          <button
-            className="btn-secondary w-full sm:w-auto"
-            type="button"
-            disabled={shareMutation.isPending}
-            onClick={() => shareMutation.mutate()}
-          >
-            {brief.isPublic ? <Copy size={16} /> : <Link2 size={16} />}
-            {brief.isPublic ? "Copy share link" : "Share brief"}
-          </button>
+          <div className="flex bg-slate-100 rounded-md p-1 mr-2">
+            <button
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded transition ${
+                brief.visibility === "private" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900"
+              }`}
+              disabled={visibilityMutation.isPending}
+              onClick={() => visibilityMutation.mutate("private")}
+            >
+              <EyeOff size={14} /> Private
+            </button>
+            <button
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded transition ${
+                brief.visibility === "unlisted" ? "bg-white shadow-sm text-civic-700" : "text-slate-500 hover:text-slate-900"
+              }`}
+              disabled={visibilityMutation.isPending}
+              onClick={() => visibilityMutation.mutate("unlisted")}
+            >
+              <Link2 size={14} /> Unlisted
+            </button>
+          </div>
           <Link
             to="/briefs/$briefId/actions"
             params={{ briefId }}
@@ -1394,9 +1519,9 @@ function BriefPage() {
           </button>
         </div>
       </div>
-      {shareStatus ? (
+      {visibilityStatus ? (
         <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">
-          {shareStatus}
+          {visibilityStatus}
         </p>
       ) : null}
       {deleteStatus ? (

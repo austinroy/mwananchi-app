@@ -12,7 +12,7 @@ export type CivicBrief = {
   title: string;
   category: BriefCategory;
   jurisdiction: string;
-  isPublic: boolean;
+  visibility: "private" | "unlisted" | "public";
   summary: string;
   keyPoints: string[];
   affectedGroups: string[];
@@ -46,9 +46,9 @@ export type AiDefaultsRecord = AiModelSelection & {
   updatedAt?: string;
 };
 
-export type ShareBriefResult = {
-  brief: CivicBrief;
-  shareUrl: string;
+export type UpdateVisibilityResult = {
+  ok: boolean;
+  visibility: "private" | "unlisted" | "public";
 };
 
 export type NewBriefInput = {

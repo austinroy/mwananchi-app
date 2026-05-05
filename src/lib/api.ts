@@ -8,7 +8,7 @@ import type {
   CivicActionInput,
   CivicBrief,
   NewBriefInput,
-  ShareBriefResult,
+  UpdateVisibilityResult,
 } from "./types";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
@@ -71,9 +71,13 @@ export async function generateApiAction(
   });
 }
 
-export async function shareApiBrief(briefId: string) {
-  return apiRequest<ShareBriefResult>(`/api/briefs/${briefId}/share`, {
-    method: "POST",
+export async function updateApiBriefVisibility(
+  briefId: string,
+  visibility: "private" | "unlisted" | "public",
+) {
+  return apiRequest<UpdateVisibilityResult>(`/api/briefs/${briefId}/visibility`, {
+    method: "PUT",
+    body: JSON.stringify({ visibility }),
   });
 }
 

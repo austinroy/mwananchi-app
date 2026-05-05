@@ -13,7 +13,7 @@ import {
   getApiSharedBrief,
   listApiBriefs,
   sendApiChatMessage,
-  shareApiBrief,
+  updateApiBriefVisibility,
 } from "./api";
 
 export const seedBrief: import("./types").CivicBrief = {
@@ -21,7 +21,7 @@ export const seedBrief: import("./types").CivicBrief = {
   title: "County Budget Public Notice",
   category: "Budget",
   jurisdiction: "Nairobi County",
-  isPublic: true,
+  visibility: "unlisted",
   summary:
     "The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.",
   keyPoints: [
@@ -106,9 +106,12 @@ export async function generateAction(briefId: string, input: CivicActionInput) {
   return apiAction;
 }
 
-export async function shareBrief(briefId: string) {
-  const apiResult = await shareApiBrief(briefId);
-  if (!apiResult) throw new Error("Failed to share brief");
+export async function updateBriefVisibility(
+  briefId: string,
+  visibility: "private" | "unlisted" | "public",
+) {
+  const apiResult = await updateApiBriefVisibility(briefId, visibility);
+  if (!apiResult) throw new Error("Failed to update visibility");
   return apiResult;
 }
 

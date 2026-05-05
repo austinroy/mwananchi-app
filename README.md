@@ -88,7 +88,7 @@ If the API server is not running, API actions will fail as the browser mock/loca
 
 ## Shareable Briefs
 
-Brief owners can make a brief public from the brief detail page. Shared briefs are available at `/share/:briefId` and show the read-only civic brief without chat history or generated actions.
+Brief owners can toggle the visibility of a brief between "Private" and "Unlisted" from the brief detail page. Unlisted briefs are available at `/share/:briefId` to anyone with the link, and show the read-only civic brief without chat history or generated actions. Private briefs are only accessible to the original owner.
 
 ## AI Providers
 
