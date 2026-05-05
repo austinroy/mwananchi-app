@@ -687,7 +687,7 @@ async function callOpenAiResponses(model, instructions, input, userApiKey) {
 
   if (!response.ok) throw new Error(`OpenAI request failed with ${response.status}`);
   const payload = await response.json();
-  return typeof payload.output_text === 'string' ? payload.output_text.trim() : extractOpenAiOutputText(payload);
+  return extractOpenAiOutputText(payload);
 }
 
 async function callOpenAiCompatible(selection, instructions, input, userApiKey) {
@@ -703,6 +703,8 @@ async function callOpenAiCompatible(selection, instructions, input, userApiKey) 
     },
     body: JSON.stringify({
       model: selection.model,
+      max_tokens: 1600,
+      temperature: 0.3,
       messages: [
         { role: 'system', content: instructions },
         { role: 'user', content: input },
@@ -712,7 +714,7 @@ async function callOpenAiCompatible(selection, instructions, input, userApiKey) 
 
   if (!response.ok) throw new Error(`${selection.provider} request failed with ${response.status}`);
   const payload = await response.json();
-  return payload.choices?.[0]?.message?.content?.trim() || null;
+  return extractChatCompletionText(payload);
 }
 
 async function callAnthropicMessages(model, instructions, input, userApiKey) {
@@ -736,7 +738,7 @@ async function callAnthropicMessages(model, instructions, input, userApiKey) {
 
   if (!response.ok) throw new Error(`Anthropic request failed with ${response.status}`);
   const payload = await response.json();
-  return payload.content?.map((item) => item.text).filter(Boolean).join('\n').trim() || null;
+  return extractAnthropicText(payload);
 }
 
 function getAiErrorMessage(selection, error, isConfigured) {
@@ -870,7 +872,12 @@ async function fetchProviderModels(provider, userApiKey) {
 function normalizeModelList(value) {
   return Array.isArray(value)
     ? value
-      .map((model) => typeof model.id === 'string' ? model.id : '')
+      .map((model) => {
+        if (typeof model === 'string') return model;
+        if (typeof model.id === 'string') return model.id;
+        if (typeof model.name === 'string') return model.name;
+        return '';
+      })
       .filter(Boolean)
     : [];
 }
@@ -925,9 +932,46 @@ function normalizeStringArray(value) {
 }
 
 function extractOpenAiOutputText(payload) {
-  return payload.output
-    ?.flatMap((item) => item.content ?? [])
-    .map((content) => content.text)
+  const directText = extractContentText(payload.output_text);
+  if (directText) return directText;
+
+  const outputText = extractContentText(payload.output?.flatMap((item) => item.content ?? []));
+  if (outputText) return outputText;
+
+  return extractChatCompletionText(payload);
+}
+
+function extractAnthropicText(payload) {
+  const contentText = extractContentText(payload.content);
+  if (contentText) return contentText;
+
+  return extractContentText(payload.completion ?? payload.output_text ?? payload.text);
+}
+
+function extractChatCompletionText(payload) {
+  const choice = payload.choices?.[0];
+  const content = choice?.message?.content ?? choice?.text ?? choice?.delta?.content;
+  const text = extractContentText(content);
+  if (text) return text;
+
+  const reasoningContent = extractContentText(choice?.message?.reasoning_content);
+  return reasoningContent || null;
+}
+
+function extractContentText(content) {
+  if (typeof content === 'string') return content.trim() || null;
+  if (typeof content?.text === 'string') return content.text.trim() || null;
+  if (typeof content?.content === 'string') return content.content.trim() || null;
+  if (!Array.isArray(content)) return null;
+
+  return content
+    .map((item) => {
+      if (typeof item === 'string') return item;
+      if (typeof item?.text === 'string') return item.text;
+      if (typeof item?.content === 'string') return item.content;
+      if (Array.isArray(item?.content)) return extractContentText(item.content) || '';
+      return '';
+    })
     .filter(Boolean)
     .join('\n')
     .trim() || null;
