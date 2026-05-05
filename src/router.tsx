@@ -1,6 +1,5 @@
 import {
   Link,
-  Outlet,
   createRootRoute,
   createRoute,
   createRouter,
@@ -17,11 +16,9 @@ import {
   Home,
   KeyRound,
   Laptop,
-  LayoutDashboard,
   Link2,
   LogIn,
   LogOut,
-  Menu,
   MessageSquare,
   Send,
   Sparkles,
@@ -32,6 +29,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
+import { AppShell } from "./components/AppShell";
+import { FormattedAiText } from "./components/FormattedAiText";
+import { actionTones, actionTypes, categories } from "./lib/civicOptions";
 import { useAuth } from "./lib/auth";
 import {
   aiProviderOptions,
@@ -45,11 +45,14 @@ import {
 } from "./lib/aiSettings";
 import {
   deleteAiApiKey,
+  getApiAiDefaults,
   listAiApiKeyStatuses,
   listProviderModels,
   saveAiApiKey,
+  saveApiAiDefaults,
 } from "./lib/api";
 import {
+  clearChatMessages,
   createBrief,
   deleteBrief,
   generateAction,
@@ -70,29 +73,6 @@ import type {
   CivicActionType,
   NewBriefInput,
 } from "./lib/types";
-
-const categories: BriefCategory[] = [
-  "Housing",
-  "Justice",
-  "Elections",
-  "Education",
-  "Health",
-  "Budget",
-  "Other",
-];
-const actionTypes: { value: CivicActionType; label: string }[] = [
-  { value: "email", label: "Email" },
-  { value: "petition", label: "Petition" },
-  { value: "public_comment", label: "Public comment" },
-  { value: "whatsapp_summary", label: "WhatsApp summary" },
-  { value: "talking_points", label: "Talking points" },
-];
-const actionTones: CivicActionInput["tone"][] = [
-  "Respectful",
-  "Firm",
-  "Youth-friendly",
-  "Professional",
-];
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -170,137 +150,6 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
-}
-
-function AppShell() {
-  const auth = useAuth();
-  const clerk = useClerk();
-  const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const closeMenu = () => setIsMenuOpen(false);
-  const signOut = async () => {
-    closeMenu();
-
-    if (auth.isClerkEnabled) {
-      await clerk.signOut({ redirectUrl: "/" });
-      return;
-    }
-
-    await auth.localLogout();
-    await navigate({ to: "/" });
-  };
-
-  return (
-    <div className="min-h-screen bg-civic-50">
-      <header className="border-b border-civic-100 bg-white">
-        <nav className="page-shell relative flex items-center justify-between gap-3 py-4">
-          <Link
-            to="/"
-            className="flex min-w-0 items-center gap-2 text-lg font-bold text-civic-900"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-civic-700 text-white">
-              <Sparkles size={18} />
-            </span>
-            <span className="truncate">Mwananchi App</span>
-          </Link>
-          <button
-            aria-expanded={isMenuOpen}
-            aria-label={
-              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
-            }
-            className="btn-secondary px-3"
-            type="button"
-            onClick={() => setIsMenuOpen((value) => !value)}
-          >
-            {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
-            <span className="hidden sm:inline">Menu</span>
-          </button>
-          {isMenuOpen ? (
-            <div className="absolute right-4 top-[calc(100%-0.5rem)] z-20 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-civic-100 bg-white p-2 shadow-lg">
-              {auth.isAuthenticated ? (
-                <div className="grid gap-1">
-                  <MenuLink
-                    to="/dashboard"
-                    icon={<LayoutDashboard size={16} />}
-                    label="Dashboard"
-                    onSelect={closeMenu}
-                  />
-                  <MenuLink
-                    to="/account"
-                    icon={<UserCog size={16} />}
-                    label="Account"
-                    onSelect={closeMenu}
-                  />
-                  <Link
-                    to="/briefs/new"
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-civic-800 transition hover:bg-civic-50"
-                    onClick={closeMenu}
-                  >
-                    <FileText size={16} />
-                    New brief
-                  </Link>
-                  <button
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
-                    type="button"
-                    onClick={() => {
-                      void signOut();
-                    }}
-                  >
-                    <LogOut size={16} />
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-1">
-                  <Link
-                    to="/login"
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
-                    onClick={closeMenu}
-                  >
-                    <LogIn size={16} />
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="flex items-center gap-2 rounded-md bg-civic-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-civic-800"
-                    onClick={closeMenu}
-                  >
-                    <UserPlus size={16} />
-                    Create account
-                  </Link>
-                </div>
-              )}
-            </div>
-          ) : null}
-        </nav>
-      </header>
-      <Outlet />
-    </div>
-  );
-}
-
-function MenuLink({
-  to,
-  icon,
-  label,
-  onSelect,
-}: {
-  to: "/dashboard" | "/account";
-  icon: React.ReactNode;
-  label: string;
-  onSelect: () => void;
-}) {
-  return (
-    <Link
-      to={to}
-      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
-      onClick={onSelect}
-    >
-      {icon}
-      {label}
-    </Link>
-  );
 }
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -795,14 +644,46 @@ function AccountPage() {
 }
 
 function AiDefaultsForm() {
+  const auth = useAuth();
+  const queryClient = useQueryClient();
   const [selection, setSelection] = useState<AiModelSelection>(() =>
     readAiDefaults(),
   );
   const [status, setStatus] = useState<string | null>(null);
   const configured = useConfiguredAiProviders();
+  const { data: storedDefaults } = useQuery({
+    queryKey: ["ai-defaults", auth.user?.id],
+    queryFn: getApiAiDefaults,
+    enabled: auth.isAuthenticated,
+  });
   const isSelectionAvailable =
     isProviderConfigured(selection.provider, configured) &&
     Boolean(selection.model);
+
+  useEffect(() => {
+    if (!storedDefaults) return;
+    setSelection(storedDefaults);
+    saveAiDefaults(storedDefaults);
+  }, [storedDefaults]);
+
+  const saveMutation = useMutation({
+    mutationFn: (nextSelection: AiModelSelection) =>
+      auth.isAuthenticated
+        ? saveApiAiDefaults(nextSelection)
+        : Promise.resolve(nextSelection),
+    onSuccess: async (nextSelection) => {
+      saveAiDefaults(nextSelection);
+      setSelection(nextSelection);
+      setStatus("Default AI model saved.");
+      await queryClient.invalidateQueries({
+        queryKey: ["ai-defaults", auth.user?.id],
+      });
+    },
+    onError: (error) =>
+      setStatus(
+        error instanceof Error ? error.message : "Could not save AI defaults.",
+      ),
+  });
 
   const updateSelection = (nextSelection: AiModelSelection) => {
     setSelection(nextSelection);
@@ -815,13 +696,12 @@ function AiDefaultsForm() {
       <button
         className="btn-primary mt-5 w-full sm:w-auto"
         type="button"
-        disabled={!isSelectionAvailable}
+        disabled={!isSelectionAvailable || saveMutation.isPending}
         onClick={() => {
-          saveAiDefaults(resolveConfiguredAiSelection(selection, configured));
-          setStatus("Default AI model saved.");
+          saveMutation.mutate(resolveConfiguredAiSelection(selection, configured));
         }}
       >
-        Save AI defaults
+        {saveMutation.isPending ? "Saving..." : "Save AI defaults"}
       </button>
       {!isSelectionAvailable ? (
         <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -1600,154 +1480,6 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function FormattedAiText({ content }: { content: string }) {
-  const blocks = parseAiTextBlocks(content);
-
-  return (
-    <div className="ai-response">
-      {blocks.map((block, index) => {
-        if (block.type === "heading")
-          return <h3 key={index}>{formatInlineMarkdown(block.content)}</h3>;
-        if (block.type === "code")
-          return (
-            <pre key={index}>
-              <code>{block.content}</code>
-            </pre>
-          );
-        if (block.type === "list") {
-          const ListTag = block.ordered ? "ol" : "ul";
-          return (
-            <ListTag key={index}>
-              {block.items.map((item) => (
-                <li key={item}>{formatInlineMarkdown(item)}</li>
-              ))}
-            </ListTag>
-          );
-        }
-        return <p key={index}>{formatInlineMarkdown(block.content)}</p>;
-      })}
-    </div>
-  );
-}
-
-function formatInlineMarkdown(content: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  const pattern =
-    /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_)/g;
-  let cursor = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(content))) {
-    if (match.index > cursor) nodes.push(content.slice(cursor, match.index));
-
-    const [raw, , linkLabel, linkUrl, code, boldA, boldB, italicA, italicB] =
-      match;
-    const key = `${match.index}-${raw}`;
-    if (linkLabel && linkUrl) {
-      nodes.push(
-        <a key={key} href={linkUrl} target="_blank" rel="noreferrer">
-          {linkLabel}
-        </a>,
-      );
-    } else if (code) {
-      nodes.push(<code key={key}>{code}</code>);
-    } else if (boldA || boldB) {
-      nodes.push(<strong key={key}>{boldA || boldB}</strong>);
-    } else if (italicA || italicB) {
-      nodes.push(<em key={key}>{italicA || italicB}</em>);
-    }
-
-    cursor = match.index + raw.length;
-  }
-
-  if (cursor < content.length) nodes.push(content.slice(cursor));
-  return nodes;
-}
-
-function parseAiTextBlocks(content: string): AiTextBlock[] {
-  const blocks: AiTextBlock[] = [];
-  const lines = content.replace(/\r\n/g, "\n").split("\n");
-  let paragraph: string[] = [];
-  let listItems: string[] = [];
-  let listOrdered = false;
-  let codeLines: string[] = [];
-  let inCode = false;
-
-  const flushParagraph = () => {
-    if (!paragraph.length) return;
-    blocks.push({ type: "paragraph", content: paragraph.join(" ") });
-    paragraph = [];
-  };
-  const flushList = () => {
-    if (!listItems.length) return;
-    blocks.push({ type: "list", ordered: listOrdered, items: listItems });
-    listItems = [];
-  };
-
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-
-    if (trimmed.startsWith("```")) {
-      if (inCode) {
-        blocks.push({ type: "code", content: codeLines.join("\n") });
-        codeLines = [];
-        inCode = false;
-      } else {
-        flushParagraph();
-        flushList();
-        inCode = true;
-      }
-      return;
-    }
-
-    if (inCode) {
-      codeLines.push(line);
-      return;
-    }
-
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      return;
-    }
-
-    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
-    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
-    if (bulletMatch || orderedMatch) {
-      flushParagraph();
-      const ordered = Boolean(orderedMatch);
-      if (listItems.length && listOrdered !== ordered) flushList();
-      listOrdered = ordered;
-      listItems.push((bulletMatch?.[1] ?? orderedMatch?.[1] ?? "").trim());
-      return;
-    }
-
-    if (/^#{1,3}\s+/.test(trimmed)) {
-      flushParagraph();
-      flushList();
-      blocks.push({
-        type: "heading",
-        content: trimmed.replace(/^#{1,3}\s+/, ""),
-      });
-      return;
-    }
-
-    paragraph.push(trimmed);
-  });
-
-  if (inCode) blocks.push({ type: "code", content: codeLines.join("\n") });
-  flushParagraph();
-  flushList();
-
-  return blocks.length ? blocks : [{ type: "paragraph", content }];
-}
-
-type AiTextBlock =
-  | { type: "paragraph"; content: string }
-  | { type: "heading"; content: string }
-  | { type: "code"; content: string }
-  | { type: "list"; ordered: boolean; items: string[] };
-
 function AiErrorNotice({
   message,
   className = "",
@@ -1969,6 +1701,7 @@ function ChatPanel({ briefId }: { briefId: string }) {
     readAiDefaults(),
   );
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [clearError, setClearError] = useState<string | null>(null);
   const configured = useConfiguredAiProviders();
   const isAiReady =
     isProviderConfigured(aiSelection.provider, configured) &&
@@ -1989,6 +1722,18 @@ function ChatPanel({ briefId }: { briefId: string }) {
       queryClient.invalidateQueries({ queryKey: ["brief-chat", briefId] }),
     onSettled: () => setPendingMessage(null),
   });
+  const clearMutation = useMutation({
+    mutationFn: () => clearChatMessages(briefId),
+    onSuccess: async () => {
+      setClearError(null);
+      queryClient.setQueryData(["brief-chat", briefId], []);
+      await queryClient.invalidateQueries({ queryKey: ["brief-chat", briefId] });
+    },
+    onError: (error) =>
+      setClearError(
+        error instanceof Error ? error.message : "Could not clear chat history.",
+      ),
+  });
   const form = useForm({
     defaultValues: { message: "" },
     onSubmit: ({ value, formApi }) => {
@@ -2001,10 +1746,25 @@ function ChatPanel({ briefId }: { briefId: string }) {
   return (
     <aside className="surface flex min-h-[520px] flex-col rounded-lg lg:min-h-[560px]">
       <div className="border-b border-civic-100 p-4">
-        <h2 className="flex items-center gap-2 font-bold">
-          <MessageSquare size={18} />
-          Ask about this brief
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-bold">
+            <MessageSquare size={18} />
+            Ask about this brief
+          </h2>
+          <button
+            className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
+            type="button"
+            disabled={!data.length || clearMutation.isPending}
+            onClick={() => {
+              setClearError(null);
+              if (window.confirm("Clear this chat history?")) {
+                clearMutation.mutate();
+              }
+            }}
+          >
+            {clearMutation.isPending ? "Clearing..." : "Clear chat"}
+          </button>
+        </div>
         <div className="mt-3">
           <AiModelSelector
             selection={aiSelection}
@@ -2012,6 +1772,11 @@ function ChatPanel({ briefId }: { briefId: string }) {
             compact
           />
         </div>
+        {clearError ? (
+          <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-semibold text-red-700">
+            {clearError}
+          </p>
+        ) : null}
       </div>
       <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-4">
         {data.map((message) => (
