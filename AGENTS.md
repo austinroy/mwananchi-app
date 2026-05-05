@@ -185,3 +185,4 @@ npm install
 - Do not introduce Next.js unless the user explicitly changes direction.
 - Keep the app name as `Mwananchi App`.
 - Prefer incremental, working slices over large speculative rewrites.
+- Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API and mock storage.
