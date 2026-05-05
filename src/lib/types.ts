@@ -19,6 +19,7 @@ export type CivicBrief = {
   concerns: string[];
   citizenQuestions: string[];
   nextSteps: string[];
+  sourceText?: string;
   aiError?: string;
   createdAt: string;
 };
@@ -56,6 +57,20 @@ export type NewBriefInput = {
   category: BriefCategory;
   jurisdiction: string;
   documentText: string;
+};
+
+export type BriefSectionKey =
+  | "summary"
+  | "keyPoints"
+  | "affectedGroups"
+  | "concerns"
+  | "citizenQuestions"
+  | "nextSteps";
+
+export type BriefSectionResult = {
+  section: BriefSectionKey;
+  value: string | string[];
+  aiError?: string;
 };
 
 export type ChatMessage = {

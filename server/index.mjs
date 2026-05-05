@@ -195,6 +195,24 @@ createServer(async (req, res) => {
       return;
     }
 
+    const briefSectionMatch = url.pathname.match(
+      /^\/api\/briefs\/([^/]+)\/sections\/([^/]+)$/,
+    );
+    if (briefSectionMatch && req.method === "POST") {
+      const body = await readJson(req);
+      const userId = await getRequestUserId(req);
+      sendJson(
+        res,
+        await generateExistingBriefSection(
+          briefSectionMatch[1],
+          briefSectionMatch[2],
+          userId,
+          body.ai,
+        ),
+      );
+      return;
+    }
+
     const briefMessagesMatch = url.pathname.match(
       /^\/api\/briefs\/([^/]+)\/messages$/,
     );
@@ -602,6 +620,37 @@ async function createBrief(input, userId, ai) {
   return brief;
 }
 
+async function generateExistingBriefSection(briefId, section, userId, ai) {
+  const definition = briefSectionDefinitions[section];
+  if (!definition) return { error: "Unknown brief section." };
+
+  const brief = getBriefForAi(briefId);
+  if (!brief || !canAccessBrief(briefId, userId)) {
+    return { error: "Brief not found." };
+  }
+
+  const result = await generateBriefSection({
+    ai,
+    userId,
+    context: getBriefSectionContext({
+      title: brief.title,
+      category: brief.category,
+      jurisdiction: brief.jurisdiction,
+      documentText: brief.sourceText,
+    }),
+    sectionName: definition.label,
+    prompt: definition.prompt,
+    mode: definition.mode,
+  });
+  updateBriefSection(briefId, section, result.value);
+
+  return {
+    section,
+    value: result.value,
+    ...(result.error ? { aiError: result.error } : {}),
+  };
+}
+
 function listMessages(briefId) {
   return db
     .prepare(
@@ -703,6 +752,24 @@ function deleteBrief(briefId, userId) {
   return { ok: true };
 }
 
+function updateBriefSection(briefId, section, value) {
+  const columnBySection = {
+    summary: "summary",
+    keyPoints: "key_points",
+    affectedGroups: "affected_groups",
+    concerns: "concerns",
+    citizenQuestions: "citizen_questions",
+    nextSteps: "next_steps",
+  };
+  const column = columnBySection[section];
+  if (!column) return;
+
+  db.prepare(`UPDATE briefs SET ${column} = ? WHERE id = ?`).run(
+    section === "summary" ? String(value || "") : JSON.stringify(value || []),
+    briefId,
+  );
+}
+
 function insertMessage(message) {
   db.prepare(
     `
@@ -720,11 +787,15 @@ function insertMessage(message) {
 }
 
 async function buildBrief(input, userId, ai) {
-  const { brief: aiBrief, error: aiError } = await generateBriefWithAi(
-    input,
-    ai,
-    userId,
-  );
+  const hasProvidedSections =
+    input.sections && Object.keys(input.sections).length > 0;
+  const { brief: aiBrief, error: aiError } = hasProvidedSections
+    ? { brief: input.sections, error: undefined }
+    : await generateBriefWithAi(
+        input,
+        ai,
+        userId,
+      );
 
   return {
     id: `brief-${crypto.randomUUID()}`,
@@ -797,33 +868,109 @@ A concerned mwananchi`,
 }
 
 async function generateBriefWithAi(input, ai, userId) {
+  const sectionContext = getBriefSectionContext(input);
+
+  const summary = await generateBriefSection({
+        ai,
+        userId,
+        context: sectionContext,
+        sectionName: briefSectionDefinitions.summary.label,
+        prompt: briefSectionDefinitions.summary.prompt,
+        mode: briefSectionDefinitions.summary.mode,
+      });
+
+  return {
+    brief: {
+      summary: summary.value,
+      keyPoints: [],
+      affectedGroups: [],
+      concerns: [],
+      citizenQuestions: [],
+      nextSteps: [],
+    },
+    error: summary.error,
+  };
+}
+
+const briefSectionDefinitions = {
+  summary: {
+    label: "Plain-language summary",
+    mode: "summary",
+    prompt:
+      "Write only a simplified plain-language summary of the source document in 2 to 4 sentences. Explain what the document does or announces and why it matters to the public. Do not include bullets, headings, labels, citations, process notes, or statements about the prompt.",
+  },
+  keyPoints: {
+    label: "Key points",
+    mode: "list",
+    prompt:
+      "Return 3 to 5 factual key points from the source document. Focus on concrete decisions, notices, appointments, corrections, dates, affected locations, or official actions. One point per line. Do not add labels, headings, explanations, or reasoning.",
+  },
+  affectedGroups: {
+    label: "Who is affected",
+    mode: "list",
+    prompt:
+      "Return 3 to 5 groups, institutions, communities, or people directly affected by the source document. Use broad readable group names when OCR text makes specific names uncertain. One group per line. Do not add labels, headings, explanations, or reasoning.",
+  },
+  concerns: {
+    label: "Concerns and risks",
+    mode: "list",
+    prompt:
+      "Return 3 to 5 concerns, risks, uncertainties, or verification issues a citizen should notice. Include OCR ambiguity, unclear names, unclear deadlines, legal/security implications, or facts that should be checked against official records when relevant. One concern per line. Do not add labels, headings, explanations, or reasoning.",
+  },
+  citizenQuestions: {
+    label: "Questions citizens should ask",
+    mode: "list",
+    prompt:
+      "Return 3 to 5 practical questions citizens, journalists, or civil society groups should ask after reading the source document. Make each question specific and answerable by an official office or source document. One question per line. Do not add labels, headings, explanations, or reasoning.",
+  },
+  nextSteps: {
+    label: "Suggested next steps",
+    mode: "list",
+    prompt:
+      "Return 3 to 5 practical next steps citizens, journalists, civil society groups, or affected people can take. Focus on verification, contacting responsible offices, saving corrected records, monitoring implementation, or sharing plain-language information. One step per line. Do not add labels, headings, explanations, or reasoning.",
+  },
+};
+
+function getBriefSectionContext(input) {
+  return `Title: ${input.title}
+Category: ${input.category}
+Jurisdiction: ${input.jurisdiction}
+
+Source document:
+${input.documentText.slice(0, 24000)}`;
+}
+
+async function generateBriefSection({
+  ai,
+  userId,
+  context,
+  sectionName,
+  prompt,
+  mode,
+}) {
   const result = await generateAiText({
     ai,
     userId,
     instructions:
-      "You are a careful civic document explainer. Do not invent facts. If the document is unclear, say what is uncertain. Return only valid JSON.",
-    input: `Analyze this civic document and return JSON with keys summary, keyPoints, affectedGroups, concerns, citizenQuestions, nextSteps. Arrays should contain 3 to 5 concise items.
+      "You are a careful civic document explainer. Return only the requested final section content. Do not include reasoning, analysis, planning, hidden thinking, scratchpad text, labels, headings, markdown headings, or explanations of your process. Do not invent facts.",
+    input: `${context}
 
-Title: ${input.title}
-Category: ${input.category}
-Jurisdiction: ${input.jurisdiction}
-
-Document:
-${input.documentText.slice(0, 24000)}`,
+Section: ${sectionName}
+${prompt}`,
   });
 
-  const text = result.text;
-  if (!text) return { brief: null, error: result.error };
-  const parsed = parseJsonObject(text);
-  if (!parsed) {
+  if (mode === "summary") {
     return {
-      brief: buildBriefFromUnstructuredAiText(text),
-      error: "The AI provider returned prose instead of structured JSON, so Mwananchi App used that response as the brief summary.",
+      value:
+        cleanSummaryText(result.text || "", context) ||
+        summarizeSourceDocument(context) ||
+        "The document could not be summarized clearly. Review the source document before relying on this brief.",
+      error: result.error,
     };
   }
 
   return {
-    brief: normalizeParsedBrief(parsed),
+    value: parsePlainList(result.text || ""),
     error: result.error,
   };
 }
@@ -838,14 +985,15 @@ Jurisdiction: ${brief.jurisdiction}
 Summary: ${brief.summary}
 Key points: ${brief.keyPoints.join("; ")}
 Concerns: ${brief.concerns.join("; ")}
-Source text excerpt: ${brief.sourceText.slice(0, 12000)}`
+Source document:
+${brief.sourceText.slice(0, 18000)}`
     : "";
 
   const result = await generateAiText({
     ai,
     userId,
     instructions:
-      "You answer questions about a civic brief. Ground answers in the provided brief/source text. If unsupported, say the brief does not include enough information.",
+      "You answer questions about a civic brief. Return only the final answer to the user. Do not include reasoning, analysis, planning, hidden thinking, or scratchpad text. Use the source document as the primary reference and use the generated brief only as a navigation aid. Ground claims in the source document. If the source document does not support the answer, say the source document does not include enough information.",
     input: `${context}
 
 Recent chat:
@@ -874,7 +1022,7 @@ async function generateActionWithAi(briefId, input, userId) {
     ai: input.ai,
     userId,
     instructions:
-      "Draft clear, respectful civic action text. Avoid legal advice. Keep claims grounded in the brief.",
+      "Draft clear, respectful civic action text. Return only the final draft. Do not include reasoning, analysis, planning, hidden thinking, or scratchpad text. Avoid legal advice. Keep claims grounded in the brief.",
     input: `Create a ${input.actionType} with a ${input.tone} tone for ${input.audience || "a public official"}.
 
 Extra context: ${input.extraContext || "None"}
@@ -893,34 +1041,37 @@ async function generateAiText({ ai, userId, instructions, input }) {
     ? getDecryptedUserAiKey(userId, selection.provider)
     : null;
   const isConfigured = isAiProviderConfigured(selection, userApiKey);
+  const finalOnlyInstructions = `${instructions}
+
+Return only the final user-visible response. Do not include analysis, reasoning, scratchpad notes, chain-of-thought, hidden thinking, planning, self-checks, validation notes, or <think> blocks. Never start with "Analysis", "Thinking", "Reasoning", "Plan", "Draft", or "Review". If you need to reason, do it privately and wait until you have the final answer before responding.`;
 
   try {
     let text = null;
     if (selection.provider === "openai") {
       text = await callOpenAiResponses(
         selection.model,
-        instructions,
+        finalOnlyInstructions,
         input,
         userApiKey,
       );
     } else if (selection.provider === "anthropic") {
       text = await callAnthropicMessages(
         selection.model,
-        instructions,
+        finalOnlyInstructions,
         input,
         userApiKey,
       );
     } else {
       text = await callOpenAiCompatible(
         selection,
-        instructions,
+        finalOnlyInstructions,
         input,
         userApiKey,
       );
     }
 
     return {
-      text,
+      text: text ? stripReasoningText(text) : text,
       error: text ? undefined : getNoTextMessage(selection, isConfigured),
     };
   } catch (error) {
@@ -1242,98 +1393,139 @@ function normalizeAiSelection(ai) {
   };
 }
 
-function parseJsonObject(value) {
-  const normalized = value
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
+function stripReasoningText(value) {
+  let text = String(value)
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<analysis>[\s\S]*?<\/analysis>/gi, "")
     .trim();
 
-  try {
-    return JSON.parse(normalized);
-  } catch {
-    const match = normalized.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[0]);
-    } catch {
-      return null;
-    }
-  }
+  const finalMatch = text.match(
+    /(?:^|\n)\s*(?:final answer|final response|final)\s*:\s*([\s\S]+)$/i,
+  );
+  if (finalMatch?.[1]) text = finalMatch[1].trim();
+
+  text = text
+    .replace(/^\s*(analysis|thinking|reasoning|plan|draft|review)\s*:\s*[\s\S]*?(?=\n\s*#{1,3}\s+|\n\s*(?:final answer|final response|final)\s*:|$)/i, "")
+    .replace(/(?:^|\n)\s*(?:final answer|final response|final)\s*:\s*/i, "\n")
+    .trim();
+
+  return text;
 }
 
-function normalizeParsedBrief(parsed) {
-  return {
-    summary: String(parsed.summary || parsed.plainLanguageSummary || parsed.overview || "").trim(),
-    keyPoints: normalizeStringArray(parsed.keyPoints || parsed.key_points || parsed.points),
-    affectedGroups: normalizeStringArray(parsed.affectedGroups || parsed.affected_groups || parsed.whoIsAffected),
-    concerns: normalizeStringArray(parsed.concerns || parsed.risks || parsed.possibleConcerns),
-    citizenQuestions: normalizeStringArray(parsed.citizenQuestions || parsed.citizen_questions || parsed.questions),
-    nextSteps: normalizeStringArray(parsed.nextSteps || parsed.next_steps || parsed.actions),
-  };
-}
-
-function buildBriefFromUnstructuredAiText(text) {
-  const sections = parseMarkdownishSections(text);
-  return {
-    summary: summarizeUnstructuredText(sections.summary?.join(" ") || text),
-    keyPoints: sections.keyPoints || extractListLikeLines(text).slice(0, 5),
-    affectedGroups: sections.affectedGroups || ["Citizens", "Community groups", "Public officials"],
-    concerns: sections.concerns || ["Review the original document before relying on this summary."],
-    citizenQuestions: sections.citizenQuestions || ["What official process, deadline, and responsible office should citizens verify?"],
-    nextSteps: sections.nextSteps || ["Compare this summary against the source document.", "Ask a follow-up question in the chat panel."],
-  };
-}
-
-function parseMarkdownishSections(text) {
-  const sections = {};
-  let currentKey = "summary";
-
-  text.split("\n").forEach((line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-
-    const heading = trimmed.replace(/^#{1,3}\s+/, "").replace(/:$/, "").toLowerCase();
-    if (/key points?/.test(heading)) currentKey = "keyPoints";
-    else if (/affected|who is affected/.test(heading)) currentKey = "affectedGroups";
-    else if (/concerns?|risks?/.test(heading)) currentKey = "concerns";
-    else if (/questions?/.test(heading)) currentKey = "citizenQuestions";
-    else if (/next steps?|actions?/.test(heading)) currentKey = "nextSteps";
-    else if (/summary|overview/.test(heading)) currentKey = "summary";
-
-    const item = trimmed
-      .replace(/^#{1,3}\s+/, "")
-      .replace(/^[-*]\s+/, "")
-      .replace(/^\d+[.)]\s+/, "")
-      .trim();
-
-    if (item && item.toLowerCase() !== heading) {
-      sections[currentKey] = [...(sections[currentKey] || []), item];
-    }
-  });
-
-  return sections;
-}
-
-function summarizeUnstructuredText(text) {
-  return text.replace(/\s+/g, " ").trim().slice(0, 900);
-}
-
-function extractListLikeLines(text) {
-  return text
+function parsePlainList(text) {
+  const cleaned = cleanBriefText(text);
+  const items = cleaned
     .split("\n")
-    .map((line) => line.trim().replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, ""))
-    .filter((line) => line.length > 20)
-    .slice(0, 6);
+    .flatMap((line) => line.split(/(?:^|\s)\d+[.)]\s+/).filter(Boolean))
+    .map((line) =>
+      line
+        .trim()
+        .replace(/^[-*•]\s+/, "")
+        .replace(/^\d+[.)]\s+/, "")
+        .trim(),
+    )
+    .filter(Boolean)
+    .filter((item) => !isPromptOrReasoningText(item))
+    .filter((item) => !isReasoningLine(item))
+    .slice(0, 5);
+
+  return items.length
+    ? items
+    : ["The AI provider did not return this section clearly. Review the source document."];
 }
 
-function normalizeStringArray(value) {
-  return Array.isArray(value)
-    ? value
-        .map((item) => String(item).trim())
-        .filter(Boolean)
-        .slice(0, 6)
-    : [];
+function cleanBriefText(value) {
+  return stripReasoningText(value)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !isReasoningLine(line))
+    .map(removeBriefFieldLabel)
+    .join("\n")
+    .replace(/\bThinking Process:\s*/gi, "")
+    .trim();
+}
+
+function cleanSummaryText(value, sourceText = "") {
+  const rawSummary = String(value || "");
+  const draftMatch = rawSummary.match(/\bDraft:\s*([\s\S]+)$/i);
+  const summary = cleanBriefText(draftMatch?.[1] || rawSummary)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!summary || isPromptOrReasoningText(summary)) {
+    return summarizeSourceDocument(sourceText);
+  }
+
+  return summary;
+}
+
+function summarizeSourceDocument(sourceText) {
+  const cleaned = String(sourceText || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+
+  return cleaned
+    .split(/(?<=[.!?])\s+/)
+    .slice(0, 3)
+    .join(" ")
+    .slice(0, 900)
+    .trim();
+}
+
+function isPromptOrReasoningText(value) {
+  const normalized = String(value).toLowerCase();
+  return [
+    "thinking process",
+    "schema requirements",
+    "analyze the request",
+    "analyze the document",
+    "content breakdown",
+    "observations on text quality",
+    "drafting the json content",
+    "review against constraints",
+    "safety/policy",
+    "uncertainty:",
+    "schema fields",
+    "constraints:",
+    "valid json",
+    "return exactly one json",
+    "task:",
+    "input:",
+    "final json validation",
+  ].some((marker) => normalized.includes(marker));
+}
+
+function isReasoningLine(line) {
+  const normalized = line
+    .replace(/^[-*]\s+/, "")
+    .replace(/^\d+[.)]\s+/, "")
+    .replace(/^\*\*|\*\*$/g, "")
+    .trim()
+    .toLowerCase();
+
+  return [
+    "analyze the request",
+    "analyze the document",
+    "refining constraints",
+    "constructing json",
+    "final json validation",
+    "thinking process",
+    "schema requirements",
+    "content breakdown",
+    "review against constraints",
+    "drafting the json content",
+    "observations on text quality",
+    "safety/policy",
+  ].some((label) => normalized.includes(label));
+}
+
+function removeBriefFieldLabel(value) {
+  return value
+    .replace(/^\*\*(summary|keypoints|affectedgroups|concerns|citizenquestions|nextsteps):\*\*\s*/i, "")
+    .replace(/^(summary|keypoints|affectedgroups|concerns|citizenquestions|nextsteps):\s*/i, "")
+    .trim();
 }
 
 function extractOpenAiOutputText(payload) {
@@ -1409,6 +1601,7 @@ function mapBriefRow(row) {
     category: row.category,
     jurisdiction: row.jurisdiction,
     visibility: row.visibility || "private",
+    sourceText: row.source_text,
     summary: row.summary,
     keyPoints: JSON.parse(row.key_points),
     affectedGroups: JSON.parse(row.affected_groups),
@@ -1538,7 +1731,6 @@ function seedSampleBrief() {
     ],
     createdAt: new Date().toISOString(),
   };
-
   db.prepare(
     `
     INSERT INTO briefs (

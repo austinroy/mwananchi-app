@@ -3,6 +3,8 @@ import type {
   AiDefaultsRecord,
   AiModelSelection,
   AiProviderId,
+  BriefSectionKey,
+  BriefSectionResult,
   ChatMessage,
   CivicAction,
   CivicActionInput,
@@ -38,6 +40,20 @@ export async function createApiBrief(
     method: "POST",
     body: JSON.stringify({ input, ai }),
   });
+}
+
+export async function generateApiExistingBriefSection(
+  briefId: string,
+  section: BriefSectionKey,
+  ai?: AiModelSelection,
+) {
+  return apiRequest<BriefSectionResult>(
+    `/api/briefs/${briefId}/sections/${section}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ ai }),
+    },
+  );
 }
 
 export async function getApiChatMessages(briefId: string) {

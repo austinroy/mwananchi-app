@@ -66,6 +66,7 @@ import {
   createBrief,
   deleteBrief,
   generateAction,
+  generateExistingBriefSection,
   getBrief,
   getChatMessages,
   getSharedBrief,
@@ -79,6 +80,7 @@ import type {
   AiModelSelection,
   AiProviderId,
   BriefCategory,
+  BriefSectionKey,
   CivicActionInput,
   CivicActionType,
   CivicBrief,
@@ -1497,7 +1499,7 @@ function NewBriefPage() {
             type="submit"
           >
             <Sparkles size={16} />
-            {mutation.isPending ? "Generating..." : "Generate brief"}
+            {mutation.isPending ? "Generating..." : "Generate summary"}
           </button>
         </div>
       </form>
@@ -1511,6 +1513,14 @@ function BriefPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
+  const [sectionStatus, setSectionStatus] = useState<string | null>(null);
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() =>
+    readAiDefaults(),
+  );
+  const configured = useConfiguredAiProviders();
+  const isAiReady =
+    isProviderConfigured(aiSelection.provider, configured) &&
+    Boolean(aiSelection.model);
 
   const { data: brief, isLoading } = useQuery({
     queryKey: ["brief", briefId],
@@ -1556,6 +1566,73 @@ function BriefPage() {
         error instanceof Error ? error.message : "Could not delete this brief.",
       ),
   });
+  const sectionMutations = {
+    keyPoints: useMutation({
+      mutationFn: () =>
+        generateExistingBriefSection(
+          briefId,
+          "keyPoints",
+          resolveConfiguredAiSelection(aiSelection, configured),
+        ),
+      onSuccess: (result) => handleSectionGenerated(result),
+      onError: handleSectionError,
+    }),
+    affectedGroups: useMutation({
+      mutationFn: () =>
+        generateExistingBriefSection(
+          briefId,
+          "affectedGroups",
+          resolveConfiguredAiSelection(aiSelection, configured),
+        ),
+      onSuccess: (result) => handleSectionGenerated(result),
+      onError: handleSectionError,
+    }),
+    concerns: useMutation({
+      mutationFn: () =>
+        generateExistingBriefSection(
+          briefId,
+          "concerns",
+          resolveConfiguredAiSelection(aiSelection, configured),
+        ),
+      onSuccess: (result) => handleSectionGenerated(result),
+      onError: handleSectionError,
+    }),
+    citizenQuestions: useMutation({
+      mutationFn: () =>
+        generateExistingBriefSection(
+          briefId,
+          "citizenQuestions",
+          resolveConfiguredAiSelection(aiSelection, configured),
+        ),
+      onSuccess: (result) => handleSectionGenerated(result),
+      onError: handleSectionError,
+    }),
+    nextSteps: useMutation({
+      mutationFn: () =>
+        generateExistingBriefSection(
+          briefId,
+          "nextSteps",
+          resolveConfiguredAiSelection(aiSelection, configured),
+        ),
+      onSuccess: (result) => handleSectionGenerated(result),
+      onError: handleSectionError,
+    }),
+  };
+
+  async function handleSectionGenerated(result: {
+    section: BriefSectionKey;
+    aiError?: string;
+  }) {
+    await queryClient.invalidateQueries({ queryKey: ["brief", briefId] });
+    await queryClient.invalidateQueries({ queryKey: ["briefs", auth.user?.id] });
+    setSectionStatus(result.aiError || "Section generated.");
+  }
+
+  function handleSectionError(error: unknown) {
+    setSectionStatus(
+      error instanceof Error ? error.message : "Could not generate this section.",
+    );
+  }
 
   if (isLoading || !brief)
     return <main className="page-shell">Loading brief...</main>;
@@ -1664,18 +1741,66 @@ function BriefPage() {
       <AiErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-4">
+          <div className="surface rounded-lg p-4 sm:p-5">
+            <p className="text-sm font-semibold text-ink">
+              Generate additional sections
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Each button prompts the AI only for that section and saves the
+              result to this brief.
+            </p>
+            <div className="mt-4">
+              <AiModelSelector
+                selection={aiSelection}
+                onChange={setAiSelection}
+              />
+            </div>
+            {sectionStatus ? (
+              <p className="mt-3 rounded-md border border-signal/30 bg-civic-50 p-3 text-sm text-slate-700">
+                {sectionStatus}
+              </p>
+            ) : null}
+          </div>
           <BriefSection
             title="Plain-language summary"
             items={[brief.summary]}
           />
-          <BriefSection title="Key points" items={brief.keyPoints} />
-          <BriefSection title="Who is affected" items={brief.affectedGroups} />
-          <BriefSection title="Concerns and risks" items={brief.concerns} />
-          <BriefSection
+          <GeneratableBriefSection
+            title="Key points"
+            items={brief.keyPoints}
+            disabled={!isAiReady}
+            isPending={sectionMutations.keyPoints.isPending}
+            onGenerate={() => sectionMutations.keyPoints.mutate()}
+          />
+          <GeneratableBriefSection
+            title="Who is affected"
+            items={brief.affectedGroups}
+            disabled={!isAiReady}
+            isPending={sectionMutations.affectedGroups.isPending}
+            onGenerate={() => sectionMutations.affectedGroups.mutate()}
+          />
+          <GeneratableBriefSection
+            title="Concerns and risks"
+            items={brief.concerns}
+            disabled={!isAiReady}
+            isPending={sectionMutations.concerns.isPending}
+            onGenerate={() => sectionMutations.concerns.mutate()}
+          />
+          <GeneratableBriefSection
             title="Questions citizens should ask"
             items={brief.citizenQuestions}
+            disabled={!isAiReady}
+            isPending={sectionMutations.citizenQuestions.isPending}
+            onGenerate={() => sectionMutations.citizenQuestions.mutate()}
           />
-          <BriefSection title="Suggested next steps" items={brief.nextSteps} />
+          <GeneratableBriefSection
+            title="Suggested next steps"
+            items={brief.nextSteps}
+            disabled={!isAiReady}
+            isPending={sectionMutations.nextSteps.isPending}
+            onGenerate={() => sectionMutations.nextSteps.mutate()}
+          />
+          <SourceDocumentSection sourceText={brief.sourceText} />
         </section>
         <ChatPanel briefId={briefId} />
       </div>
@@ -1719,6 +1844,7 @@ function SharedBriefPage() {
           items={brief.citizenQuestions}
         />
         <BriefSection title="Suggested next steps" items={brief.nextSteps} />
+        <SourceDocumentSection sourceText={brief.sourceText} />
       </section>
     </main>
   );
@@ -1730,9 +1856,72 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
       <h2 className="font-bold text-civic-900">{title}</h2>
       <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
         {items.map((item) => (
-          <li key={item}>{item}</li>
+          <li key={item}>
+            <FormattedAiText content={item} />
+          </li>
         ))}
       </ul>
+    </article>
+  );
+}
+
+function GeneratableBriefSection({
+  title,
+  items,
+  disabled,
+  isPending,
+  onGenerate,
+}: {
+  title: string;
+  items: string[];
+  disabled: boolean;
+  isPending: boolean;
+  onGenerate: () => void;
+}) {
+  return (
+    <article className="surface rounded-lg p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="font-bold text-civic-900">{title}</h2>
+        <button
+          className="btn-secondary w-full sm:w-auto"
+          type="button"
+          disabled={disabled || isPending}
+          onClick={onGenerate}
+        >
+          <Sparkles size={16} />
+          {isPending ? "Generating..." : "Generate"}
+        </button>
+      </div>
+      {items.length ? (
+        <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+          {items.map((item) => (
+            <li key={item}>
+              <FormattedAiText content={item} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Generate this section when you are ready.
+        </p>
+      )}
+    </article>
+  );
+}
+
+function SourceDocumentSection({ sourceText }: { sourceText?: string }) {
+  if (!sourceText?.trim()) return null;
+
+  return (
+    <article className="surface rounded-lg p-4 sm:p-5">
+      <details>
+        <summary className="cursor-pointer font-bold text-civic-900">
+          Source document
+        </summary>
+        <div className="mt-3 max-h-[28rem] overflow-auto rounded-md border border-civic-100 bg-slate-50 p-3">
+          <FormattedAiText content={sourceText} />
+        </div>
+      </details>
     </article>
   );
 }

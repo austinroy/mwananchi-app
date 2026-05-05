@@ -1,5 +1,7 @@
 import type {
   AiModelSelection,
+  BriefSectionKey,
+  BriefSectionResult,
   CivicActionInput,
   NewBriefInput,
 } from "./types";
@@ -8,6 +10,7 @@ import {
   createApiBrief,
   deleteApiBrief,
   generateApiAction,
+  generateApiExistingBriefSection,
   getApiBrief,
   getApiChatMessages,
   getApiSharedBrief,
@@ -22,6 +25,7 @@ export const seedBrief: import("./types").CivicBrief = {
   category: "Budget",
   jurisdiction: "Nairobi County",
   visibility: "unlisted",
+  sourceText: "Sample county budget public notice.",
   summary:
     "The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.",
   keyPoints: [
@@ -52,7 +56,7 @@ export const seedBrief: import("./types").CivicBrief = {
   createdAt: new Date().toISOString(),
 };
 
-export async function listBriefs(userId?: string) {
+export async function listBriefs(_userId?: string) {
   const apiBriefs = await listApiBriefs();
   return apiBriefs ?? [];
 }
@@ -77,6 +81,16 @@ export async function createBrief(
   const apiBrief = await createApiBrief(input, ai);
   if (!apiBrief) throw new Error("Failed to create brief");
   return apiBrief;
+}
+
+export async function generateExistingBriefSection(
+  briefId: string,
+  section: BriefSectionKey,
+  ai?: AiModelSelection,
+): Promise<BriefSectionResult> {
+  const apiResult = await generateApiExistingBriefSection(briefId, section, ai);
+  if (!apiResult) throw new Error("Failed to generate brief section");
+  return apiResult;
 }
 
 export async function getChatMessages(briefId: string) {
@@ -115,7 +129,7 @@ export async function updateBriefVisibility(
   return apiResult;
 }
 
-export async function deleteBrief(briefId: string, userId?: string) {
+export async function deleteBrief(briefId: string, _userId?: string) {
   const apiResult = await deleteApiBrief(briefId);
   if (!apiResult) throw new Error("Failed to delete brief");
   return apiResult;
