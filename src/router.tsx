@@ -9,10 +9,18 @@ import { useClerk } from "@clerk/clerk-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import {
-  Copy,
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
   Eye,
   EyeOff,
   FileText,
+  Globe,
   Home,
   KeyRound,
   Laptop,
@@ -20,7 +28,8 @@ import {
   LogIn,
   LogOut,
   MessageSquare,
-  Send,
+  MoreVertical,
+  Share,
   Sparkles,
   Trash2,
   UserCog,
@@ -29,6 +38,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
+import { toast } from "sonner";
 import { AppShell } from "./components/AppShell";
 import { FormattedAiText } from "./components/FormattedAiText";
 import { actionTones, actionTypes, categories } from "./lib/civicOptions";
@@ -61,7 +71,7 @@ import {
   getSharedBrief,
   listBriefs,
   sendChatMessage,
-  shareBrief,
+  updateBriefVisibility,
 } from "./lib/mockApi";
 import { extractPdfText } from "./lib/pdf";
 import type {
@@ -71,6 +81,7 @@ import type {
   BriefCategory,
   CivicActionInput,
   CivicActionType,
+  CivicBrief,
   NewBriefInput,
 } from "./lib/types";
 
@@ -1049,11 +1060,163 @@ function LmStudioModal({
   );
 }
 
+const columnHelper = createColumnHelper<CivicBrief>();
+
 function DashboardPage() {
   const auth = useAuth();
+  const queryClient = useQueryClient();
+
   const { data = [], isLoading } = useQuery({
     queryKey: ["briefs", auth.user?.id],
     queryFn: () => listBriefs(auth.user?.id),
+  });
+
+  const visibilityMutation = useMutation({
+    mutationFn: ({
+      briefId,
+      visibility,
+    }: {
+      briefId: string;
+      visibility: "private" | "public";
+    }) => updateBriefVisibility(briefId, visibility),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["briefs", auth.user?.id] });
+      toast.success(`Brief is now ${variables.visibility}`);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update visibility");
+    },
+  });
+
+  const [globalFilter, setGlobalFilter] = useState("");
+
+  const briefColumns = useMemo(
+    () => [
+      columnHelper.accessor("title", {
+        header: "Title",
+        cell: (info) => (
+          <Link
+            to="/briefs/$briefId"
+            params={{ briefId: info.row.original.id }}
+            className="font-semibold text-civic-800 hover:underline"
+          >
+            {info.getValue()}
+          </Link>
+        ),
+      }),
+      columnHelper.accessor("category", {
+        header: "Category",
+      }),
+      columnHelper.accessor("jurisdiction", {
+        header: "Jurisdiction",
+      }),
+      columnHelper.accessor("visibility", {
+        header: "Visibility",
+        cell: (info) => {
+          const val = info.getValue() || "private";
+          const style =
+            val === "private"
+              ? "bg-slate-100 text-slate-700"
+              : "bg-civic-100 text-civic-800";
+          return (
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${style}`}
+            >
+              {val.charAt(0).toUpperCase() + val.slice(1)}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor("createdAt", {
+        header: "Created Date",
+        cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+      }),
+      columnHelper.display({
+        id: "actions",
+        header: "",
+        cell: (info) => {
+          const brief = info.row.original;
+          return (
+            <div className="flex justify-end pr-2">
+              <details className="dropdown relative inline-block">
+                <summary className="btn-ghost list-none outline-none cursor-pointer p-1">
+                  <MoreVertical size={18} />
+                </summary>
+                <div className="absolute right-0 z-50 mt-1 min-w-[140px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                  <button
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50"
+                    disabled={brief.visibility === "private"}
+                    onClick={async (e) => {
+                      const target = e.currentTarget.closest("details");
+                      if (target) target.removeAttribute("open");
+
+                      const absoluteUrl = new URL(
+                        `/share/${brief.id}`,
+                        window.location.origin,
+                      ).toString();
+                      await navigator.clipboard?.writeText(absoluteUrl);
+                      toast.success(`Link copied to clipboard!`);
+                    }}
+                  >
+                    <Link2 size={14} />
+                    Copy link
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  {brief.visibility === "private" ? (
+                    <button
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50 text-civic-700"
+                      disabled={visibilityMutation.isPending}
+                      onClick={() => {
+                        visibilityMutation.mutate({
+                          briefId: brief.id,
+                          visibility: "public",
+                        });
+                        const target = document.activeElement?.closest("details");
+                        if (target) target.removeAttribute("open");
+                      }}
+                    >
+                      <Globe size={14} />
+                      Make Public
+                    </button>
+                  ) : (
+                    <button
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50 text-slate-600"
+                      disabled={visibilityMutation.isPending}
+                      onClick={() => {
+                        visibilityMutation.mutate({
+                          briefId: brief.id,
+                          visibility: "private",
+                        });
+                        const target = document.activeElement?.closest("details");
+                        if (target) target.removeAttribute("open");
+                      }}
+                    >
+                      <EyeOff size={14} />
+                      Make Private
+                    </button>
+                  )}
+                </div>
+              </details>
+            </div>
+          );
+        },
+      }),
+    ],
+    [visibilityMutation],
+  );
+
+  const table = useReactTable({
+    data,
+    columns: briefColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter,
+    },
+    onGlobalFilterChange: setGlobalFilter,
   });
 
   return (
@@ -1091,34 +1254,72 @@ function DashboardPage() {
       </div>
 
       <section className="mt-8 surface rounded-lg">
-        <div className="border-b border-civic-100 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 border-b border-civic-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <h2 className="text-xl font-bold">Recent briefs</h2>
+          <input
+            type="text"
+            placeholder="Search briefs..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-civic-500 focus:ring-1 focus:ring-civic-500"
+          />
         </div>
-        <div className="divide-y divide-civic-100">
-          {isLoading ? (
-            <p className="p-5 text-slate-600">Loading briefs...</p>
-          ) : (
-            data.map((brief) => (
-              <Link
-                key={brief.id}
-                to="/briefs/$briefId"
-                params={{ briefId: brief.id }}
-                className="block p-4 transition hover:bg-civic-50 sm:p-5"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">{brief.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {brief.category} · {brief.jurisdiction}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-civic-700">
-                    Open brief
-                  </span>
-                </div>
-              </Link>
-            ))
-          )}
+        
+        <div className="overflow-x-auto pb-24">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="cursor-pointer px-4 py-3 font-medium transition hover:bg-slate-100"
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center gap-2">
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: " ↑",
+                          desc: " ↓",
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={briefColumns.length} className="p-5 text-center text-slate-600">
+                    Loading briefs...
+                  </td>
+                </tr>
+              ) : table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td colSpan={briefColumns.length} className="p-5 text-center text-slate-600">
+                    No briefs found.
+                  </td>
+                </tr>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="transition hover:bg-slate-50">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-3">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
     </main>
@@ -1309,22 +1510,35 @@ function BriefPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
+
   const { data: brief, isLoading } = useQuery({
     queryKey: ["brief", briefId],
     queryFn: () => getBrief(briefId),
   });
-  const shareMutation = useMutation({
-    mutationFn: () => shareBrief(briefId),
+  const visibilityMutation = useMutation({
+    mutationFn: (nextVisibility: "private" | "unlisted" | "public") =>
+      updateBriefVisibility(briefId, nextVisibility),
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["brief", briefId] });
-      const absoluteUrl = new URL(
-        result.shareUrl,
-        window.location.origin,
-      ).toString();
-      await navigator.clipboard?.writeText(absoluteUrl);
-      setShareStatus(`Share link copied: ${absoluteUrl}`);
+      await queryClient.invalidateQueries({
+        queryKey: ["briefs", auth.user?.id],
+      });
+      if (result.visibility === "unlisted" || result.visibility === "public") {
+        const absoluteUrl = new URL(
+          `/share/${briefId}`,
+          window.location.origin,
+        ).toString();
+        await navigator.clipboard?.writeText(absoluteUrl);
+        toast.success(`Link copied! Brief is now ${result.visibility}`);
+      } else {
+        toast.success("Brief is now private.");
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Could not update visibility.",
+      );
     },
   });
   const deleteMutation = useMutation({
@@ -1335,6 +1549,7 @@ function BriefPage() {
       });
       await queryClient.removeQueries({ queryKey: ["brief", briefId] });
       await navigate({ to: "/dashboard" });
+      toast.success("Brief deleted successfully.");
     },
     onError: (error) =>
       setDeleteStatus(
@@ -1354,23 +1569,70 @@ function BriefPage() {
           </p>
           <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
-        <div className="grid gap-2 sm:flex sm:flex-wrap">
-          <button
-            className="btn-secondary w-full sm:w-auto"
-            type="button"
-            disabled={shareMutation.isPending}
-            onClick={() => shareMutation.mutate()}
-          >
-            {brief.isPublic ? <Copy size={16} /> : <Link2 size={16} />}
-            {brief.isPublic ? "Copy share link" : "Share brief"}
-          </button>
+        <div className="grid gap-2 sm:flex sm:flex-wrap items-center">
+          <details className="dropdown relative inline-block">
+            <summary className="btn-secondary flex items-center gap-2 cursor-pointer list-none outline-none">
+              <Share size={16} />
+              Share & Actions
+            </summary>
+            <div className="absolute right-0 z-50 mt-1 min-w-[160px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+              <button
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50"
+                disabled={brief.visibility === "private"}
+                onClick={async (e) => {
+                  const target = e.currentTarget.closest("details");
+                  if (target) target.removeAttribute("open");
+
+                  const absoluteUrl = new URL(
+                    `/share/${brief.id}`,
+                    window.location.origin,
+                  ).toString();
+                  await navigator.clipboard?.writeText(absoluteUrl);
+                  toast.success(`Link copied!`);
+                }}
+              >
+                <Link2 size={14} />
+                Copy link
+              </button>
+
+              <div className="my-1 border-t border-slate-100" />
+
+              {brief.visibility === "private" ? (
+                <button
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50 text-civic-700"
+                  disabled={visibilityMutation.isPending}
+                  onClick={() => {
+                    visibilityMutation.mutate("public");
+                    const target = document.activeElement?.closest("details");
+                    if (target) target.removeAttribute("open");
+                  }}
+                >
+                  <Globe size={14} />
+                  Make Public
+                </button>
+              ) : (
+                <button
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50 text-slate-600"
+                  disabled={visibilityMutation.isPending}
+                  onClick={() => {
+                    visibilityMutation.mutate("private");
+                    const target = document.activeElement?.closest("details");
+                    if (target) target.removeAttribute("open");
+                  }}
+                >
+                  <EyeOff size={14} />
+                  Make Private
+                </button>
+              )}
+            </div>
+          </details>
           <Link
             to="/briefs/$briefId/actions"
             params={{ briefId }}
-            className="btn-primary w-full sm:w-auto"
+            className="btn-primary"
           >
-            <Send size={16} />
-            Generate action
+            <Sparkles size={16} />
+            Generate actions
           </Link>
           <button
             className="btn-danger w-full sm:w-auto"
@@ -1394,11 +1656,6 @@ function BriefPage() {
           </button>
         </div>
       </div>
-      {shareStatus ? (
-        <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">
-          {shareStatus}
-        </p>
-      ) : null}
       {deleteStatus ? (
         <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
           {deleteStatus}

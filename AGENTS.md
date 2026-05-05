@@ -77,9 +77,9 @@ Near-term priorities:
 
 1. Split large route/page code out of `src/router.tsx` into route and component files.
 2. Add proper form validation for title, category, jurisdiction, and document text.
-3. Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
+3. [COMPLETED] Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
 4. Replace prototype API persistence with a production database.
-5. Add richer share controls, including private/unlisted toggles and unshare.
+5. [COMPLETED] Add richer share controls, including private/unlisted toggles and unshare.
 6. Add richer OCR progress and language controls.
 7. Continue moving route/page components out of `src/router.tsx`; AppShell and AI text formatting have already been extracted.
 

@@ -89,7 +89,8 @@ db.exec(`
   );
 `);
 
-ensureColumn("briefs", "is_public", "INTEGER NOT NULL DEFAULT 0");
+ensureColumn("briefs", "visibility", "TEXT NOT NULL DEFAULT 'private'");
+db.exec("UPDATE briefs SET visibility = 'unlisted' WHERE is_public = 1 AND visibility = 'private'");
 ensureColumn("briefs", "ai_error", "TEXT");
 ensureColumn("chat_messages", "ai_error", "TEXT");
 ensureColumn("civic_actions", "ai_error", "TEXT");
@@ -245,12 +246,13 @@ createServer(async (req, res) => {
       return;
     }
 
-    const shareBriefMatch = url.pathname.match(
-      /^\/api\/briefs\/([^/]+)\/share$/,
+    const visibilityMatch = url.pathname.match(
+      /^\/api\/briefs\/([^/]+)\/visibility$/,
     );
-    if (shareBriefMatch && req.method === "POST") {
+    if (visibilityMatch && req.method === "PUT") {
+      const body = await readJson(req);
       const userId = await getRequestUserId(req);
-      const result = shareBrief(shareBriefMatch[1], userId);
+      const result = updateBriefVisibility(visibilityMatch[1], userId, body.visibility);
       if (!result) {
         sendJson(res, { error: "Brief not found" }, 404);
         return;
@@ -542,10 +544,10 @@ function getBrief(briefId, userId) {
   const row = db
     .prepare(
       `
-    SELECT * FROM briefs
-    WHERE id = ?
-      AND (is_public = 1 OR user_id IS NULL OR user_id = ? OR id = ?)
-  `,
+      SELECT * FROM briefs
+      WHERE id = ?
+        AND (visibility IN ('unlisted', 'public') OR user_id IS NULL OR user_id = ? OR id = ?)
+    `,
     )
     .get(briefId, userId || "", "brief-sample-budget");
   return row ? mapBriefRow(row) : null;
@@ -553,7 +555,7 @@ function getBrief(briefId, userId) {
 
 function getPublicBrief(briefId) {
   const row = db
-    .prepare("SELECT * FROM briefs WHERE id = ? AND is_public = 1")
+    .prepare("SELECT * FROM briefs WHERE id = ? AND visibility IN ('unlisted', 'public')")
     .get(briefId);
   return row ? mapBriefRow(row) : null;
 }
@@ -565,7 +567,7 @@ async function createBrief(input, userId, ai) {
     `
     INSERT INTO briefs (
       id, user_id, title, category, jurisdiction, source_text, summary,
-      key_points, affected_groups, concerns, citizen_questions, next_steps, ai_error, is_public, created_at
+      key_points, affected_groups, concerns, citizen_questions, next_steps, ai_error, visibility, created_at
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
@@ -583,7 +585,7 @@ async function createBrief(input, userId, ai) {
     JSON.stringify(brief.citizenQuestions),
     JSON.stringify(brief.nextSteps),
     brief.aiError || null,
-    brief.isPublic ? 1 : 0,
+    brief.visibility || "private",
     brief.createdAt,
   );
 
@@ -672,7 +674,8 @@ async function createAction(briefId, input, userId) {
   return action;
 }
 
-function shareBrief(briefId, userId) {
+function updateBriefVisibility(briefId, userId, visibility) {
+  if (!["private", "unlisted", "public"].includes(visibility)) return null;
   const row = db
     .prepare(
       "SELECT * FROM briefs WHERE id = ? AND (user_id = ? OR user_id IS NULL OR id = ?)",
@@ -680,12 +683,8 @@ function shareBrief(briefId, userId) {
     .get(briefId, userId || "", "brief-sample-budget");
   if (!row) return null;
 
-  db.prepare("UPDATE briefs SET is_public = 1 WHERE id = ?").run(briefId);
-  const brief = getPublicBrief(briefId);
-  return {
-    brief,
-    shareUrl: `/share/${briefId}`,
-  };
+  db.prepare("UPDATE briefs SET visibility = ? WHERE id = ?").run(visibility, briefId);
+  return { ok: true, visibility };
 }
 
 function deleteBrief(briefId, userId) {
@@ -732,7 +731,7 @@ async function buildBrief(input, userId, ai) {
     title: input.title,
     category: input.category,
     jurisdiction: input.jurisdiction,
-    isPublic: false,
+    visibility: "private",
     summary:
       aiBrief?.summary ??
       `This ${String(input.category).toLowerCase()} document appears to affect public decision-making in ${input.jurisdiction}. Mwananchi App summarized the submitted text, highlighted who is affected, and prepared citizen questions.`,
@@ -1409,7 +1408,7 @@ function mapBriefRow(row) {
     title: row.title,
     category: row.category,
     jurisdiction: row.jurisdiction,
-    isPublic: Boolean(row.is_public),
+    visibility: row.visibility || "private",
     summary: row.summary,
     keyPoints: JSON.parse(row.key_points),
     affectedGroups: JSON.parse(row.affected_groups),
@@ -1508,7 +1507,7 @@ function seedSampleBrief() {
     title: "County Budget Public Notice",
     category: "Budget",
     jurisdiction: "Nairobi County",
-    isPublic: true,
+    visibility: "unlisted",
     sourceText: "Sample county budget public notice.",
     summary:
       "The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.",
@@ -1544,7 +1543,7 @@ function seedSampleBrief() {
     `
     INSERT INTO briefs (
       id, user_id, title, category, jurisdiction, source_text, summary,
-      key_points, affected_groups, concerns, citizen_questions, next_steps, ai_error, is_public, created_at
+      key_points, affected_groups, concerns, citizen_questions, next_steps, ai_error, visibility, created_at
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
@@ -1562,7 +1561,7 @@ function seedSampleBrief() {
     JSON.stringify(sample.citizenQuestions),
     JSON.stringify(sample.nextSteps),
     null,
-    sample.isPublic ? 1 : 0,
+    sample.visibility || "private",
     sample.createdAt,
   );
 

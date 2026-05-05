@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type React from "react";
+import { Toaster } from "sonner";
 import { useAuth } from "../lib/auth";
 
 export function AppShell() {
@@ -119,6 +120,7 @@ export function AppShell() {
         </nav>
       </header>
       <Outlet />
+      <Toaster position="top-right" richColors />
     </div>
   );
 }
