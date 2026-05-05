@@ -1,11 +1,11 @@
 export type BriefCategory =
-  | 'Housing'
-  | 'Justice'
-  | 'Elections'
-  | 'Education'
-  | 'Health'
-  | 'Budget'
-  | 'Other';
+  | "Housing"
+  | "Justice"
+  | "Elections"
+  | "Education"
+  | "Health"
+  | "Budget"
+  | "Other";
 
 export type CivicBrief = {
   id: string;
@@ -23,7 +23,12 @@ export type CivicBrief = {
   createdAt: string;
 };
 
-export type AiProviderId = 'openai' | 'openrouter' | 'anthropic' | 'lmstudio' | 'custom';
+export type AiProviderId =
+  | "openai"
+  | "openrouter"
+  | "anthropic"
+  | "lmstudio"
+  | "custom";
 
 export type AiModelSelection = {
   provider: AiProviderId;
@@ -52,22 +57,22 @@ export type NewBriefInput = {
 export type ChatMessage = {
   id: string;
   briefId: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   aiError?: string;
   createdAt: string;
 };
 
 export type CivicActionType =
-  | 'email'
-  | 'petition'
-  | 'public_comment'
-  | 'whatsapp_summary'
-  | 'talking_points';
+  | "email"
+  | "petition"
+  | "public_comment"
+  | "whatsapp_summary"
+  | "talking_points";
 
 export type CivicActionInput = {
   actionType: CivicActionType;
-  tone: 'Respectful' | 'Firm' | 'Youth-friendly' | 'Professional';
+  tone: "Respectful" | "Firm" | "Youth-friendly" | "Professional";
   audience: string;
   extraContext?: string;
   ai?: AiModelSelection;

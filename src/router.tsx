@@ -1,26 +1,98 @@
-import { Link, Outlet, createRootRoute, createRoute, createRouter, useNavigate } from '@tanstack/react-router';
-import { useClerk } from '@clerk/clerk-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from '@tanstack/react-form';
-import { Copy, Eye, EyeOff, FileText, Home, KeyRound, Laptop, LayoutDashboard, Link2, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, Trash2, UserCog, UserPlus, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import type React from 'react';
-import { useAuth } from './lib/auth';
-import { aiProviderOptions, defaultLmStudioSettings, getProviderModels, readAiDefaults, readLmStudioSettings, saveAiDefaults, saveLmStudioSettings, withLocalProviderSettings } from './lib/aiSettings';
-import { deleteAiApiKey, listAiApiKeyStatuses, listProviderModels, saveAiApiKey } from './lib/api';
-import { createBrief, deleteBrief, generateAction, getBrief, getChatMessages, getSharedBrief, listBriefs, sendChatMessage, shareBrief } from './lib/mockApi';
-import { extractPdfText } from './lib/pdf';
-import type { AiApiKeyStatus, AiModelSelection, AiProviderId, BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
+import {
+  Link,
+  Outlet,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  useNavigate,
+} from "@tanstack/react-router";
+import { useClerk } from "@clerk/clerk-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import {
+  Copy,
+  Eye,
+  EyeOff,
+  FileText,
+  Home,
+  KeyRound,
+  Laptop,
+  LayoutDashboard,
+  Link2,
+  LogIn,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Send,
+  Sparkles,
+  Trash2,
+  UserCog,
+  UserPlus,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useAuth } from "./lib/auth";
+import {
+  aiProviderOptions,
+  defaultLmStudioSettings,
+  getProviderModels,
+  readAiDefaults,
+  readLmStudioSettings,
+  saveAiDefaults,
+  saveLmStudioSettings,
+  withLocalProviderSettings,
+} from "./lib/aiSettings";
+import {
+  deleteAiApiKey,
+  listAiApiKeyStatuses,
+  listProviderModels,
+  saveAiApiKey,
+} from "./lib/api";
+import {
+  createBrief,
+  deleteBrief,
+  generateAction,
+  getBrief,
+  getChatMessages,
+  getSharedBrief,
+  listBriefs,
+  sendChatMessage,
+  shareBrief,
+} from "./lib/mockApi";
+import { extractPdfText } from "./lib/pdf";
+import type {
+  AiApiKeyStatus,
+  AiModelSelection,
+  AiProviderId,
+  BriefCategory,
+  CivicActionInput,
+  CivicActionType,
+  NewBriefInput,
+} from "./lib/types";
 
-const categories: BriefCategory[] = ['Housing', 'Justice', 'Elections', 'Education', 'Health', 'Budget', 'Other'];
-const actionTypes: { value: CivicActionType; label: string }[] = [
-  { value: 'email', label: 'Email' },
-  { value: 'petition', label: 'Petition' },
-  { value: 'public_comment', label: 'Public comment' },
-  { value: 'whatsapp_summary', label: 'WhatsApp summary' },
-  { value: 'talking_points', label: 'Talking points' },
+const categories: BriefCategory[] = [
+  "Housing",
+  "Justice",
+  "Elections",
+  "Education",
+  "Health",
+  "Budget",
+  "Other",
 ];
-const actionTones: CivicActionInput['tone'][] = ['Respectful', 'Firm', 'Youth-friendly', 'Professional'];
+const actionTypes: { value: CivicActionType; label: string }[] = [
+  { value: "email", label: "Email" },
+  { value: "petition", label: "Petition" },
+  { value: "public_comment", label: "Public comment" },
+  { value: "whatsapp_summary", label: "WhatsApp summary" },
+  { value: "talking_points", label: "Talking points" },
+];
+const actionTones: CivicActionInput["tone"][] = [
+  "Respectful",
+  "Firm",
+  "Youth-friendly",
+  "Professional",
+];
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -28,63 +100,73 @@ const rootRoute = createRootRoute({
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/',
+  path: "/",
   component: LandingPage,
 });
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/dashboard',
+  path: "/dashboard",
   component: DashboardPage,
 });
 
 const newBriefRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/briefs/new',
+  path: "/briefs/new",
   component: NewBriefPage,
 });
 
 const briefRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/briefs/$briefId',
+  path: "/briefs/$briefId",
   component: BriefPage,
 });
 
 const actionsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/briefs/$briefId/actions',
+  path: "/briefs/$briefId/actions",
   component: ActionsPage,
 });
 
 const sharedBriefRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/share/$briefId',
+  path: "/share/$briefId",
   component: SharedBriefPage,
 });
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/login',
+  path: "/login",
   component: LoginPage,
 });
 
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/register',
+  path: "/register",
   component: RegisterPage,
 });
 
 const accountRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/account',
+  path: "/account",
   component: AccountPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, newBriefRoute, briefRoute, actionsRoute, sharedBriefRoute, loginRoute, registerRoute, accountRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  dashboardRoute,
+  newBriefRoute,
+  briefRoute,
+  actionsRoute,
+  sharedBriefRoute,
+  loginRoute,
+  registerRoute,
+  accountRoute,
+]);
 
 export const router = createRouter({ routeTree });
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
@@ -101,19 +183,22 @@ function AppShell() {
     closeMenu();
 
     if (auth.isClerkEnabled) {
-      await clerk.signOut({ redirectUrl: '/' });
+      await clerk.signOut({ redirectUrl: "/" });
       return;
     }
 
     await auth.localLogout();
-    await navigate({ to: '/' });
+    await navigate({ to: "/" });
   };
 
   return (
     <div className="min-h-screen bg-civic-50">
       <header className="border-b border-civic-100 bg-white">
         <nav className="page-shell relative flex items-center justify-between gap-3 py-4">
-          <Link to="/" className="flex min-w-0 items-center gap-2 text-lg font-bold text-civic-900">
+          <Link
+            to="/"
+            className="flex min-w-0 items-center gap-2 text-lg font-bold text-civic-900"
+          >
             <span className="grid size-9 shrink-0 place-items-center rounded-md bg-civic-700 text-white">
               <Sparkles size={18} />
             </span>
@@ -121,7 +206,9 @@ function AppShell() {
           </Link>
           <button
             aria-expanded={isMenuOpen}
-            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-label={
+              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
+            }
             className="btn-secondary px-3"
             type="button"
             onClick={() => setIsMenuOpen((value) => !value)}
@@ -131,37 +218,59 @@ function AppShell() {
           </button>
           {isMenuOpen ? (
             <div className="absolute right-4 top-[calc(100%-0.5rem)] z-20 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-civic-100 bg-white p-2 shadow-lg">
-            {auth.isAuthenticated ? (
-              <div className="grid gap-1">
-                <MenuLink to="/dashboard" icon={<LayoutDashboard size={16} />} label="Dashboard" onSelect={closeMenu} />
-                <MenuLink to="/account" icon={<UserCog size={16} />} label="Account" onSelect={closeMenu} />
-                <Link to="/briefs/new" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-civic-800 transition hover:bg-civic-50" onClick={closeMenu}>
-                  <FileText size={16} />
-                  New brief
-                </Link>
-                <button
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
-                  type="button"
-                  onClick={() => {
-                    void signOut();
-                  }}
-                >
-                  <LogOut size={16} />
-                  Sign out
-                </button>
-              </div>
-            ) : (
-              <div className="grid gap-1">
-                <Link to="/login" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50" onClick={closeMenu}>
-                  <LogIn size={16} />
-                  Sign in
-                </Link>
-                <Link to="/register" className="flex items-center gap-2 rounded-md bg-civic-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-civic-800" onClick={closeMenu}>
-                  <UserPlus size={16} />
-                  Create account
-                </Link>
-              </div>
-            )}
+              {auth.isAuthenticated ? (
+                <div className="grid gap-1">
+                  <MenuLink
+                    to="/dashboard"
+                    icon={<LayoutDashboard size={16} />}
+                    label="Dashboard"
+                    onSelect={closeMenu}
+                  />
+                  <MenuLink
+                    to="/account"
+                    icon={<UserCog size={16} />}
+                    label="Account"
+                    onSelect={closeMenu}
+                  />
+                  <Link
+                    to="/briefs/new"
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-civic-800 transition hover:bg-civic-50"
+                    onClick={closeMenu}
+                  >
+                    <FileText size={16} />
+                    New brief
+                  </Link>
+                  <button
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
+                    type="button"
+                    onClick={() => {
+                      void signOut();
+                    }}
+                  >
+                    <LogOut size={16} />
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="grid gap-1">
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
+                    onClick={closeMenu}
+                  >
+                    <LogIn size={16} />
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex items-center gap-2 rounded-md bg-civic-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-civic-800"
+                    onClick={closeMenu}
+                  >
+                    <UserPlus size={16} />
+                    Create account
+                  </Link>
+                </div>
+              )}
             </div>
           ) : null}
         </nav>
@@ -177,13 +286,17 @@ function MenuLink({
   label,
   onSelect,
 }: {
-  to: '/dashboard' | '/account';
+  to: "/dashboard" | "/account";
   icon: React.ReactNode;
   label: string;
   onSelect: () => void;
 }) {
   return (
-    <Link to={to} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50" onClick={onSelect}>
+    <Link
+      to={to}
+      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
+      onClick={onSelect}
+    >
       {icon}
       {label}
     </Link>
@@ -203,9 +316,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
         <div className="mx-auto grid size-12 place-items-center rounded-md bg-civic-700 text-white">
           <LogIn size={22} />
         </div>
-        <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">Sign in to continue</h1>
+        <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">
+          Sign in to continue
+        </h1>
         <p className="mt-3 text-slate-600">
-          Mwananchi App saves briefs, chat history, and generated actions to your workspace.
+          Mwananchi App saves briefs, chat history, and generated actions to
+          your workspace.
         </p>
         <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
           <Link to="/login" className="btn-primary w-full sm:w-auto">
@@ -225,13 +341,16 @@ function LandingPage() {
     <main className="page-shell">
       <section className="grid items-center gap-8 py-6 sm:min-h-[72vh] sm:py-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-civic-700 sm:text-sm sm:tracking-[0.18em]">Civic intelligence for citizens</p>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-civic-700 sm:text-sm sm:tracking-[0.18em]">
+            Civic intelligence for citizens
+          </p>
           <h1 className="max-w-3xl text-4xl font-bold leading-tight text-ink sm:text-5xl lg:text-6xl">
             Turn public documents into public understanding.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:mt-6 sm:text-lg sm:leading-8">
-            Mwananchi App helps citizens, journalists, students, and community groups explain policies,
-            ask sharper questions, and draft practical civic actions.
+            Mwananchi App helps citizens, journalists, students, and community
+            groups explain policies, ask sharper questions, and draft practical
+            civic actions.
           </p>
           <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
@@ -247,17 +366,24 @@ function LandingPage() {
         <div className="surface rounded-lg p-4 sm:p-6">
           <div className="rounded-md bg-civic-900 p-5 text-white">
             <p className="text-sm text-civic-100">Sample brief</p>
-            <h2 className="mt-2 text-2xl font-bold">County Budget Public Notice</h2>
+            <h2 className="mt-2 text-2xl font-bold">
+              County Budget Public Notice
+            </h2>
             <p className="mt-4 text-sm leading-6 text-civic-100">
-              Key issues: public participation window, ward allocation, service delivery impact,
-              and accountability after approval.
+              Key issues: public participation window, ward allocation, service
+              delivery impact, and accountability after approval.
             </p>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {['Explain', 'Question', 'Act'].map((item) => (
-              <div key={item} className="rounded-md border border-civic-100 p-4">
+            {["Explain", "Question", "Act"].map((item) => (
+              <div
+                key={item}
+                className="rounded-md border border-civic-100 p-4"
+              >
                 <p className="font-semibold text-civic-900">{item}</p>
-                <p className="mt-1 text-sm text-slate-600">Plain language workflow</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Plain language workflow
+                </p>
               </div>
             ))}
           </div>
@@ -274,18 +400,18 @@ function LoginPage() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const form = useForm({
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
     onSubmit: async ({ value }) => {
       await auth.localLogin(value);
-      await navigate({ to: '/dashboard' });
+      await navigate({ to: "/dashboard" });
     },
   });
 
   useEffect(() => {
     if (!auth.isLoading && auth.isAuthenticated) {
-      void navigate({ to: '/dashboard', replace: true });
+      void navigate({ to: "/dashboard", replace: true });
     }
   }, [auth.isAuthenticated, auth.isLoading, navigate]);
 
@@ -297,15 +423,29 @@ function LoginPage() {
     <AuthFormShell
       eyebrow="Welcome back"
       title="Sign in to Mwananchi App"
-      description={auth.isClerkEnabled ? 'Use your Mwananchi App account to save briefs, messages, and civic actions.' : 'Local development fallback is active until Clerk is configured.'}
-      footer={<span>New here? <Link to="/register" className="font-semibold text-civic-700">Create an account</Link></span>}
+      description={
+        auth.isClerkEnabled
+          ? "Use your Mwananchi App account to save briefs, messages, and civic actions."
+          : "Local development fallback is active until Clerk is configured."
+      }
+      footer={
+        <span>
+          New here?{" "}
+          <Link to="/register" className="font-semibold text-civic-700">
+            Create an account
+          </Link>
+        </span>
+      }
     >
       {auth.isClerkEnabled ? (
         <button
           className="btn-primary w-full"
           type="button"
           onClick={() => {
-            void clerk.openSignIn({ forceRedirectUrl: '/dashboard', fallbackRedirectUrl: '/dashboard' });
+            void clerk.openSignIn({
+              forceRedirectUrl: "/dashboard",
+              fallbackRedirectUrl: "/dashboard",
+            });
           }}
         >
           <LogIn size={16} />
@@ -323,7 +463,13 @@ function LoginPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Email</span>
-                <input className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" type="email" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} required />
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  type="email"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  required
+                />
               </label>
             )}
           </form.Field>
@@ -332,14 +478,26 @@ function LoginPage() {
               <label className="block">
                 <span className="text-sm font-semibold">Password</span>
                 <span className="relative mt-2 block">
-                  <input className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11" type={isPasswordVisible ? 'text' : 'password'} value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} required />
+                  <input
+                    className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11"
+                    type={isPasswordVisible ? "text" : "password"}
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    required
+                  />
                   <button
-                    aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      isPasswordVisible ? "Hide password" : "Show password"
+                    }
                     className="absolute inset-y-0 right-2 grid w-8 place-items-center text-slate-500 transition hover:text-civic-700"
                     type="button"
                     onClick={() => setIsPasswordVisible((value) => !value)}
                   >
-                    {isPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {isPasswordVisible ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </span>
               </label>
@@ -362,19 +520,19 @@ function RegisterPage() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const form = useForm({
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
+      name: "",
+      email: "",
+      password: "",
     },
     onSubmit: async ({ value }) => {
       await auth.localRegister(value);
-      await navigate({ to: '/dashboard' });
+      await navigate({ to: "/dashboard" });
     },
   });
 
   useEffect(() => {
     if (!auth.isLoading && auth.isAuthenticated) {
-      void navigate({ to: '/dashboard', replace: true });
+      void navigate({ to: "/dashboard", replace: true });
     }
   }, [auth.isAuthenticated, auth.isLoading, navigate]);
 
@@ -386,15 +544,29 @@ function RegisterPage() {
     <AuthFormShell
       eyebrow="Create workspace"
       title="Create your Mwananchi account"
-      description={auth.isClerkEnabled ? 'Create an account to keep your civic briefs connected to your workspace.' : 'Local development fallback is active until Clerk is configured.'}
-      footer={<span>Already have an account? <Link to="/login" className="font-semibold text-civic-700">Sign in</Link></span>}
+      description={
+        auth.isClerkEnabled
+          ? "Create an account to keep your civic briefs connected to your workspace."
+          : "Local development fallback is active until Clerk is configured."
+      }
+      footer={
+        <span>
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-civic-700">
+            Sign in
+          </Link>
+        </span>
+      }
     >
       {auth.isClerkEnabled ? (
         <button
           className="btn-primary w-full"
           type="button"
           onClick={() => {
-            void clerk.openSignUp({ forceRedirectUrl: '/dashboard', fallbackRedirectUrl: '/dashboard' });
+            void clerk.openSignUp({
+              forceRedirectUrl: "/dashboard",
+              fallbackRedirectUrl: "/dashboard",
+            });
           }}
         >
           <UserPlus size={16} />
@@ -412,7 +584,12 @@ function RegisterPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Name</span>
-                <input className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} required />
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  required
+                />
               </label>
             )}
           </form.Field>
@@ -420,7 +597,13 @@ function RegisterPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Email</span>
-                <input className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" type="email" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} required />
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  type="email"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  required
+                />
               </label>
             )}
           </form.Field>
@@ -429,14 +612,27 @@ function RegisterPage() {
               <label className="block">
                 <span className="text-sm font-semibold">Password</span>
                 <span className="relative mt-2 block">
-                  <input className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11" type={isPasswordVisible ? 'text' : 'password'} value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} required minLength={8} />
+                  <input
+                    className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11"
+                    type={isPasswordVisible ? "text" : "password"}
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    required
+                    minLength={8}
+                  />
                   <button
-                    aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      isPasswordVisible ? "Hide password" : "Show password"
+                    }
                     className="absolute inset-y-0 right-2 grid w-8 place-items-center text-slate-500 transition hover:text-civic-700"
                     type="button"
                     onClick={() => setIsPasswordVisible((value) => !value)}
                   >
-                    {isPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {isPasswordVisible ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </span>
               </label>
@@ -469,7 +665,9 @@ function AuthFormShell({
     <main className="page-shell grid min-h-[72vh] place-items-center">
       <section className="surface w-full max-w-md rounded-lg p-5 sm:p-6">
         <p className="text-sm font-semibold text-civic-700">{eyebrow}</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">{title}</h1>
+        <h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">
+          {title}
+        </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
         <div className="mt-6">{children}</div>
         <p className="mt-6 text-center text-sm text-slate-600">{footer}</p>
@@ -482,7 +680,9 @@ function AuthRedirectingCard() {
   return (
     <main className="page-shell grid min-h-[72vh] place-items-center">
       <section className="surface w-full max-w-md rounded-lg p-5 text-center sm:p-6">
-        <h1 className="text-2xl font-bold text-ink">Taking you to your dashboard...</h1>
+        <h1 className="text-2xl font-bold text-ink">
+          Taking you to your dashboard...
+        </h1>
       </section>
     </main>
   );
@@ -494,19 +694,21 @@ function AccountPage() {
   const navigate = useNavigate();
   const signOut = async () => {
     if (auth.isClerkEnabled) {
-      await clerk.signOut({ redirectUrl: '/' });
+      await clerk.signOut({ redirectUrl: "/" });
       return;
     }
 
     await auth.localLogout();
-    await navigate({ to: '/' });
+    await navigate({ to: "/" });
   };
 
   return (
     <RequireAuth>
       <main className="page-shell max-w-4xl">
         <div className="mb-6">
-          <p className="text-sm font-semibold text-civic-700">Workspace settings</p>
+          <p className="text-sm font-semibold text-civic-700">
+            Workspace settings
+          </p>
           <h1 className="text-3xl font-bold text-ink sm:text-4xl">Account</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Manage your Mwananchi App identity and sign-in settings.
@@ -518,10 +720,16 @@ function AccountPage() {
             <div className="grid size-14 place-items-center rounded-md bg-civic-700 text-white">
               <UserCog size={24} />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-ink">{auth.user?.name ?? 'Mwananchi user'}</h2>
-            <p className="mt-1 break-words text-sm text-slate-600">{auth.user?.email}</p>
+            <h2 className="mt-5 text-xl font-bold text-ink">
+              {auth.user?.name ?? "Mwananchi user"}
+            </h2>
+            <p className="mt-1 break-words text-sm text-slate-600">
+              {auth.user?.email}
+            </p>
             <p className="mt-4 rounded-md bg-civic-50 px-3 py-2 text-sm font-semibold text-civic-800">
-              {auth.isClerkEnabled ? 'Clerk account' : 'Local development account'}
+              {auth.isClerkEnabled
+                ? "Clerk account"
+                : "Local development account"}
             </p>
           </section>
 
@@ -529,13 +737,17 @@ function AccountPage() {
             <h2 className="text-xl font-bold text-ink">Account management</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               {auth.isClerkEnabled
-                ? 'Open Clerk account management to update profile details, password, security settings, connected sign-in methods, and account deletion.'
-                : 'Local fallback accounts are stored in this browser for development. Configure Clerk to enable production profile and security management.'}
+                ? "Open Clerk account management to update profile details, password, security settings, connected sign-in methods, and account deletion."
+                : "Local fallback accounts are stored in this browser for development. Configure Clerk to enable production profile and security management."}
             </p>
 
             <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
               {auth.isClerkEnabled ? (
-                <button className="btn-primary w-full sm:w-auto" type="button" onClick={() => void clerk.openUserProfile()}>
+                <button
+                  className="btn-primary w-full sm:w-auto"
+                  type="button"
+                  onClick={() => void clerk.openUserProfile()}
+                >
                   <UserCog size={16} />
                   Manage with Clerk
                 </button>
@@ -556,21 +768,24 @@ function AccountPage() {
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
           <h2 className="text-xl font-bold text-ink">Default AI model</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Choose the provider and model Mwananchi App should use by default. Chat and action drafts can override this per request.
+            Choose the provider and model Mwananchi App should use by default.
+            Chat and action drafts can override this per request.
           </p>
           <AiDefaultsForm />
         </section>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
           <h2 className="text-xl font-bold text-ink">User API keys</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Store your own provider keys for logged-in AI requests. Keys are encrypted by the API server and are never shown again after saving.
+            Store your own provider keys for logged-in AI requests. Keys are
+            encrypted by the API server and are never shown again after saving.
           </p>
           <AiApiKeysForm />
         </section>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
           <h2 className="text-xl font-bold text-ink">Local models</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Connect LM Studio when you want Mwananchi App to use an open-source model running on this machine.
+            Connect LM Studio when you want Mwananchi App to use an open-source
+            model running on this machine.
           </p>
           <LmStudioSetup />
         </section>
@@ -580,10 +795,14 @@ function AccountPage() {
 }
 
 function AiDefaultsForm() {
-  const [selection, setSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const [selection, setSelection] = useState<AiModelSelection>(() =>
+    readAiDefaults(),
+  );
   const [status, setStatus] = useState<string | null>(null);
   const configured = useConfiguredAiProviders();
-  const isSelectionAvailable = isProviderConfigured(selection.provider, configured) && Boolean(selection.model);
+  const isSelectionAvailable =
+    isProviderConfigured(selection.provider, configured) &&
+    Boolean(selection.model);
 
   const updateSelection = (nextSelection: AiModelSelection) => {
     setSelection(nextSelection);
@@ -599,13 +818,19 @@ function AiDefaultsForm() {
         disabled={!isSelectionAvailable}
         onClick={() => {
           saveAiDefaults(resolveConfiguredAiSelection(selection, configured));
-          setStatus('Default AI model saved.');
+          setStatus("Default AI model saved.");
         }}
       >
         Save AI defaults
       </button>
-      {!isSelectionAvailable ? <p className="mt-3 text-sm leading-6 text-slate-600">Configure this provider before saving it as your default.</p> : null}
-      {status ? <p className="mt-3 text-sm font-semibold text-civic-700">{status}</p> : null}
+      {!isSelectionAvailable ? (
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Configure this provider before saving it as your default.
+        </p>
+      ) : null}
+      {status ? (
+        <p className="mt-3 text-sm font-semibold text-civic-700">{status}</p>
+      ) : null}
     </div>
   );
 }
@@ -613,33 +838,47 @@ function AiDefaultsForm() {
 function AiApiKeysForm() {
   const queryClient = useQueryClient();
   const { data = [], isLoading } = useQuery({
-    queryKey: ['ai-api-key-statuses'],
+    queryKey: ["ai-api-key-statuses"],
     queryFn: listAiApiKeyStatuses,
   });
-  const [provider, setProvider] = useState<AiProviderId>('openai');
-  const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState<AiProviderId>("openai");
+  const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const keyProviderOptions = aiProviderOptions.filter((option) => option.value !== 'lmstudio');
-  const configuredProviders = new Map(data.map((item: AiApiKeyStatus) => [item.provider, item]));
+  const keyProviderOptions = aiProviderOptions.filter(
+    (option) => option.value !== "lmstudio",
+  );
+  const configuredProviders = new Map(
+    data.map((item: AiApiKeyStatus) => [item.provider, item]),
+  );
   const selectedStatus = configuredProviders.get(provider);
 
   const saveMutation = useMutation({
     mutationFn: () => saveAiApiKey(provider, apiKey),
     onSuccess: async () => {
-      setApiKey('');
-      setStatus('API key saved.');
-      await queryClient.invalidateQueries({ queryKey: ['ai-api-key-statuses'] });
+      setApiKey("");
+      setStatus("API key saved.");
+      await queryClient.invalidateQueries({
+        queryKey: ["ai-api-key-statuses"],
+      });
     },
-    onError: (error) => setStatus(error instanceof Error ? error.message : 'Could not save API key.'),
+    onError: (error) =>
+      setStatus(
+        error instanceof Error ? error.message : "Could not save API key.",
+      ),
   });
   const deleteMutation = useMutation({
     mutationFn: (nextProvider: AiProviderId) => deleteAiApiKey(nextProvider),
     onSuccess: async () => {
-      setStatus('API key removed.');
-      await queryClient.invalidateQueries({ queryKey: ['ai-api-key-statuses'] });
+      setStatus("API key removed.");
+      await queryClient.invalidateQueries({
+        queryKey: ["ai-api-key-statuses"],
+      });
     },
-    onError: (error) => setStatus(error instanceof Error ? error.message : 'Could not remove API key.'),
+    onError: (error) =>
+      setStatus(
+        error instanceof Error ? error.message : "Could not remove API key.",
+      ),
   });
 
   return (
@@ -655,7 +894,11 @@ function AiApiKeysForm() {
               setStatus(null);
             }}
           >
-            {keyProviderOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {keyProviderOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-sm font-semibold text-slate-700">
@@ -663,15 +906,24 @@ function AiApiKeysForm() {
           <div className="mt-2 flex rounded-md border border-civic-100 bg-white focus-within:ring-2 focus-within:ring-civic-100">
             <input
               className="min-w-0 flex-1 rounded-l-md px-3 py-2 text-sm outline-none"
-              type={showKey ? 'text' : 'password'}
+              type={showKey ? "text" : "password"}
               value={apiKey}
               onChange={(event) => {
                 setApiKey(event.target.value);
                 setStatus(null);
               }}
-              placeholder={selectedStatus ? 'Enter a new key to replace the stored key' : 'Paste provider API key'}
+              placeholder={
+                selectedStatus
+                  ? "Enter a new key to replace the stored key"
+                  : "Paste provider API key"
+              }
             />
-            <button className="grid w-11 place-items-center text-slate-500" type="button" onClick={() => setShowKey((value) => !value)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
+            <button
+              className="grid w-11 place-items-center text-slate-500"
+              type="button"
+              onClick={() => setShowKey((value) => !value)}
+              aria-label={showKey ? "Hide API key" : "Show API key"}
+            >
               {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
@@ -686,7 +938,7 @@ function AiApiKeysForm() {
           onClick={() => saveMutation.mutate()}
         >
           <KeyRound size={16} />
-          {selectedStatus ? 'Replace key' : 'Save encrypted key'}
+          {selectedStatus ? "Replace key" : "Save encrypted key"}
         </button>
         {selectedStatus ? (
           <button
@@ -700,7 +952,11 @@ function AiApiKeysForm() {
           </button>
         ) : null}
         <span className="text-sm text-slate-600">
-          {isLoading ? 'Checking stored keys...' : selectedStatus ? `Configured ${new Date(selectedStatus.updatedAt).toLocaleDateString()}` : 'No key stored for this provider.'}
+          {isLoading
+            ? "Checking stored keys..."
+            : selectedStatus
+              ? `Configured ${new Date(selectedStatus.updatedAt).toLocaleDateString()}`
+              : "No key stored for this provider."}
         </span>
       </div>
 
@@ -708,15 +964,22 @@ function AiApiKeysForm() {
         {keyProviderOptions.map((option) => {
           const item = configuredProviders.get(option.value);
           return (
-            <div key={option.value} className="rounded-md border border-civic-100 bg-civic-50/60 px-3 py-2 text-sm">
+            <div
+              key={option.value}
+              className="rounded-md border border-civic-100 bg-civic-50/60 px-3 py-2 text-sm"
+            >
               <span className="font-semibold text-ink">{option.label}</span>
-              <span className="ml-2 text-slate-600">{item ? 'Configured' : 'Not configured'}</span>
+              <span className="ml-2 text-slate-600">
+                {item ? "Configured" : "Not configured"}
+              </span>
             </div>
           );
         })}
       </div>
 
-      {status ? <p className="text-sm font-semibold text-civic-700">{status}</p> : null}
+      {status ? (
+        <p className="text-sm font-semibold text-civic-700">{status}</p>
+      ) : null}
     </div>
   );
 }
@@ -727,7 +990,11 @@ function LmStudioSetup() {
 
   const saveSettings = (nextSettings: typeof defaultLmStudioSettings) => {
     saveLmStudioSettings(nextSettings);
-    saveAiDefaults({ provider: 'lmstudio', model: nextSettings.model, baseUrl: nextSettings.baseUrl });
+    saveAiDefaults({
+      provider: "lmstudio",
+      model: nextSettings.model,
+      baseUrl: nextSettings.baseUrl,
+    });
     setSettings(nextSettings);
     setIsOpen(false);
   };
@@ -738,9 +1005,17 @@ function LmStudioSetup() {
         <p className="font-semibold text-ink">LM Studio</p>
         <p className="mt-1 break-all">Base URL: {settings.baseUrl}</p>
         <p className="break-all">Model: {settings.model}</p>
-        <p>{settings.models.length ? `${settings.models.length} models loaded from LM Studio` : 'No LM Studio models loaded yet'}</p>
+        <p>
+          {settings.models.length
+            ? `${settings.models.length} models loaded from LM Studio`
+            : "No LM Studio models loaded yet"}
+        </p>
       </div>
-      <button className="btn-primary mt-4 w-full sm:w-auto" type="button" onClick={() => setIsOpen(true)}>
+      <button
+        className="btn-primary mt-4 w-full sm:w-auto"
+        type="button"
+        onClick={() => setIsOpen(true)}
+      >
         <Laptop size={16} />
         Set up LM Studio
       </button>
@@ -769,13 +1044,30 @@ function LmStudioModal({
   const [models, setModels] = useState<string[]>(initialSettings.models);
   const [status, setStatus] = useState<string | null>(null);
   const modelMutation = useMutation({
-    mutationFn: () => listProviderModels('lmstudio', baseUrl.trim() || defaultLmStudioSettings.baseUrl),
+    mutationFn: () =>
+      listProviderModels(
+        "lmstudio",
+        baseUrl.trim() || defaultLmStudioSettings.baseUrl,
+      ),
     onSuccess: (nextModels) => {
       setModels(nextModels);
-      setModel((currentModel) => nextModels.includes(currentModel) ? currentModel : nextModels[0] ?? defaultLmStudioSettings.model);
-      setStatus(nextModels.length ? `Loaded ${nextModels.length} model${nextModels.length === 1 ? '' : 's'} from LM Studio.` : 'LM Studio responded, but no models were returned.');
+      setModel((currentModel) =>
+        nextModels.includes(currentModel)
+          ? currentModel
+          : (nextModels[0] ?? defaultLmStudioSettings.model),
+      );
+      setStatus(
+        nextModels.length
+          ? `Loaded ${nextModels.length} model${nextModels.length === 1 ? "" : "s"} from LM Studio.`
+          : "LM Studio responded, but no models were returned.",
+      );
     },
-    onError: (error) => setStatus(error instanceof Error ? error.message : 'Could not load LM Studio models.'),
+    onError: (error) =>
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Could not load LM Studio models.",
+      ),
   });
 
   return (
@@ -783,15 +1075,25 @@ function LmStudioModal({
       <section className="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-civic-700">Local model setup</p>
-            <h2 className="mt-1 text-2xl font-bold text-ink">Connect LM Studio</h2>
+            <p className="text-sm font-semibold text-civic-700">
+              Local model setup
+            </p>
+            <h2 className="mt-1 text-2xl font-bold text-ink">
+              Connect LM Studio
+            </h2>
           </div>
-          <button className="grid size-9 place-items-center rounded-md border border-civic-100 text-slate-600" type="button" onClick={onClose} aria-label="Close LM Studio setup">
+          <button
+            className="grid size-9 place-items-center rounded-md border border-civic-100 text-slate-600"
+            type="button"
+            onClick={onClose}
+            aria-label="Close LM Studio setup"
+          >
             <X size={18} />
           </button>
         </div>
         <div className="mt-5 rounded-md border border-civic-100 bg-civic-50 p-3 text-sm leading-6 text-slate-700">
-          Start the LM Studio local server, load a model, then use the OpenAI-compatible server URL and model name here.
+          Start the LM Studio local server, load a model, then use the
+          OpenAI-compatible server URL and model name here.
         </div>
         <label className="mt-5 block text-sm font-semibold text-slate-700">
           Base URL
@@ -806,32 +1108,57 @@ function LmStudioModal({
             placeholder="http://127.0.0.1:1234/v1"
           />
         </label>
-        <button className="btn-secondary mt-4 w-full sm:w-auto" type="button" disabled={modelMutation.isPending} onClick={() => modelMutation.mutate()}>
-          {modelMutation.isPending ? 'Loading models...' : 'Load models from LM Studio'}
+        <button
+          className="btn-secondary mt-4 w-full sm:w-auto"
+          type="button"
+          disabled={modelMutation.isPending}
+          onClick={() => modelMutation.mutate()}
+        >
+          {modelMutation.isPending
+            ? "Loading models..."
+            : "Load models from LM Studio"}
         </button>
         <label className="mt-4 block text-sm font-semibold text-slate-700">
           Model
           <select
             className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
-            value={models.includes(model) ? model : ''}
+            value={models.includes(model) ? model : ""}
             disabled={models.length === 0}
             onChange={(event) => setModel(event.target.value)}
           >
-            {models.length === 0 ? <option value="">Load models first</option> : null}
-            {models.map((modelOption) => <option key={modelOption} value={modelOption}>{modelOption}</option>)}
+            {models.length === 0 ? (
+              <option value="">Load models first</option>
+            ) : null}
+            {models.map((modelOption) => (
+              <option key={modelOption} value={modelOption}>
+                {modelOption}
+              </option>
+            ))}
           </select>
         </label>
-        {status ? <p className="mt-3 text-sm leading-6 text-slate-600">{status}</p> : null}
+        {status ? (
+          <p className="mt-3 text-sm leading-6 text-slate-600">{status}</p>
+        ) : null}
         <div className="mt-6 grid gap-3 sm:flex sm:justify-end">
-          <button className="btn-secondary w-full sm:w-auto" type="button" onClick={onClose}>Cancel</button>
+          <button
+            className="btn-secondary w-full sm:w-auto"
+            type="button"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
           <button
             className="btn-primary w-full sm:w-auto"
             type="button"
-            onClick={() => onSave({
-              baseUrl: baseUrl.trim() || defaultLmStudioSettings.baseUrl,
-              model: models.includes(model) ? model : models[0] ?? defaultLmStudioSettings.model,
-              models,
-            })}
+            onClick={() =>
+              onSave({
+                baseUrl: baseUrl.trim() || defaultLmStudioSettings.baseUrl,
+                model: models.includes(model)
+                  ? model
+                  : (models[0] ?? defaultLmStudioSettings.model),
+                models,
+              })
+            }
             disabled={models.length === 0}
           >
             Save LM Studio setup
@@ -845,7 +1172,7 @@ function LmStudioModal({
 function DashboardPage() {
   const auth = useAuth();
   const { data = [], isLoading } = useQuery({
-    queryKey: ['briefs', auth.user?.id],
+    queryKey: ["briefs", auth.user?.id],
     queryFn: () => listBriefs(auth.user?.id),
   });
 
@@ -853,11 +1180,16 @@ function DashboardPage() {
     <main className="page-shell">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-semibold text-civic-700">{auth.isAuthenticated ? 'Workspace' : 'Testing mode'}</p>
-          <h1 className="text-3xl font-bold text-ink sm:text-4xl">Civic briefs</h1>
+          <p className="text-sm font-semibold text-civic-700">
+            {auth.isAuthenticated ? "Workspace" : "Testing mode"}
+          </p>
+          <h1 className="text-3xl font-bold text-ink sm:text-4xl">
+            Civic briefs
+          </h1>
           {!auth.isAuthenticated ? (
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Dashboard access is temporarily open for testing. Sign in later to save generated briefs to your workspace.
+              Dashboard access is temporarily open for testing. Sign in later to
+              save generated briefs to your workspace.
             </p>
           ) : null}
         </div>
@@ -871,7 +1203,9 @@ function DashboardPage() {
         {categories.slice(0, 6).map((category) => (
           <div key={category} className="surface rounded-lg p-5">
             <p className="font-semibold text-civic-900">{category}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Track documents, questions, and actions.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Track documents, questions, and actions.
+            </p>
           </div>
         ))}
       </div>
@@ -885,13 +1219,22 @@ function DashboardPage() {
             <p className="p-5 text-slate-600">Loading briefs...</p>
           ) : (
             data.map((brief) => (
-              <Link key={brief.id} to="/briefs/$briefId" params={{ briefId: brief.id }} className="block p-4 transition hover:bg-civic-50 sm:p-5">
+              <Link
+                key={brief.id}
+                to="/briefs/$briefId"
+                params={{ briefId: brief.id }}
+                className="block p-4 transition hover:bg-civic-50 sm:p-5"
+              >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="font-semibold text-ink">{brief.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">{brief.category} · {brief.jurisdiction}</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {brief.category} · {brief.jurisdiction}
+                    </p>
                   </div>
-                  <span className="text-sm font-semibold text-civic-700">Open brief</span>
+                  <span className="text-sm font-semibold text-civic-700">
+                    Open brief
+                  </span>
                 </div>
               </Link>
             ))
@@ -907,23 +1250,34 @@ function NewBriefPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pdfStatus, setPdfStatus] = useState<string | null>(null);
-  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() =>
+    readAiDefaults(),
+  );
   const configured = useConfiguredAiProviders();
-  const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
+  const isAiReady =
+    isProviderConfigured(aiSelection.provider, configured) &&
+    Boolean(aiSelection.model);
   const mutation = useMutation({
-    mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id, resolveConfiguredAiSelection(aiSelection, configured)),
+    mutationFn: (input: NewBriefInput) =>
+      createBrief(
+        input,
+        auth.user?.id,
+        resolveConfiguredAiSelection(aiSelection, configured),
+      ),
     onSuccess: async (brief) => {
-      await queryClient.invalidateQueries({ queryKey: ['briefs', auth.user?.id] });
-      await navigate({ to: '/briefs/$briefId', params: { briefId: brief.id } });
+      await queryClient.invalidateQueries({
+        queryKey: ["briefs", auth.user?.id],
+      });
+      await navigate({ to: "/briefs/$briefId", params: { briefId: brief.id } });
     },
   });
 
   const form = useForm({
     defaultValues: {
-      title: '',
-      category: 'Budget' as BriefCategory,
-      jurisdiction: 'Kenya',
-      documentText: '',
+      title: "",
+      category: "Budget" as BriefCategory,
+      jurisdiction: "Kenya",
+      documentText: "",
     },
     onSubmit: ({ value }) => mutation.mutate(value as NewBriefInput),
   });
@@ -931,14 +1285,17 @@ function NewBriefPage() {
   return (
     <main className="page-shell max-w-4xl">
       <h1 className="text-3xl font-bold sm:text-4xl">Create a civic brief</h1>
-      <p className="mt-2 text-slate-600">Paste a policy, bill, public notice, or civic document.</p>
+      <p className="mt-2 text-slate-600">
+        Paste a policy, bill, public notice, or civic document.
+      </p>
       {auth.isAuthenticated ? (
         <div className="mt-5 rounded-lg border border-civic-100 bg-white p-4 text-sm leading-6 text-slate-700">
           Generated briefs are saved to your dashboard.
         </div>
       ) : (
         <div className="mt-5 rounded-lg border border-signal/30 bg-white p-4 text-sm leading-6 text-slate-700">
-          You can create a brief without signing in. Create an account when you want to keep briefs across sessions.
+          You can create a brief without signing in. Create an account when you
+          want to keep briefs across sessions.
         </div>
       )}
       <form
@@ -954,7 +1311,11 @@ function NewBriefPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Document title</span>
-                <input className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
               </label>
             )}
           </form.Field>
@@ -962,7 +1323,11 @@ function NewBriefPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Jurisdiction</span>
-                <input className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
               </label>
             )}
           </form.Field>
@@ -970,8 +1335,16 @@ function NewBriefPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Category</span>
-                <select className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value as BriefCategory)}>
-                  {categories.map((category) => <option key={category}>{category}</option>)}
+                <select
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) =>
+                    field.handleChange(event.target.value as BriefCategory)
+                  }
+                >
+                  {categories.map((category) => (
+                    <option key={category}>{category}</option>
+                  ))}
                 </select>
               </label>
             )}
@@ -990,25 +1363,39 @@ function NewBriefPage() {
                     const file = event.target.files?.[0];
                     if (!file) return;
 
-                    setPdfStatus('Extracting text from PDF...');
+                    setPdfStatus("Extracting text from PDF...");
                     try {
-                      const result = await extractPdfText(file, (progress) => setPdfStatus(progress.message));
+                      const result = await extractPdfText(file, (progress) =>
+                        setPdfStatus(progress.message),
+                      );
                       field.handleChange(result.text);
                       setPdfStatus(
-                        result.method === 'ocr'
+                        result.method === "ocr"
                           ? `OCR extracted text from ${file.name}. Review it before generating the brief.`
                           : `Extracted text from ${file.name}. Review it before generating the brief.`,
                       );
                     } catch (error) {
-                      setPdfStatus(error instanceof Error ? error.message : 'Could not extract text from this PDF.');
+                      setPdfStatus(
+                        error instanceof Error
+                          ? error.message
+                          : "Could not extract text from this PDF.",
+                      );
                     }
                   }}
                 />
               </label>
-              {pdfStatus ? <p className="mt-2 text-sm leading-6 text-slate-600">{pdfStatus}</p> : null}
+              {pdfStatus ? (
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {pdfStatus}
+                </p>
+              ) : null}
               <label className="mt-5 block">
                 <span className="text-sm font-semibold">Document text</span>
-                <textarea className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+                <textarea
+                  className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
               </label>
             </div>
           )}
@@ -1018,10 +1405,18 @@ function NewBriefPage() {
           <AiModelSelector selection={aiSelection} onChange={setAiSelection} />
         </div>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-600">{isAiReady ? 'MVP note: AI responses should still be checked against official sources.' : 'Configure the selected AI provider before generating a brief.'}</p>
-          <button className="btn-primary w-full sm:w-auto" disabled={mutation.isPending || !isAiReady} type="submit">
+          <p className="text-sm text-slate-600">
+            {isAiReady
+              ? "MVP note: AI responses should still be checked against official sources."
+              : "Configure the selected AI provider before generating a brief."}
+          </p>
+          <button
+            className="btn-primary w-full sm:w-auto"
+            disabled={mutation.isPending || !isAiReady}
+            type="submit"
+          >
             <Sparkles size={16} />
-            {mutation.isPending ? 'Generating...' : 'Generate brief'}
+            {mutation.isPending ? "Generating..." : "Generate brief"}
           </button>
         </div>
       </form>
@@ -1036,12 +1431,18 @@ function BriefPage() {
   const queryClient = useQueryClient();
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
-  const { data: brief, isLoading } = useQuery({ queryKey: ['brief', briefId], queryFn: () => getBrief(briefId) });
+  const { data: brief, isLoading } = useQuery({
+    queryKey: ["brief", briefId],
+    queryFn: () => getBrief(briefId),
+  });
   const shareMutation = useMutation({
     mutationFn: () => shareBrief(briefId),
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ['brief', briefId] });
-      const absoluteUrl = new URL(result.shareUrl, window.location.origin).toString();
+      await queryClient.invalidateQueries({ queryKey: ["brief", briefId] });
+      const absoluteUrl = new URL(
+        result.shareUrl,
+        window.location.origin,
+      ).toString();
       await navigator.clipboard?.writeText(absoluteUrl);
       setShareStatus(`Share link copied: ${absoluteUrl}`);
     },
@@ -1049,57 +1450,94 @@ function BriefPage() {
   const deleteMutation = useMutation({
     mutationFn: () => deleteBrief(briefId, auth.user?.id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['briefs', auth.user?.id] });
-      await queryClient.removeQueries({ queryKey: ['brief', briefId] });
-      await navigate({ to: '/dashboard' });
+      await queryClient.invalidateQueries({
+        queryKey: ["briefs", auth.user?.id],
+      });
+      await queryClient.removeQueries({ queryKey: ["brief", briefId] });
+      await navigate({ to: "/dashboard" });
     },
-    onError: (error) => setDeleteStatus(error instanceof Error ? error.message : 'Could not delete this brief.'),
+    onError: (error) =>
+      setDeleteStatus(
+        error instanceof Error ? error.message : "Could not delete this brief.",
+      ),
   });
 
-  if (isLoading || !brief) return <main className="page-shell">Loading brief...</main>;
+  if (isLoading || !brief)
+    return <main className="page-shell">Loading brief...</main>;
 
   return (
     <main className="page-shell">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-civic-700">{brief.category} · {brief.jurisdiction}</p>
+          <p className="text-sm font-semibold text-civic-700">
+            {brief.category} · {brief.jurisdiction}
+          </p>
           <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
         <div className="grid gap-2 sm:flex sm:flex-wrap">
-          <button className="btn-secondary w-full sm:w-auto" type="button" disabled={shareMutation.isPending} onClick={() => shareMutation.mutate()}>
+          <button
+            className="btn-secondary w-full sm:w-auto"
+            type="button"
+            disabled={shareMutation.isPending}
+            onClick={() => shareMutation.mutate()}
+          >
             {brief.isPublic ? <Copy size={16} /> : <Link2 size={16} />}
-            {brief.isPublic ? 'Copy share link' : 'Share brief'}
+            {brief.isPublic ? "Copy share link" : "Share brief"}
           </button>
-          <Link to="/briefs/$briefId/actions" params={{ briefId }} className="btn-primary w-full sm:w-auto">
+          <Link
+            to="/briefs/$briefId/actions"
+            params={{ briefId }}
+            className="btn-primary w-full sm:w-auto"
+          >
             <Send size={16} />
             Generate action
           </Link>
           <button
             className="btn-danger w-full sm:w-auto"
             type="button"
-            disabled={deleteMutation.isPending || brief.id === 'brief-sample-budget'}
+            disabled={
+              deleteMutation.isPending || brief.id === "brief-sample-budget"
+            }
             onClick={() => {
               setDeleteStatus(null);
-              if (window.confirm('Delete this brief and its chat/action history? This cannot be undone.')) {
+              if (
+                window.confirm(
+                  "Delete this brief and its chat/action history? This cannot be undone.",
+                )
+              ) {
                 deleteMutation.mutate();
               }
             }}
           >
             <Trash2 size={16} />
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete brief'}
+            {deleteMutation.isPending ? "Deleting..." : "Delete brief"}
           </button>
         </div>
       </div>
-      {shareStatus ? <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">{shareStatus}</p> : null}
-      {deleteStatus ? <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{deleteStatus}</p> : null}
+      {shareStatus ? (
+        <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">
+          {shareStatus}
+        </p>
+      ) : null}
+      {deleteStatus ? (
+        <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          {deleteStatus}
+        </p>
+      ) : null}
       <AiErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-4">
-          <BriefSection title="Plain-language summary" items={[brief.summary]} />
+          <BriefSection
+            title="Plain-language summary"
+            items={[brief.summary]}
+          />
           <BriefSection title="Key points" items={brief.keyPoints} />
           <BriefSection title="Who is affected" items={brief.affectedGroups} />
           <BriefSection title="Concerns and risks" items={brief.concerns} />
-          <BriefSection title="Questions citizens should ask" items={brief.citizenQuestions} />
+          <BriefSection
+            title="Questions citizens should ask"
+            items={brief.citizenQuestions}
+          />
           <BriefSection title="Suggested next steps" items={brief.nextSteps} />
         </section>
         <ChatPanel briefId={briefId} />
@@ -1110,16 +1548,23 @@ function BriefPage() {
 
 function SharedBriefPage() {
   const { briefId } = sharedBriefRoute.useParams();
-  const { data: brief, isLoading } = useQuery({ queryKey: ['shared-brief', briefId], queryFn: () => getSharedBrief(briefId) });
+  const { data: brief, isLoading } = useQuery({
+    queryKey: ["shared-brief", briefId],
+    queryFn: () => getSharedBrief(briefId),
+  });
 
-  if (isLoading) return <main className="page-shell">Loading shared brief...</main>;
-  if (!brief) return <main className="page-shell">Shared brief not found.</main>;
+  if (isLoading)
+    return <main className="page-shell">Loading shared brief...</main>;
+  if (!brief)
+    return <main className="page-shell">Shared brief not found.</main>;
 
   return (
     <main className="page-shell">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-civic-700">Shared brief · {brief.category} · {brief.jurisdiction}</p>
+          <p className="text-sm font-semibold text-civic-700">
+            Shared brief · {brief.category} · {brief.jurisdiction}
+          </p>
           <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
         <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
@@ -1132,7 +1577,10 @@ function SharedBriefPage() {
         <BriefSection title="Key points" items={brief.keyPoints} />
         <BriefSection title="Who is affected" items={brief.affectedGroups} />
         <BriefSection title="Concerns and risks" items={brief.concerns} />
-        <BriefSection title="Questions citizens should ask" items={brief.citizenQuestions} />
+        <BriefSection
+          title="Questions citizens should ask"
+          items={brief.citizenQuestions}
+        />
         <BriefSection title="Suggested next steps" items={brief.nextSteps} />
       </section>
     </main>
@@ -1144,7 +1592,9 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
     <article className="surface rounded-lg p-4 sm:p-5">
       <h2 className="font-bold text-civic-900">{title}</h2>
       <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-        {items.map((item) => <li key={item}>{item}</li>)}
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
     </article>
   );
@@ -1156,13 +1606,21 @@ function FormattedAiText({ content }: { content: string }) {
   return (
     <div className="ai-response">
       {blocks.map((block, index) => {
-        if (block.type === 'heading') return <h3 key={index}>{formatInlineMarkdown(block.content)}</h3>;
-        if (block.type === 'code') return <pre key={index}><code>{block.content}</code></pre>;
-        if (block.type === 'list') {
-          const ListTag = block.ordered ? 'ol' : 'ul';
+        if (block.type === "heading")
+          return <h3 key={index}>{formatInlineMarkdown(block.content)}</h3>;
+        if (block.type === "code")
+          return (
+            <pre key={index}>
+              <code>{block.content}</code>
+            </pre>
+          );
+        if (block.type === "list") {
+          const ListTag = block.ordered ? "ol" : "ul";
           return (
             <ListTag key={index}>
-              {block.items.map((item) => <li key={item}>{formatInlineMarkdown(item)}</li>)}
+              {block.items.map((item) => (
+                <li key={item}>{formatInlineMarkdown(item)}</li>
+              ))}
             </ListTag>
           );
         }
@@ -1174,17 +1632,23 @@ function FormattedAiText({ content }: { content: string }) {
 
 function formatInlineMarkdown(content: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
-  const pattern = /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_)/g;
+  const pattern =
+    /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_)/g;
   let cursor = 0;
   let match: RegExpExecArray | null;
 
   while ((match = pattern.exec(content))) {
     if (match.index > cursor) nodes.push(content.slice(cursor, match.index));
 
-    const [raw, , linkLabel, linkUrl, code, boldA, boldB, italicA, italicB] = match;
+    const [raw, , linkLabel, linkUrl, code, boldA, boldB, italicA, italicB] =
+      match;
     const key = `${match.index}-${raw}`;
     if (linkLabel && linkUrl) {
-      nodes.push(<a key={key} href={linkUrl} target="_blank" rel="noreferrer">{linkLabel}</a>);
+      nodes.push(
+        <a key={key} href={linkUrl} target="_blank" rel="noreferrer">
+          {linkLabel}
+        </a>,
+      );
     } else if (code) {
       nodes.push(<code key={key}>{code}</code>);
     } else if (boldA || boldB) {
@@ -1202,7 +1666,7 @@ function formatInlineMarkdown(content: string): React.ReactNode[] {
 
 function parseAiTextBlocks(content: string): AiTextBlock[] {
   const blocks: AiTextBlock[] = [];
-  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
   let paragraph: string[] = [];
   let listItems: string[] = [];
   let listOrdered = false;
@@ -1211,21 +1675,21 @@ function parseAiTextBlocks(content: string): AiTextBlock[] {
 
   const flushParagraph = () => {
     if (!paragraph.length) return;
-    blocks.push({ type: 'paragraph', content: paragraph.join(' ') });
+    blocks.push({ type: "paragraph", content: paragraph.join(" ") });
     paragraph = [];
   };
   const flushList = () => {
     if (!listItems.length) return;
-    blocks.push({ type: 'list', ordered: listOrdered, items: listItems });
+    blocks.push({ type: "list", ordered: listOrdered, items: listItems });
     listItems = [];
   };
 
   lines.forEach((line) => {
     const trimmed = line.trim();
 
-    if (trimmed.startsWith('```')) {
+    if (trimmed.startsWith("```")) {
       if (inCode) {
-        blocks.push({ type: 'code', content: codeLines.join('\n') });
+        blocks.push({ type: "code", content: codeLines.join("\n") });
         codeLines = [];
         inCode = false;
       } else {
@@ -1254,40 +1718,55 @@ function parseAiTextBlocks(content: string): AiTextBlock[] {
       const ordered = Boolean(orderedMatch);
       if (listItems.length && listOrdered !== ordered) flushList();
       listOrdered = ordered;
-      listItems.push((bulletMatch?.[1] ?? orderedMatch?.[1] ?? '').trim());
+      listItems.push((bulletMatch?.[1] ?? orderedMatch?.[1] ?? "").trim());
       return;
     }
 
     if (/^#{1,3}\s+/.test(trimmed)) {
       flushParagraph();
       flushList();
-      blocks.push({ type: 'heading', content: trimmed.replace(/^#{1,3}\s+/, '') });
+      blocks.push({
+        type: "heading",
+        content: trimmed.replace(/^#{1,3}\s+/, ""),
+      });
       return;
     }
 
     paragraph.push(trimmed);
   });
 
-  if (inCode) blocks.push({ type: 'code', content: codeLines.join('\n') });
+  if (inCode) blocks.push({ type: "code", content: codeLines.join("\n") });
   flushParagraph();
   flushList();
 
-  return blocks.length ? blocks : [{ type: 'paragraph', content }];
+  return blocks.length ? blocks : [{ type: "paragraph", content }];
 }
 
 type AiTextBlock =
-  | { type: 'paragraph'; content: string }
-  | { type: 'heading'; content: string }
-  | { type: 'code'; content: string }
-  | { type: 'list'; ordered: boolean; items: string[] };
+  | { type: "paragraph"; content: string }
+  | { type: "heading"; content: string }
+  | { type: "code"; content: string }
+  | { type: "list"; ordered: boolean; items: string[] };
 
-function AiErrorNotice({ message, className = '' }: { message?: string; className?: string }) {
+function AiErrorNotice({
+  message,
+  className = "",
+}: {
+  message?: string;
+  className?: string;
+}) {
   if (!message) return null;
-  const isConfiguredFailure = message.startsWith('Configured ');
+  const isConfiguredFailure = message.startsWith("Configured ");
 
   return (
-    <div className={`rounded-md border ${isConfiguredFailure ? 'border-red-200 bg-red-50' : 'border-signal/30 bg-white'} p-3 text-sm leading-6 text-slate-700 ${className}`}>
-      <p className="font-semibold text-civic-900">{isConfiguredFailure ? 'AI provider error detected' : 'AI provider notice'}</p>
+    <div
+      className={`rounded-md border ${isConfiguredFailure ? "border-red-200 bg-red-50" : "border-signal/30 bg-white"} p-3 text-sm leading-6 text-slate-700 ${className}`}
+    >
+      <p className="font-semibold text-civic-900">
+        {isConfiguredFailure
+          ? "AI provider error detected"
+          : "AI provider notice"}
+      </p>
       <p className="mt-1">{message}</p>
     </div>
   );
@@ -1297,43 +1776,61 @@ function useConfiguredAiProviders() {
   const auth = useAuth();
   const [settingsVersion, setSettingsVersion] = useState(0);
   const { data = [] } = useQuery({
-    queryKey: ['ai-api-key-statuses'],
+    queryKey: ["ai-api-key-statuses"],
     queryFn: listAiApiKeyStatuses,
     enabled: auth.isAuthenticated,
   });
   const lmStudioSettings = readLmStudioSettings();
-  const keyedProviders = new Set(data.map((item: AiApiKeyStatus) => item.provider));
+  const keyedProviders = new Set(
+    data.map((item: AiApiKeyStatus) => item.provider),
+  );
 
   useEffect(() => {
     const refresh = () => setSettingsVersion((version) => version + 1);
-    window.addEventListener('mwananchi-lm-studio-settings', refresh);
-    return () => window.removeEventListener('mwananchi-lm-studio-settings', refresh);
+    window.addEventListener("mwananchi-lm-studio-settings", refresh);
+    return () =>
+      window.removeEventListener("mwananchi-lm-studio-settings", refresh);
   }, []);
 
   return {
     keyedProviders,
     lmStudioSettings,
     settingsVersion,
-    isLmStudioConfigured: Boolean(lmStudioSettings.baseUrl && lmStudioSettings.model && lmStudioSettings.models.length),
+    isLmStudioConfigured: Boolean(
+      lmStudioSettings.baseUrl &&
+      lmStudioSettings.model &&
+      lmStudioSettings.models.length,
+    ),
   };
 }
 
-function isProviderConfigured(provider: AiProviderId, configured: ReturnType<typeof useConfiguredAiProviders>) {
-  if (provider === 'lmstudio') return configured.isLmStudioConfigured;
+function isProviderConfigured(
+  provider: AiProviderId,
+  configured: ReturnType<typeof useConfiguredAiProviders>,
+) {
+  if (provider === "lmstudio") return configured.isLmStudioConfigured;
   return configured.keyedProviders.has(provider);
 }
 
-function getConfiguredProviderModels(provider: AiProviderId, configured: ReturnType<typeof useConfiguredAiProviders>) {
+function getConfiguredProviderModels(
+  provider: AiProviderId,
+  configured: ReturnType<typeof useConfiguredAiProviders>,
+) {
   if (!isProviderConfigured(provider, configured)) return [];
-  if (provider === 'lmstudio') return configured.lmStudioSettings.models;
+  if (provider === "lmstudio") return configured.lmStudioSettings.models;
   return getProviderModels(provider);
 }
 
-function resolveConfiguredAiSelection(selection: AiModelSelection, configured: ReturnType<typeof useConfiguredAiProviders>) {
+function resolveConfiguredAiSelection(
+  selection: AiModelSelection,
+  configured: ReturnType<typeof useConfiguredAiProviders>,
+) {
   const models = getConfiguredProviderModels(selection.provider, configured);
   const resolvedSelection = {
     ...selection,
-    model: models.includes(selection.model) ? selection.model : models[0] ?? selection.model,
+    model: models.includes(selection.model)
+      ? selection.model
+      : (models[0] ?? selection.model),
   };
 
   return withLocalProviderSettings(resolvedSelection);
@@ -1353,13 +1850,36 @@ function AiModelSelector({
     ...provider,
     isConfigured: isProviderConfigured(provider.value, configured),
   }));
-  const isSelectedProviderConfigured = isProviderConfigured(selection.provider, configured);
-  const { data: providerModels = [], isLoading: isLoadingModels, isError: modelLoadFailed } = useQuery<string[]>({
-    queryKey: ['ai-provider-models', selection.provider, selection.provider === 'lmstudio' ? configured.lmStudioSettings.baseUrl : 'hosted', configured.settingsVersion],
-    queryFn: () => listProviderModels(selection.provider, selection.provider === 'lmstudio' ? configured.lmStudioSettings.baseUrl : undefined),
+  const isSelectedProviderConfigured = isProviderConfigured(
+    selection.provider,
+    configured,
+  );
+  const {
+    data: providerModels = [],
+    isLoading: isLoadingModels,
+    isError: modelLoadFailed,
+  } = useQuery<string[]>({
+    queryKey: [
+      "ai-provider-models",
+      selection.provider,
+      selection.provider === "lmstudio"
+        ? configured.lmStudioSettings.baseUrl
+        : "hosted",
+      configured.settingsVersion,
+    ],
+    queryFn: () =>
+      listProviderModels(
+        selection.provider,
+        selection.provider === "lmstudio"
+          ? configured.lmStudioSettings.baseUrl
+          : undefined,
+      ),
     enabled: isSelectedProviderConfigured,
   });
-  const models = useMemo(() => isSelectedProviderConfigured ? providerModels : [], [isSelectedProviderConfigured, providerModels]);
+  const models = useMemo(
+    () => (isSelectedProviderConfigured ? providerModels : []),
+    [isSelectedProviderConfigured, providerModels],
+  );
 
   useEffect(() => {
     if (!models.length) return;
@@ -1368,20 +1888,29 @@ function AiModelSelector({
   }, [models, onChange, selection]);
 
   return (
-    <div className={compact ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}>
+    <div
+      className={
+        compact ? "grid gap-2 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"
+      }
+    >
       <label className="block">
         <span className="text-sm font-semibold">Provider</span>
         <select
           className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
           value={selection.provider}
           onChange={(event) => {
-            const provider = event.target.value as AiModelSelection['provider'];
-            onChange({ provider, model: '' });
+            const provider = event.target.value as AiModelSelection["provider"];
+            onChange({ provider, model: "" });
           }}
         >
           {providerOptions.map((provider) => (
-            <option key={provider.value} value={provider.value} disabled={!provider.isConfigured}>
-              {provider.label}{provider.isConfigured ? '' : ' (not configured)'}
+            <option
+              key={provider.value}
+              value={provider.value}
+              disabled={!provider.isConfigured}
+            >
+              {provider.label}
+              {provider.isConfigured ? "" : " (not configured)"}
             </option>
           ))}
         </select>
@@ -1390,18 +1919,45 @@ function AiModelSelector({
         <span className="text-sm font-semibold">Model</span>
         <select
           className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
-          value={models.includes(selection.model) ? selection.model : models[0] ?? ''}
+          value={
+            models.includes(selection.model)
+              ? selection.model
+              : (models[0] ?? "")
+          }
           disabled={!isSelectedProviderConfigured || models.length === 0}
-          onChange={(event) => onChange({ ...selection, model: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...selection, model: event.target.value })
+          }
         >
-          {!isSelectedProviderConfigured ? <option value="">Configure provider first</option> : null}
-          {isSelectedProviderConfigured && isLoadingModels ? <option value="">Loading models...</option> : null}
-          {isSelectedProviderConfigured && modelLoadFailed ? <option value="">Could not load models</option> : null}
-          {isSelectedProviderConfigured && models.length === 0 ? <option value="">No models available</option> : null}
-          {models.map((model) => <option key={model} value={model}>{model}</option>)}
+          {!isSelectedProviderConfigured ? (
+            <option value="">Configure provider first</option>
+          ) : null}
+          {isSelectedProviderConfigured && isLoadingModels ? (
+            <option value="">Loading models...</option>
+          ) : null}
+          {isSelectedProviderConfigured && modelLoadFailed ? (
+            <option value="">Could not load models</option>
+          ) : null}
+          {isSelectedProviderConfigured && models.length === 0 ? (
+            <option value="">No models available</option>
+          ) : null}
+          {models.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
         </select>
-        {!isSelectedProviderConfigured ? <p className="mt-2 text-xs leading-5 text-slate-600">This provider is disabled until it is configured in Account.</p> : null}
-        {modelLoadFailed ? <p className="mt-2 text-xs leading-5 text-slate-600">Could not load models from this provider. Check the provider setup and try again.</p> : null}
+        {!isSelectedProviderConfigured ? (
+          <p className="mt-2 text-xs leading-5 text-slate-600">
+            This provider is disabled until it is configured in Account.
+          </p>
+        ) : null}
+        {modelLoadFailed ? (
+          <p className="mt-2 text-xs leading-5 text-slate-600">
+            Could not load models from this provider. Check the provider setup
+            and try again.
+          </p>
+        ) : null}
       </label>
     </div>
   );
@@ -1409,19 +1965,32 @@ function AiModelSelector({
 
 function ChatPanel({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
-  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() =>
+    readAiDefaults(),
+  );
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const configured = useConfiguredAiProviders();
-  const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
-  const { data = [] } = useQuery({ queryKey: ['brief-chat', briefId], queryFn: () => getChatMessages(briefId) });
+  const isAiReady =
+    isProviderConfigured(aiSelection.provider, configured) &&
+    Boolean(aiSelection.model);
+  const { data = [] } = useQuery({
+    queryKey: ["brief-chat", briefId],
+    queryFn: () => getChatMessages(briefId),
+  });
   const mutation = useMutation({
-    mutationFn: (content: string) => sendChatMessage(briefId, content, resolveConfiguredAiSelection(aiSelection, configured)),
+    mutationFn: (content: string) =>
+      sendChatMessage(
+        briefId,
+        content,
+        resolveConfiguredAiSelection(aiSelection, configured),
+      ),
     onMutate: (content) => setPendingMessage(content),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brief-chat', briefId] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["brief-chat", briefId] }),
     onSettled: () => setPendingMessage(null),
   });
   const form = useForm({
-    defaultValues: { message: '' },
+    defaultValues: { message: "" },
     onSubmit: ({ value, formApi }) => {
       if (!value.message.trim()) return;
       mutation.mutate(value.message);
@@ -1437,16 +2006,37 @@ function ChatPanel({ briefId }: { briefId: string }) {
           Ask about this brief
         </h2>
         <div className="mt-3">
-          <AiModelSelector selection={aiSelection} onChange={setAiSelection} compact />
+          <AiModelSelector
+            selection={aiSelection}
+            onChange={setAiSelection}
+            compact
+          />
         </div>
       </div>
       <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-4">
         {data.map((message) => (
-          <div key={message.id} className={message.role === 'user' ? 'ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8' : 'mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8'}>
-            {message.role === 'assistant' ? <FormattedAiText content={message.content} /> : <p>{message.content}</p>}
+          <div
+            key={message.id}
+            className={
+              message.role === "user"
+                ? "ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8"
+                : "mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8"
+            }
+          >
+            {message.role === "assistant" ? (
+              <FormattedAiText content={message.content} />
+            ) : (
+              <p>{message.content}</p>
+            )}
             {message.aiError ? (
-              <div className={`mt-3 rounded-md border p-2 text-xs leading-5 text-slate-700 ${message.aiError.startsWith('Configured ') ? 'border-red-200 bg-red-50' : 'border-signal/30 bg-white/80'}`}>
-                <span className="font-semibold">{message.aiError.startsWith('Configured ') ? 'AI provider error detected: ' : 'AI provider notice: '}</span>
+              <div
+                className={`mt-3 rounded-md border p-2 text-xs leading-5 text-slate-700 ${message.aiError.startsWith("Configured ") ? "border-red-200 bg-red-50" : "border-signal/30 bg-white/80"}`}
+              >
+                <span className="font-semibold">
+                  {message.aiError.startsWith("Configured ")
+                    ? "AI provider error detected: "
+                    : "AI provider notice: "}
+                </span>
                 {message.aiError}
               </div>
             ) : null}
@@ -1458,7 +2048,10 @@ function ChatPanel({ briefId }: { briefId: string }) {
               <p>{pendingMessage}</p>
             </div>
             <div className="mr-4 inline-flex rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8">
-              <span className="typing-dots" aria-label="Assistant is processing">
+              <span
+                className="typing-dots"
+                aria-label="Assistant is processing"
+              >
                 <span />
                 <span />
                 <span />
@@ -1476,11 +2069,24 @@ function ChatPanel({ briefId }: { briefId: string }) {
       >
         <form.Field name="message">
           {(field) => (
-            <textarea className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6" placeholder="Ask who is affected, what changed, or what action to take..." value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+            <textarea
+              className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6"
+              placeholder="Ask who is affected, what changed, or what action to take..."
+              value={field.state.value}
+              onChange={(event) => field.handleChange(event.target.value)}
+            />
           )}
         </form.Field>
-        {!isAiReady ? <p className="mt-2 text-sm leading-6 text-slate-600">Configure the selected provider before sending a question.</p> : null}
-        <button className="btn-primary mt-3 w-full" disabled={mutation.isPending || !isAiReady} type="submit">
+        {!isAiReady ? (
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Configure the selected provider before sending a question.
+          </p>
+        ) : null}
+        <button
+          className="btn-primary mt-3 w-full"
+          disabled={mutation.isPending || !isAiReady}
+          type="submit"
+        >
           Send question
         </button>
       </form>
@@ -1490,26 +2096,49 @@ function ChatPanel({ briefId }: { briefId: string }) {
 
 function ActionsPage() {
   const { briefId } = actionsRoute.useParams();
-  const { data: brief } = useQuery({ queryKey: ['brief', briefId], queryFn: () => getBrief(briefId) });
-  const mutation = useMutation({ mutationFn: (input: CivicActionInput) => generateAction(briefId, input) });
-  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const { data: brief } = useQuery({
+    queryKey: ["brief", briefId],
+    queryFn: () => getBrief(briefId),
+  });
+  const mutation = useMutation({
+    mutationFn: (input: CivicActionInput) => generateAction(briefId, input),
+  });
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() =>
+    readAiDefaults(),
+  );
   const configured = useConfiguredAiProviders();
-  const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
+  const isAiReady =
+    isProviderConfigured(aiSelection.provider, configured) &&
+    Boolean(aiSelection.model);
   const form = useForm({
     defaultValues: {
-      actionType: 'email' as CivicActionType,
-      tone: 'Respectful' as CivicActionInput['tone'],
-      audience: 'County official',
-      extraContext: '',
+      actionType: "email" as CivicActionType,
+      tone: "Respectful" as CivicActionInput["tone"],
+      audience: "County official",
+      extraContext: "",
     },
-    onSubmit: ({ value }) => mutation.mutate({ ...value, ai: resolveConfiguredAiSelection(aiSelection, configured) }),
+    onSubmit: ({ value }) =>
+      mutation.mutate({
+        ...value,
+        ai: resolveConfiguredAiSelection(aiSelection, configured),
+      }),
   });
 
   return (
     <main className="page-shell max-w-5xl">
-      <Link to="/briefs/$briefId" params={{ briefId }} className="text-sm font-semibold text-civic-700">Back to brief</Link>
-      <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Generate civic action</h1>
-      <p className="mt-2 text-slate-600">{brief?.title ?? 'Brief'} · choose a format and audience.</p>
+      <Link
+        to="/briefs/$briefId"
+        params={{ briefId }}
+        className="text-sm font-semibold text-civic-700"
+      >
+        Back to brief
+      </Link>
+      <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
+        Generate civic action
+      </h1>
+      <p className="mt-2 text-slate-600">
+        {brief?.title ?? "Brief"} · choose a format and audience.
+      </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <form
@@ -1524,8 +2153,18 @@ function ActionsPage() {
             {(field) => (
               <label className="block">
                 <span className="text-sm font-semibold">Action type</span>
-                <select className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value as CivicActionType)}>
-                  {actionTypes.map((action) => <option key={action.value} value={action.value}>{action.label}</option>)}
+                <select
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) =>
+                    field.handleChange(event.target.value as CivicActionType)
+                  }
+                >
+                  {actionTypes.map((action) => (
+                    <option key={action.value} value={action.value}>
+                      {action.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             )}
@@ -1534,8 +2173,18 @@ function ActionsPage() {
             {(field) => (
               <label className="mt-4 block">
                 <span className="text-sm font-semibold">Tone</span>
-                <select className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value as CivicActionInput['tone'])}>
-                  {actionTones.map((tone) => <option key={tone}>{tone}</option>)}
+                <select
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) =>
+                    field.handleChange(
+                      event.target.value as CivicActionInput["tone"],
+                    )
+                  }
+                >
+                  {actionTones.map((tone) => (
+                    <option key={tone}>{tone}</option>
+                  ))}
                 </select>
               </label>
             )}
@@ -1544,20 +2193,36 @@ function ActionsPage() {
             {(field) => (
               <label className="mt-4 block">
                 <span className="text-sm font-semibold">Audience</span>
-                <input className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2" value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
+                <input
+                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
               </label>
             )}
           </form.Field>
-          {!isAiReady ? <p className="mt-4 text-sm leading-6 text-slate-600">Configure the selected provider before drafting an action.</p> : null}
-          <button className="btn-primary mt-5 w-full" disabled={mutation.isPending || !isAiReady} type="submit">
-            {mutation.isPending ? 'Drafting...' : 'Draft action'}
+          {!isAiReady ? (
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              Configure the selected provider before drafting an action.
+            </p>
+          ) : null}
+          <button
+            className="btn-primary mt-5 w-full"
+            disabled={mutation.isPending || !isAiReady}
+            type="submit"
+          >
+            {mutation.isPending ? "Drafting..." : "Draft action"}
           </button>
         </form>
         <section className="surface rounded-lg p-4 sm:p-5">
           <h2 className="font-bold">Generated draft</h2>
           <AiErrorNotice message={mutation.data?.aiError} className="mt-4" />
           <div className="mt-4 rounded-md bg-civic-50 p-4 text-sm leading-7 text-slate-800">
-            {mutation.data?.content ? <FormattedAiText content={mutation.data.content} /> : 'Your civic action draft will appear here.'}
+            {mutation.data?.content ? (
+              <FormattedAiText content={mutation.data.content} />
+            ) : (
+              "Your civic action draft will appear here."
+            )}
           </div>
         </section>
       </div>
