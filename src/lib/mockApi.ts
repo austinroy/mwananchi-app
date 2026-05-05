@@ -3,6 +3,9 @@ import type {
   CivicAction,
   CivicActionInput,
   CivicBrief,
+  AiApiKeyStatus,
+  AiModelSelection,
+  AiProviderId,
   NewBriefInput,
   ShareBriefResult,
 } from './types';
@@ -93,10 +96,10 @@ export async function getSharedBrief(briefId: string) {
   return brief;
 }
 
-export async function createBrief(input: NewBriefInput, userId?: string) {
+export async function createBrief(input: NewBriefInput, userId?: string, ai?: AiModelSelection) {
   const apiBrief = await apiRequest<CivicBrief>('/api/briefs', {
     method: 'POST',
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ input, ai }),
   });
   if (apiBrief) return apiBrief;
 
@@ -192,10 +195,10 @@ export async function getChatMessages(briefId: string) {
   return messages.get(briefId) ?? [];
 }
 
-export async function sendChatMessage(briefId: string, content: string) {
+export async function sendChatMessage(briefId: string, content: string, ai?: AiModelSelection) {
   const apiMessage = await apiRequest<ChatMessage>(`/api/briefs/${briefId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, ai }),
   });
   if (apiMessage) return apiMessage;
 
@@ -261,6 +264,29 @@ export async function shareBrief(briefId: string) {
     brief: sharedBrief,
     shareUrl: `${window.location.origin}/share/${briefId}`,
   };
+}
+
+export async function listAiApiKeyStatuses() {
+  const apiStatuses = await apiRequest<AiApiKeyStatus[]>('/api/users/me/ai-keys');
+  if (apiStatuses) return apiStatuses;
+  return [];
+}
+
+export async function saveAiApiKey(provider: AiProviderId, apiKey: string) {
+  const apiStatus = await apiRequest<AiApiKeyStatus>('/api/users/me/ai-keys', {
+    method: 'PUT',
+    body: JSON.stringify({ provider, apiKey }),
+  });
+  if (!apiStatus) throw new Error('Could not save API key. Make sure the API server is running and API_KEY_ENCRYPTION_SECRET is configured.');
+  return apiStatus;
+}
+
+export async function deleteAiApiKey(provider: AiProviderId) {
+  const result = await apiRequest<{ ok: boolean }>(`/api/users/me/ai-keys/${provider}`, {
+    method: 'DELETE',
+  });
+  if (!result) throw new Error('Could not remove API key.');
+  return result;
 }
 
 async function apiRequest<T>(path: string, init?: RequestInit) {

@@ -19,7 +19,21 @@ export type CivicBrief = {
   concerns: string[];
   citizenQuestions: string[];
   nextSteps: string[];
+  aiError?: string;
   createdAt: string;
+};
+
+export type AiProviderId = 'openai' | 'openrouter' | 'anthropic' | 'custom';
+
+export type AiModelSelection = {
+  provider: AiProviderId;
+  model: string;
+};
+
+export type AiApiKeyStatus = {
+  provider: AiProviderId;
+  isConfigured: boolean;
+  updatedAt: string;
 };
 
 export type ShareBriefResult = {
@@ -39,6 +53,7 @@ export type ChatMessage = {
   briefId: string;
   role: 'user' | 'assistant';
   content: string;
+  aiError?: string;
   createdAt: string;
 };
 
@@ -54,11 +69,13 @@ export type CivicActionInput = {
   tone: 'Respectful' | 'Firm' | 'Youth-friendly' | 'Professional';
   audience: string;
   extraContext?: string;
+  ai?: AiModelSelection;
 };
 
 export type CivicAction = CivicActionInput & {
   id: string;
   briefId: string;
   content: string;
+  aiError?: string;
   createdAt: string;
 };

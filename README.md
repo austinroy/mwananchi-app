@@ -26,6 +26,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Logged-in users keep generated briefs in browser local storage
 - SQLite-backed API server for users, briefs, chat messages, and civic actions
 - PDF upload with lightweight text extraction into the brief form
+- Real AI provider integration for brief analysis, chat, and civic action drafts
 
 ## Auth Status
 
@@ -88,6 +89,37 @@ If the API server is not running, the app falls back to the existing browser moc
 ## Shareable Briefs
 
 Brief owners can make a brief public from the brief detail page. Shared briefs are available at `/share/:briefId` and show the read-only civic brief without chat history or generated actions.
+
+## AI Providers
+
+The API server can call real AI providers for brief analysis, document-grounded chat, and civic action generation. If no provider key is configured, the app falls back to the existing prototype responses.
+
+Supported provider paths:
+
+- OpenAI through the Responses API
+- OpenRouter through an OpenAI-compatible chat completions endpoint
+- Anthropic through the Messages API
+- Custom OpenAI-compatible providers through `CUSTOM_AI_BASE_URL`
+
+Add the provider keys you need:
+
+```bash
+OPENAI_API_KEY=
+OPENROUTER_API_KEY=
+ANTHROPIC_API_KEY=
+CUSTOM_AI_API_KEY=
+CUSTOM_AI_BASE_URL=
+```
+
+Users can set a default provider and model on the account page. Chat and action generation also include per-request model controls so users can switch providers for a single task.
+
+Logged-in users can also store their own provider API keys from the account page. User-owned keys are encrypted in SQLite with AES-256-GCM and are never returned to the browser after saving. Set a stable encryption secret before enabling this in any deployed environment:
+
+```bash
+API_KEY_ENCRYPTION_SECRET=use-a-long-random-secret-at-least-32-characters
+```
+
+Keep this value stable. Changing it makes previously stored user API keys unreadable.
 
 ## PDF Upload
 
