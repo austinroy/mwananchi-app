@@ -23,7 +23,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Chat panel with mock responses
 - Civic action generator
 - Clerk-ready auth with local development fallback
-- Logged-in users keep generated briefs in browser local storage
+- Logged-in users keep generated briefs stored securely in the SQLite database
 - SQLite-backed API server for users, briefs, chat messages, and civic actions
 - PDF upload with lightweight text extraction into the brief form
 - Real AI provider integration for brief analysis, chat, and civic action drafts
@@ -47,7 +47,7 @@ Protected routes:
 
 Guests can create and act on a brief without signing in. Dashboard access is temporarily open for testing. Login is currently used for workspace/history-style persistence.
 
-Generated briefs are stored in SQLite when the API server is running, with browser mock persistence as a fallback during prototype work.
+Generated briefs are strictly stored in SQLite using the local API server.
 
 To enable Clerk, add this environment variable:
 
@@ -84,7 +84,7 @@ data/mwananchi.sqlite
 
 The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`.
 
-If the API server is not running, the app falls back to the existing browser mock/localStorage behavior so frontend work can continue.
+If the API server is not running, API actions will fail as the browser mock/localStorage fallbacks have been removed.
 
 ## Shareable Briefs
 
