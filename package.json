@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "api": "node --experimental-sqlite server/index.mjs",
+    "api": "node --experimental-sqlite --watch server/index.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
