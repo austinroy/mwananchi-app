@@ -29,6 +29,7 @@ import {
   LogIn,
   LogOut,
   MessageSquare,
+  MoreVertical,
   Send,
   Sparkles,
   Trash2,
@@ -1087,9 +1088,7 @@ const briefColumns = [
       const style =
         val === "private"
           ? "bg-slate-100 text-slate-700"
-          : val === "unlisted"
-            ? "bg-blue-100 text-blue-800"
-            : "bg-civic-100 text-civic-800";
+          : "bg-civic-100 text-civic-800";
       return (
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${style}`}>
           {val.charAt(0).toUpperCase() + val.slice(1)}
@@ -1100,6 +1099,42 @@ const briefColumns = [
   columnHelper.accessor("createdAt", {
     header: "Created Date",
     cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+  }),
+  columnHelper.display({
+    id: "actions",
+    header: "",
+    cell: (info) => {
+      const brief = info.row.original;
+      return (
+        <div className="flex justify-end">
+          <details className="dropdown relative">
+            <summary className="btn-ghost p-1 cursor-pointer list-none">
+              <MoreVertical size={18} />
+            </summary>
+            <div className="absolute right-0 z-50 mt-1 min-w-[120px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+              <button
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50"
+                disabled={brief.visibility === "private"}
+                onClick={async (e) => {
+                  const target = e.currentTarget.closest("details");
+                  if (target) target.removeAttribute("open");
+                  
+                  const absoluteUrl = new URL(
+                    `/share/${brief.id}`,
+                    window.location.origin,
+                  ).toString();
+                  await navigator.clipboard?.writeText(absoluteUrl);
+                  alert(`Link copied to clipboard!`);
+                }}
+              >
+                <Link2 size={14} />
+                Copy link
+              </button>
+            </div>
+          </details>
+        </div>
+      );
+    },
   }),
 ];
 
@@ -1480,16 +1515,6 @@ function BriefPage() {
               title="Only you can see this"
             >
               <EyeOff size={14} /> Private
-            </button>
-            <button
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded transition ${
-                brief.visibility === "unlisted" ? "bg-white shadow-sm text-blue-700" : "text-slate-500 hover:text-slate-900"
-              }`}
-              disabled={visibilityMutation.isPending}
-              onClick={() => visibilityMutation.mutate("unlisted")}
-              title="Anyone with the link can see this"
-            >
-              <Link2 size={14} /> Unlisted
             </button>
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded transition ${
