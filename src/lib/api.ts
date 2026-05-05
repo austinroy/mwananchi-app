@@ -1,5 +1,6 @@
 import type {
   AiApiKeyStatus,
+  AiDefaultsRecord,
   AiModelSelection,
   AiProviderId,
   ChatMessage,
@@ -54,6 +55,12 @@ export async function sendApiChatMessage(
   });
 }
 
+export async function clearApiChatMessages(briefId: string) {
+  return apiRequestStrict<{ ok: boolean }>(`/api/briefs/${briefId}/messages`, {
+    method: "DELETE",
+  });
+}
+
 export async function generateApiAction(
   briefId: string,
   input: CivicActionInput,
@@ -71,7 +78,7 @@ export async function shareApiBrief(briefId: string) {
 }
 
 export async function deleteApiBrief(briefId: string) {
-  return apiRequest<{ ok: boolean }>(`/api/briefs/${briefId}`, {
+  return apiRequestStrict<{ ok: boolean }>(`/api/briefs/${briefId}`, {
     method: "DELETE",
   });
 }
@@ -104,6 +111,19 @@ export async function deleteAiApiKey(provider: AiProviderId) {
     },
   );
   if (!result) throw new Error("Could not remove API key.");
+  return result;
+}
+
+export async function getApiAiDefaults() {
+  return apiRequest<AiDefaultsRecord>("/api/users/me/ai-defaults");
+}
+
+export async function saveApiAiDefaults(selection: AiModelSelection) {
+  const result = await apiRequest<AiDefaultsRecord>("/api/users/me/ai-defaults", {
+    method: "PUT",
+    body: JSON.stringify(selection),
+  });
+  if (!result) throw new Error("Could not save AI defaults.");
   return result;
 }
 
@@ -183,6 +203,36 @@ async function apiRequest<T>(path: string, init?: RequestInit) {
     return (await response.json()) as T;
   } catch {
     return null;
+  }
+}
+
+async function apiRequestStrict<T>(path: string, init?: RequestInit) {
+  const token = await apiAuthContext.getToken?.();
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...init,
+    headers: {
+      "content-type": "application/json",
+      ...(apiAuthContext.userId
+        ? { "x-mwananchi-user-id": apiAuthContext.userId }
+        : {}),
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await readApiError(response);
+    throw new Error(message || `API request failed with ${response.status}`);
+  }
+  return (await response.json()) as T;
+}
+
+async function readApiError(response: Response) {
+  try {
+    const payload = await response.json();
+    return typeof payload.error === "string" ? payload.error : "";
+  } catch {
+    return "";
   }
 }
 

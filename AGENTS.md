@@ -33,6 +33,9 @@ Important files:
 - `src/main.tsx`: app bootstrap
 - `src/lib/auth.tsx`: Clerk-ready auth provider with local development fallback
 - `src/lib/aiSettings.ts`: browser-stored default AI provider/model settings
+- `src/lib/civicOptions.ts`: shared category/action option lists
+- `src/components/AppShell.tsx`: shared navigation shell
+- `src/components/FormattedAiText.tsx`: safe React renderer for AI response formatting
 - `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
 - `src/router.tsx`: current routes and page components
 - `src/lib/mockApi.ts`: mock async API and seed data
@@ -63,7 +66,7 @@ Auth status:
 - If the API server is unavailable, the browser mock/localStorage fallback in `src/lib/mockApi.ts` still keeps the prototype usable.
 - Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.
 - Real AI integration lives in `server/index.mjs`. OpenAI uses the Responses API, OpenRouter, LM Studio, and custom providers use OpenAI-compatible chat completions, and Anthropic uses the Messages API. Missing provider keys intentionally fall back to prototype responses.
-- User AI defaults are stored in browser `localStorage` from the account page. Chat and action generation support on-the-fly provider/model overrides.
+- User AI defaults are stored server-side for signed-in users through `/api/users/me/ai-defaults`, with browser `localStorage` retained as guest/offline fallback. Chat and action generation support on-the-fly provider/model overrides.
 - Logged-in users can store user-owned AI provider keys. The API stores encrypted key material in the `ai_api_keys` SQLite table, using AES-256-GCM with `API_KEY_ENCRYPTION_SECRET`. The browser only receives configured/not-configured status.
 - Hosted provider model lists are fetched through `src/lib/api.ts` and `server/index.mjs` so encrypted keys stay server-side. Do not move hosted-provider model discovery into browser fetches unless the app stops storing encrypted keys.
 - LM Studio setup is intentionally separate from hosted-provider key storage. The account page uses a modal for local base URL/model settings, tries browser-direct model loading from LM Studio's `/models` endpoint, falls back to the Mwananchi API proxy when CORS blocks direct access, and sends those settings with LM Studio generation requests.
@@ -78,7 +81,7 @@ Near-term priorities:
 4. Replace prototype API persistence with a production database.
 5. Add richer share controls, including private/unlisted toggles and unshare.
 6. Add richer OCR progress and language controls.
-7. Add server-side persistence for user AI model defaults once account settings move fully out of browser storage.
+7. Continue moving route/page components out of `src/router.tsx`; AppShell and AI text formatting have already been extracted.
 
 ## Suggested File Organization
 

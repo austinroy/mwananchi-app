@@ -114,7 +114,7 @@ CUSTOM_AI_API_KEY=
 CUSTOM_AI_BASE_URL=
 ```
 
-Users can set a default provider and model on the account page. Chat and action generation also include per-request model controls so users can switch providers for a single task.
+Users can set a default provider and model on the account page. Signed-in user defaults are stored by the API and browser `localStorage` remains the guest/offline fallback. Chat and action generation also include per-request model controls so users can switch providers for a single task.
 
 Model lists are loaded from configured providers. Hosted providers use the Mwananchi API because encrypted user keys stay server-side. LM Studio model discovery first tries the browser against the local LM Studio server, then falls back to the Mwananchi API proxy if the browser hits CORS restrictions.
 

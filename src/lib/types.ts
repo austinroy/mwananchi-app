@@ -42,6 +42,10 @@ export type AiApiKeyStatus = {
   updatedAt: string;
 };
 
+export type AiDefaultsRecord = AiModelSelection & {
+  updatedAt?: string;
+};
+
 export type ShareBriefResult = {
   brief: CivicBrief;
   shareUrl: string;

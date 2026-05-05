@@ -7,6 +7,7 @@ import type {
   NewBriefInput,
 } from "./types";
 import {
+  clearApiChatMessages,
   createApiBrief,
   deleteApiBrief,
   generateApiAction,
@@ -261,6 +262,18 @@ export async function sendChatMessage(
   return assistantMessage;
 }
 
+export async function clearChatMessages(briefId: string) {
+  const apiResult = await clearApiChatMessages(briefId);
+  if (apiResult) {
+    messages.set(briefId, []);
+    return apiResult;
+  }
+
+  await delay(250);
+  messages.set(briefId, []);
+  return { ok: true };
+}
+
 export async function generateAction(briefId: string, input: CivicActionInput) {
   const apiAction = await generateApiAction(briefId, input);
   if (apiAction) return apiAction;
@@ -298,13 +311,26 @@ export async function shareBrief(briefId: string) {
 }
 
 export async function deleteBrief(briefId: string, userId?: string) {
-  const apiResult = await deleteApiBrief(briefId);
+  let apiResult: { ok: boolean } | null = null;
+  let apiError: Error | null = null;
+  try {
+    apiResult = await deleteApiBrief(briefId);
+  } catch (error) {
+    if (error instanceof TypeError) {
+      apiError = error;
+    } else if (error instanceof Error) {
+      apiError = error;
+      if (error.message !== "Brief not found") throw error;
+    } else {
+      throw error;
+    }
+  }
   if (apiResult) return apiResult;
 
   await delay(250);
   hydrateSavedBriefs();
   if (!briefs.has(briefId) || briefId === seedBrief.id)
-    throw new Error("Brief not found");
+    throw apiError || new Error("Brief not found");
 
   briefs.delete(briefId);
   messages.delete(briefId);

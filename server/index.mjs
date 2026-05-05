@@ -79,6 +79,14 @@ db.exec(`
     updated_at TEXT NOT NULL,
     PRIMARY KEY (user_id, provider)
   );
+
+  CREATE TABLE IF NOT EXISTS user_ai_defaults (
+    user_id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    base_url TEXT,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 ensureColumn("briefs", "is_public", "INTEGER NOT NULL DEFAULT 0");
@@ -156,6 +164,22 @@ createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === "/api/users/me/ai-defaults") {
+      const userId = await getRequiredRequestUserId(req, res);
+      if (!userId) return;
+
+      if (req.method === "GET") {
+        sendJson(res, getUserAiDefaults(userId));
+        return;
+      }
+
+      if (req.method === "PUT") {
+        const body = await readJson(req);
+        sendJson(res, upsertUserAiDefaults(userId, body));
+        return;
+      }
+    }
+
     if (req.method === "GET" && url.pathname === "/api/briefs") {
       sendJson(res, listBriefs(await getRequestUserId(req)));
       return;
@@ -193,6 +217,17 @@ createServer(async (req, res) => {
         res,
         await sendMessage(briefMessagesMatch[1], body.content, body.ai, userId),
       );
+      return;
+    }
+
+    if (briefMessagesMatch && req.method === "DELETE") {
+      const userId = await getRequestUserId(req);
+      if (!canAccessBrief(briefMessagesMatch[1], userId)) {
+        sendJson(res, { error: "Brief not found" }, 404);
+        return;
+      }
+      clearMessages(briefMessagesMatch[1]);
+      sendJson(res, { ok: true });
       return;
     }
 
@@ -251,8 +286,16 @@ createServer(async (req, res) => {
     if (briefMatch && req.method === "DELETE") {
       const userId = await getRequestUserId(req);
       const result = deleteBrief(briefMatch[1], userId);
-      if (!result) {
+      if (result?.status === "not_found") {
         sendJson(res, { error: "Brief not found" }, 404);
+        return;
+      }
+      if (result?.status === "sample") {
+        sendJson(res, { error: "The sample brief cannot be deleted." }, 403);
+        return;
+      }
+      if (result?.status === "forbidden") {
+        sendJson(res, { error: "You can only delete briefs you created." }, 403);
         return;
       }
       sendJson(res, result);
@@ -372,6 +415,45 @@ function deleteUserAiKey(userId, providerValue) {
     userId,
     provider,
   );
+}
+
+function getUserAiDefaults(userId) {
+  const row = db
+    .prepare("SELECT * FROM user_ai_defaults WHERE user_id = ?")
+    .get(userId);
+  if (!row) return null;
+
+  return {
+    provider: row.provider,
+    model: row.model,
+    ...(row.base_url ? { baseUrl: row.base_url } : {}),
+    updatedAt: row.updated_at,
+  };
+}
+
+function upsertUserAiDefaults(userId, input) {
+  const selection = normalizeAiSelection(input);
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO user_ai_defaults (user_id, provider, model, base_url, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET
+      provider = excluded.provider,
+      model = excluded.model,
+      base_url = excluded.base_url,
+      updated_at = excluded.updated_at
+  `).run(
+    userId,
+    selection.provider,
+    selection.model,
+    selection.baseUrl || null,
+    now,
+  );
+
+  return {
+    ...selection,
+    updatedAt: now,
+  };
 }
 
 function getDecryptedUserAiKey(userId, providerValue) {
@@ -534,6 +616,10 @@ function listMessages(briefId) {
     }));
 }
 
+function clearMessages(briefId) {
+  db.prepare("DELETE FROM chat_messages WHERE brief_id = ?").run(briefId);
+}
+
 async function sendMessage(briefId, content, ai, userId) {
   const now = new Date().toISOString();
   insertMessage({
@@ -603,12 +689,13 @@ function shareBrief(briefId, userId) {
 }
 
 function deleteBrief(briefId, userId) {
+  if (briefId === "brief-sample-budget") return { status: "sample" };
+
   const row = db
-    .prepare(
-      "SELECT * FROM briefs WHERE id = ? AND (user_id = ? OR user_id IS NULL) AND id != ?",
-    )
-    .get(briefId, userId || "", "brief-sample-budget");
-  if (!row) return null;
+    .prepare("SELECT * FROM briefs WHERE id = ?")
+    .get(briefId);
+  if (!row) return { status: "not_found" };
+  if (row.user_id && row.user_id !== userId) return { status: "forbidden" };
 
   db.prepare("DELETE FROM chat_messages WHERE brief_id = ?").run(briefId);
   db.prepare("DELETE FROM civic_actions WHERE brief_id = ?").run(briefId);
@@ -729,22 +816,15 @@ ${input.documentText.slice(0, 24000)}`,
   const text = result.text;
   if (!text) return { brief: null, error: result.error };
   const parsed = parseJsonObject(text);
-  if (!parsed)
+  if (!parsed) {
     return {
-      brief: null,
-      error:
-        "The AI provider returned a response that could not be parsed as a structured civic brief.",
+      brief: buildBriefFromUnstructuredAiText(text),
+      error: "The AI provider returned prose instead of structured JSON, so Mwananchi App used that response as the brief summary.",
     };
+  }
 
   return {
-    brief: {
-      summary: String(parsed.summary || "").trim(),
-      keyPoints: normalizeStringArray(parsed.keyPoints),
-      affectedGroups: normalizeStringArray(parsed.affectedGroups),
-      concerns: normalizeStringArray(parsed.concerns),
-      citizenQuestions: normalizeStringArray(parsed.citizenQuestions),
-      nextSteps: normalizeStringArray(parsed.nextSteps),
-    },
+    brief: normalizeParsedBrief(parsed),
     error: result.error,
   };
 }
@@ -1164,10 +1244,16 @@ function normalizeAiSelection(ai) {
 }
 
 function parseJsonObject(value) {
+  const normalized = value
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
+
   try {
-    return JSON.parse(value);
+    return JSON.parse(normalized);
   } catch {
-    const match = value.match(/\{[\s\S]*\}/);
+    const match = normalized.match(/\{[\s\S]*\}/);
     if (!match) return null;
     try {
       return JSON.parse(match[0]);
@@ -1175,6 +1261,71 @@ function parseJsonObject(value) {
       return null;
     }
   }
+}
+
+function normalizeParsedBrief(parsed) {
+  return {
+    summary: String(parsed.summary || parsed.plainLanguageSummary || parsed.overview || "").trim(),
+    keyPoints: normalizeStringArray(parsed.keyPoints || parsed.key_points || parsed.points),
+    affectedGroups: normalizeStringArray(parsed.affectedGroups || parsed.affected_groups || parsed.whoIsAffected),
+    concerns: normalizeStringArray(parsed.concerns || parsed.risks || parsed.possibleConcerns),
+    citizenQuestions: normalizeStringArray(parsed.citizenQuestions || parsed.citizen_questions || parsed.questions),
+    nextSteps: normalizeStringArray(parsed.nextSteps || parsed.next_steps || parsed.actions),
+  };
+}
+
+function buildBriefFromUnstructuredAiText(text) {
+  const sections = parseMarkdownishSections(text);
+  return {
+    summary: summarizeUnstructuredText(sections.summary?.join(" ") || text),
+    keyPoints: sections.keyPoints || extractListLikeLines(text).slice(0, 5),
+    affectedGroups: sections.affectedGroups || ["Citizens", "Community groups", "Public officials"],
+    concerns: sections.concerns || ["Review the original document before relying on this summary."],
+    citizenQuestions: sections.citizenQuestions || ["What official process, deadline, and responsible office should citizens verify?"],
+    nextSteps: sections.nextSteps || ["Compare this summary against the source document.", "Ask a follow-up question in the chat panel."],
+  };
+}
+
+function parseMarkdownishSections(text) {
+  const sections = {};
+  let currentKey = "summary";
+
+  text.split("\n").forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    const heading = trimmed.replace(/^#{1,3}\s+/, "").replace(/:$/, "").toLowerCase();
+    if (/key points?/.test(heading)) currentKey = "keyPoints";
+    else if (/affected|who is affected/.test(heading)) currentKey = "affectedGroups";
+    else if (/concerns?|risks?/.test(heading)) currentKey = "concerns";
+    else if (/questions?/.test(heading)) currentKey = "citizenQuestions";
+    else if (/next steps?|actions?/.test(heading)) currentKey = "nextSteps";
+    else if (/summary|overview/.test(heading)) currentKey = "summary";
+
+    const item = trimmed
+      .replace(/^#{1,3}\s+/, "")
+      .replace(/^[-*]\s+/, "")
+      .replace(/^\d+[.)]\s+/, "")
+      .trim();
+
+    if (item && item.toLowerCase() !== heading) {
+      sections[currentKey] = [...(sections[currentKey] || []), item];
+    }
+  });
+
+  return sections;
+}
+
+function summarizeUnstructuredText(text) {
+  return text.replace(/\s+/g, " ").trim().slice(0, 900);
+}
+
+function extractListLikeLines(text) {
+  return text
+    .split("\n")
+    .map((line) => line.trim().replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, ""))
+    .filter((line) => line.length > 20)
+    .slice(0, 6);
 }
 
 function normalizeStringArray(value) {
