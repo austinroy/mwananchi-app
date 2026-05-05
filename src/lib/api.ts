@@ -60,6 +60,12 @@ export async function shareApiBrief(briefId: string) {
   });
 }
 
+export async function deleteApiBrief(briefId: string) {
+  return apiRequest<{ ok: boolean }>(`/api/briefs/${briefId}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function listAiApiKeyStatuses() {
   const apiStatuses = await apiRequest<AiApiKeyStatus[]>('/api/users/me/ai-keys');
   if (apiStatuses) return apiStatuses;

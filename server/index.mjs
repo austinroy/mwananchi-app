@@ -220,6 +220,17 @@ createServer(async (req, res) => {
       return;
     }
 
+    if (briefMatch && req.method === 'DELETE') {
+      const userId = await getRequestUserId(req);
+      const result = deleteBrief(briefMatch[1], userId);
+      if (!result) {
+        sendJson(res, { error: 'Brief not found' }, 404);
+        return;
+      }
+      sendJson(res, result);
+      return;
+    }
+
     sendJson(res, { error: 'Not found' }, 404);
   } catch (error) {
     sendJson(res, { error: error instanceof Error ? error.message : 'Server error' }, 500);
@@ -487,6 +498,17 @@ function shareBrief(briefId, userId) {
     brief,
     shareUrl: `/share/${briefId}`,
   };
+}
+
+function deleteBrief(briefId, userId) {
+  const row = db.prepare('SELECT * FROM briefs WHERE id = ? AND (user_id = ? OR user_id IS NULL) AND id != ?').get(briefId, userId || '', 'brief-sample-budget');
+  if (!row) return null;
+
+  db.prepare('DELETE FROM chat_messages WHERE brief_id = ?').run(briefId);
+  db.prepare('DELETE FROM civic_actions WHERE brief_id = ?').run(briefId);
+  db.prepare('DELETE FROM briefs WHERE id = ?').run(briefId);
+
+  return { ok: true };
 }
 
 function insertMessage(message) {

@@ -8,7 +8,7 @@ import type React from 'react';
 import { useAuth } from './lib/auth';
 import { aiProviderOptions, defaultLmStudioSettings, getProviderModels, readAiDefaults, readLmStudioSettings, saveAiDefaults, saveLmStudioSettings, withLocalProviderSettings } from './lib/aiSettings';
 import { deleteAiApiKey, listAiApiKeyStatuses, listProviderModels, saveAiApiKey } from './lib/api';
-import { createBrief, generateAction, getBrief, getChatMessages, getSharedBrief, listBriefs, sendChatMessage, shareBrief } from './lib/mockApi';
+import { createBrief, deleteBrief, generateAction, getBrief, getChatMessages, getSharedBrief, listBriefs, sendChatMessage, shareBrief } from './lib/mockApi';
 import { extractPdfText } from './lib/pdf';
 import type { AiApiKeyStatus, AiModelSelection, AiProviderId, BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
 
@@ -1031,8 +1031,11 @@ function NewBriefPage() {
 
 function BriefPage() {
   const { briefId } = briefRoute.useParams();
+  const auth = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const { data: brief, isLoading } = useQuery({ queryKey: ['brief', briefId], queryFn: () => getBrief(briefId) });
   const shareMutation = useMutation({
     mutationFn: () => shareBrief(briefId),
@@ -1042,6 +1045,15 @@ function BriefPage() {
       await navigator.clipboard?.writeText(absoluteUrl);
       setShareStatus(`Share link copied: ${absoluteUrl}`);
     },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteBrief(briefId, auth.user?.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['briefs', auth.user?.id] });
+      await queryClient.removeQueries({ queryKey: ['brief', briefId] });
+      await navigate({ to: '/dashboard' });
+    },
+    onError: (error) => setDeleteStatus(error instanceof Error ? error.message : 'Could not delete this brief.'),
   });
 
   if (isLoading || !brief) return <main className="page-shell">Loading brief...</main>;
@@ -1062,9 +1074,24 @@ function BriefPage() {
             <Send size={16} />
             Generate action
           </Link>
+          <button
+            className="btn-danger w-full sm:w-auto"
+            type="button"
+            disabled={deleteMutation.isPending || brief.id === 'brief-sample-budget'}
+            onClick={() => {
+              setDeleteStatus(null);
+              if (window.confirm('Delete this brief and its chat/action history? This cannot be undone.')) {
+                deleteMutation.mutate();
+              }
+            }}
+          >
+            <Trash2 size={16} />
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete brief'}
+          </button>
         </div>
       </div>
       {shareStatus ? <p className="mb-5 rounded-md border border-civic-100 bg-white p-3 text-sm font-semibold text-civic-800">{shareStatus}</p> : null}
+      {deleteStatus ? <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{deleteStatus}</p> : null}
       <AiErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-4">

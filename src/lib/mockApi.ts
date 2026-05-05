@@ -8,6 +8,7 @@ import type {
 } from './types';
 import {
   createApiBrief,
+  deleteApiBrief,
   generateApiAction,
   getApiBrief,
   getApiChatMessages,
@@ -167,6 +168,12 @@ function saveBriefForUser(userId: string, brief: CivicBrief) {
   window.localStorage.setItem(savedBriefsStorageKey, JSON.stringify(savedBriefs));
 }
 
+function removeBriefForUser(userId: string, briefId: string) {
+  const savedBriefs = readSavedBriefs();
+  savedBriefs[userId] = (savedBriefs[userId] ?? []).filter((brief) => brief.id !== briefId);
+  window.localStorage.setItem(savedBriefsStorageKey, JSON.stringify(savedBriefs));
+}
+
 function hydrateSavedBriefs() {
   Object.values(readSavedBriefs()).flat().forEach((brief) => briefs.set(brief.id, brief));
 }
@@ -254,6 +261,22 @@ export async function shareBrief(briefId: string) {
     brief: sharedBrief,
     shareUrl: `${window.location.origin}/share/${briefId}`,
   };
+}
+
+export async function deleteBrief(briefId: string, userId?: string) {
+  const apiResult = await deleteApiBrief(briefId);
+  if (apiResult) return apiResult;
+
+  await delay(250);
+  hydrateSavedBriefs();
+  if (!briefs.has(briefId) || briefId === seedBrief.id) throw new Error('Brief not found');
+
+  briefs.delete(briefId);
+  messages.delete(briefId);
+  actions.delete(briefId);
+  if (userId) removeBriefForUser(userId, briefId);
+
+  return { ok: true };
 }
 
 function buildActionDraft(input: CivicActionInput) {
