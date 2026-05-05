@@ -20,11 +20,12 @@ The app should feel trustworthy, calm, accessible, and useful for Kenyan civic c
 - TanStack Router
 - TanStack Query
 - TanStack Form
-- TanStack Table, planned for richer dashboard tables
+- TanStack Table
 - Tailwind CSS
 - Lucide React icons
+- Sonner toasts
 - Oxlint via `npm run lint`
-- Node API server using built-in `node:sqlite`
+- Node API server using built-in `node:sqlite` (with watch mode)
 
 ## Current App Shape
 
@@ -79,7 +80,7 @@ Near-term priorities:
 2. Add proper form validation for title, category, jurisdiction, and document text.
 3. [COMPLETED] Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
 4. Replace prototype API persistence with a production database.
-5. [COMPLETED] Add richer share controls, including private/unlisted toggles and unshare.
+5. [COMPLETED] Add richer share controls, including private/public toggles and unshare.
 6. Add richer OCR progress and language controls.
 7. Continue moving route/page components out of `src/router.tsx`; AppShell and AI text formatting have already been extracted.
 

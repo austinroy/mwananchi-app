@@ -8,9 +8,11 @@ Mwananchi App is a civic participation web app for turning public documents into
 - TanStack Router
 - TanStack Query
 - TanStack Form
+- TanStack Table
 - Tailwind CSS
 - Lucide React icons
-- Local Node API using built-in `node:sqlite`
+- Sonner toasts
+- Local Node API using built-in `node:sqlite` (with watch mode)
 - Oxlint
 
 ## Current MVP
@@ -88,7 +90,7 @@ If the API server is not running, API actions will fail as the browser mock/loca
 
 ## Shareable Briefs
 
-Brief owners can toggle the visibility of a brief between "Private" and "Unlisted" from the brief detail page. Unlisted briefs are available at `/share/:briefId` to anyone with the link, and show the read-only civic brief without chat history or generated actions. Private briefs are only accessible to the original owner.
+Brief owners can manage visibility from the brief detail page or the dashboard. Briefs can be toggled between **Private** (owner only) and **Public** (read-only access via `/share/:briefId`). Public briefs provide a copy-to-clipboard link for easy sharing. Shared briefs show the read-only civic brief without chat history or generated actions.
 
 ## AI Providers
 
