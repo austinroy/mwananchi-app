@@ -23,11 +23,12 @@ export type CivicBrief = {
   createdAt: string;
 };
 
-export type AiProviderId = 'openai' | 'openrouter' | 'anthropic' | 'custom';
+export type AiProviderId = 'openai' | 'openrouter' | 'anthropic' | 'lmstudio' | 'custom';
 
 export type AiModelSelection = {
   provider: AiProviderId;
   model: string;
+  baseUrl?: string;
 };
 
 export type AiApiKeyStatus = {

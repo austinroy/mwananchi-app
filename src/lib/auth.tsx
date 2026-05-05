@@ -1,7 +1,7 @@
 import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { setApiAuthContext } from './mockApi';
+import { setApiAuthContext } from './api';
 
 export type AuthUser = {
   id: string;

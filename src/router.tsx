@@ -2,12 +2,13 @@ import { Link, Outlet, createRootRoute, createRoute, createRouter, useNavigate }
 import { useClerk } from '@clerk/clerk-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
-import { Copy, Eye, EyeOff, FileText, Home, KeyRound, LayoutDashboard, Link2, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, Trash2, UserCog, UserPlus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Copy, Eye, EyeOff, FileText, Home, KeyRound, Laptop, LayoutDashboard, Link2, LogIn, LogOut, Menu, MessageSquare, Send, Sparkles, Trash2, UserCog, UserPlus, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import { useAuth } from './lib/auth';
-import { aiProviderOptions, getProviderModels, readAiDefaults, saveAiDefaults } from './lib/aiSettings';
-import { createBrief, deleteAiApiKey, generateAction, getBrief, getChatMessages, getSharedBrief, listAiApiKeyStatuses, listBriefs, saveAiApiKey, sendChatMessage, shareBrief } from './lib/mockApi';
+import { aiProviderOptions, defaultLmStudioSettings, getProviderModels, readAiDefaults, readLmStudioSettings, saveAiDefaults, saveLmStudioSettings, withLocalProviderSettings } from './lib/aiSettings';
+import { deleteAiApiKey, listAiApiKeyStatuses, listProviderModels, saveAiApiKey } from './lib/api';
+import { createBrief, generateAction, getBrief, getChatMessages, getSharedBrief, listBriefs, sendChatMessage, shareBrief } from './lib/mockApi';
 import { extractPdfText } from './lib/pdf';
 import type { AiApiKeyStatus, AiModelSelection, AiProviderId, BriefCategory, CivicActionInput, CivicActionType, NewBriefInput } from './lib/types';
 
@@ -566,6 +567,13 @@ function AccountPage() {
           </p>
           <AiApiKeysForm />
         </section>
+        <section className="surface mt-6 rounded-lg p-5 sm:p-6">
+          <h2 className="text-xl font-bold text-ink">Local models</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Connect LM Studio when you want Mwananchi App to use an open-source model running on this machine.
+          </p>
+          <LmStudioSetup />
+        </section>
       </main>
     </RequireAuth>
   );
@@ -574,6 +582,8 @@ function AccountPage() {
 function AiDefaultsForm() {
   const [selection, setSelection] = useState<AiModelSelection>(() => readAiDefaults());
   const [status, setStatus] = useState<string | null>(null);
+  const configured = useConfiguredAiProviders();
+  const isSelectionAvailable = isProviderConfigured(selection.provider, configured) && Boolean(selection.model);
 
   const updateSelection = (nextSelection: AiModelSelection) => {
     setSelection(nextSelection);
@@ -586,13 +596,15 @@ function AiDefaultsForm() {
       <button
         className="btn-primary mt-5 w-full sm:w-auto"
         type="button"
+        disabled={!isSelectionAvailable}
         onClick={() => {
-          saveAiDefaults(selection);
+          saveAiDefaults(resolveConfiguredAiSelection(selection, configured));
           setStatus('Default AI model saved.');
         }}
       >
         Save AI defaults
       </button>
+      {!isSelectionAvailable ? <p className="mt-3 text-sm leading-6 text-slate-600">Configure this provider before saving it as your default.</p> : null}
       {status ? <p className="mt-3 text-sm font-semibold text-civic-700">{status}</p> : null}
     </div>
   );
@@ -608,6 +620,7 @@ function AiApiKeysForm() {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const keyProviderOptions = aiProviderOptions.filter((option) => option.value !== 'lmstudio');
   const configuredProviders = new Map(data.map((item: AiApiKeyStatus) => [item.provider, item]));
   const selectedStatus = configuredProviders.get(provider);
 
@@ -642,7 +655,7 @@ function AiApiKeysForm() {
               setStatus(null);
             }}
           >
-            {aiProviderOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {keyProviderOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </label>
         <label className="text-sm font-semibold text-slate-700">
@@ -692,7 +705,7 @@ function AiApiKeysForm() {
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {aiProviderOptions.map((option) => {
+        {keyProviderOptions.map((option) => {
           const item = configuredProviders.get(option.value);
           return (
             <div key={option.value} className="rounded-md border border-civic-100 bg-civic-50/60 px-3 py-2 text-sm">
@@ -704,6 +717,127 @@ function AiApiKeysForm() {
       </div>
 
       {status ? <p className="text-sm font-semibold text-civic-700">{status}</p> : null}
+    </div>
+  );
+}
+
+function LmStudioSetup() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [settings, setSettings] = useState(() => readLmStudioSettings());
+
+  const saveSettings = (nextSettings: typeof defaultLmStudioSettings) => {
+    saveLmStudioSettings(nextSettings);
+    saveAiDefaults({ provider: 'lmstudio', model: nextSettings.model, baseUrl: nextSettings.baseUrl });
+    setSettings(nextSettings);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="mt-5">
+      <div className="rounded-md border border-civic-100 bg-civic-50/70 p-4 text-sm leading-6 text-slate-700">
+        <p className="font-semibold text-ink">LM Studio</p>
+        <p className="mt-1 break-all">Base URL: {settings.baseUrl}</p>
+        <p className="break-all">Model: {settings.model}</p>
+        <p>{settings.models.length ? `${settings.models.length} models loaded from LM Studio` : 'No LM Studio models loaded yet'}</p>
+      </div>
+      <button className="btn-primary mt-4 w-full sm:w-auto" type="button" onClick={() => setIsOpen(true)}>
+        <Laptop size={16} />
+        Set up LM Studio
+      </button>
+      {isOpen ? (
+        <LmStudioModal
+          initialSettings={settings}
+          onClose={() => setIsOpen(false)}
+          onSave={saveSettings}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function LmStudioModal({
+  initialSettings,
+  onClose,
+  onSave,
+}: {
+  initialSettings: typeof defaultLmStudioSettings;
+  onClose: () => void;
+  onSave: (settings: typeof defaultLmStudioSettings) => void;
+}) {
+  const [baseUrl, setBaseUrl] = useState(initialSettings.baseUrl);
+  const [model, setModel] = useState(initialSettings.model);
+  const [models, setModels] = useState<string[]>(initialSettings.models);
+  const [status, setStatus] = useState<string | null>(null);
+  const modelMutation = useMutation({
+    mutationFn: () => listProviderModels('lmstudio', baseUrl.trim() || defaultLmStudioSettings.baseUrl),
+    onSuccess: (nextModels) => {
+      setModels(nextModels);
+      setModel((currentModel) => nextModels.includes(currentModel) ? currentModel : nextModels[0] ?? defaultLmStudioSettings.model);
+      setStatus(nextModels.length ? `Loaded ${nextModels.length} model${nextModels.length === 1 ? '' : 's'} from LM Studio.` : 'LM Studio responded, but no models were returned.');
+    },
+    onError: (error) => setStatus(error instanceof Error ? error.message : 'Could not load LM Studio models.'),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4">
+      <section className="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-civic-700">Local model setup</p>
+            <h2 className="mt-1 text-2xl font-bold text-ink">Connect LM Studio</h2>
+          </div>
+          <button className="grid size-9 place-items-center rounded-md border border-civic-100 text-slate-600" type="button" onClick={onClose} aria-label="Close LM Studio setup">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="mt-5 rounded-md border border-civic-100 bg-civic-50 p-3 text-sm leading-6 text-slate-700">
+          Start the LM Studio local server, load a model, then use the OpenAI-compatible server URL and model name here.
+        </div>
+        <label className="mt-5 block text-sm font-semibold text-slate-700">
+          Base URL
+          <input
+            className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+            value={baseUrl}
+            onChange={(event) => {
+              setBaseUrl(event.target.value);
+              setModels([]);
+              setStatus(null);
+            }}
+            placeholder="http://127.0.0.1:1234/v1"
+          />
+        </label>
+        <button className="btn-secondary mt-4 w-full sm:w-auto" type="button" disabled={modelMutation.isPending} onClick={() => modelMutation.mutate()}>
+          {modelMutation.isPending ? 'Loading models...' : 'Load models from LM Studio'}
+        </button>
+        <label className="mt-4 block text-sm font-semibold text-slate-700">
+          Model
+          <select
+            className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
+            value={models.includes(model) ? model : ''}
+            disabled={models.length === 0}
+            onChange={(event) => setModel(event.target.value)}
+          >
+            {models.length === 0 ? <option value="">Load models first</option> : null}
+            {models.map((modelOption) => <option key={modelOption} value={modelOption}>{modelOption}</option>)}
+          </select>
+        </label>
+        {status ? <p className="mt-3 text-sm leading-6 text-slate-600">{status}</p> : null}
+        <div className="mt-6 grid gap-3 sm:flex sm:justify-end">
+          <button className="btn-secondary w-full sm:w-auto" type="button" onClick={onClose}>Cancel</button>
+          <button
+            className="btn-primary w-full sm:w-auto"
+            type="button"
+            onClick={() => onSave({
+              baseUrl: baseUrl.trim() || defaultLmStudioSettings.baseUrl,
+              model: models.includes(model) ? model : models[0] ?? defaultLmStudioSettings.model,
+              models,
+            })}
+            disabled={models.length === 0}
+          >
+            Save LM Studio setup
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -773,9 +907,11 @@ function NewBriefPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pdfStatus, setPdfStatus] = useState<string | null>(null);
-  const [aiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const configured = useConfiguredAiProviders();
+  const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
   const mutation = useMutation({
-    mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id, aiSelection),
+    mutationFn: (input: NewBriefInput) => createBrief(input, auth.user?.id, resolveConfiguredAiSelection(aiSelection, configured)),
     onSuccess: async (brief) => {
       await queryClient.invalidateQueries({ queryKey: ['briefs', auth.user?.id] });
       await navigate({ to: '/briefs/$briefId', params: { briefId: brief.id } });
@@ -877,9 +1013,13 @@ function NewBriefPage() {
             </div>
           )}
         </form.Field>
+        <div className="mt-5 rounded-md border border-civic-100 bg-civic-50/50 p-4">
+          <p className="mb-3 text-sm font-semibold text-ink">AI provider</p>
+          <AiModelSelector selection={aiSelection} onChange={setAiSelection} />
+        </div>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-600">MVP note: mock analysis is active until the AI backend is connected.</p>
-          <button className="btn-primary w-full sm:w-auto" disabled={mutation.isPending} type="submit">
+          <p className="text-sm text-slate-600">{isAiReady ? 'MVP note: AI responses should still be checked against official sources.' : 'Configure the selected AI provider before generating a brief.'}</p>
+          <button className="btn-primary w-full sm:w-auto" disabled={mutation.isPending || !isAiReady} type="submit">
             <Sparkles size={16} />
             {mutation.isPending ? 'Generating...' : 'Generate brief'}
           </button>
@@ -985,13 +1125,60 @@ function BriefSection({ title, items }: { title: string; items: string[] }) {
 
 function AiErrorNotice({ message, className = '' }: { message?: string; className?: string }) {
   if (!message) return null;
+  const isConfiguredFailure = message.startsWith('Configured ');
 
   return (
-    <div className={`rounded-md border border-signal/30 bg-white p-3 text-sm leading-6 text-slate-700 ${className}`}>
-      <p className="font-semibold text-civic-900">AI provider notice</p>
+    <div className={`rounded-md border ${isConfiguredFailure ? 'border-red-200 bg-red-50' : 'border-signal/30 bg-white'} p-3 text-sm leading-6 text-slate-700 ${className}`}>
+      <p className="font-semibold text-civic-900">{isConfiguredFailure ? 'AI provider error detected' : 'AI provider notice'}</p>
       <p className="mt-1">{message}</p>
     </div>
   );
+}
+
+function useConfiguredAiProviders() {
+  const auth = useAuth();
+  const [settingsVersion, setSettingsVersion] = useState(0);
+  const { data = [] } = useQuery({
+    queryKey: ['ai-api-key-statuses'],
+    queryFn: listAiApiKeyStatuses,
+    enabled: auth.isAuthenticated,
+  });
+  const lmStudioSettings = readLmStudioSettings();
+  const keyedProviders = new Set(data.map((item: AiApiKeyStatus) => item.provider));
+
+  useEffect(() => {
+    const refresh = () => setSettingsVersion((version) => version + 1);
+    window.addEventListener('mwananchi-lm-studio-settings', refresh);
+    return () => window.removeEventListener('mwananchi-lm-studio-settings', refresh);
+  }, []);
+
+  return {
+    keyedProviders,
+    lmStudioSettings,
+    settingsVersion,
+    isLmStudioConfigured: Boolean(lmStudioSettings.baseUrl && lmStudioSettings.model && lmStudioSettings.models.length),
+  };
+}
+
+function isProviderConfigured(provider: AiProviderId, configured: ReturnType<typeof useConfiguredAiProviders>) {
+  if (provider === 'lmstudio') return configured.isLmStudioConfigured;
+  return configured.keyedProviders.has(provider);
+}
+
+function getConfiguredProviderModels(provider: AiProviderId, configured: ReturnType<typeof useConfiguredAiProviders>) {
+  if (!isProviderConfigured(provider, configured)) return [];
+  if (provider === 'lmstudio') return configured.lmStudioSettings.models;
+  return getProviderModels(provider);
+}
+
+function resolveConfiguredAiSelection(selection: AiModelSelection, configured: ReturnType<typeof useConfiguredAiProviders>) {
+  const models = getConfiguredProviderModels(selection.provider, configured);
+  const resolvedSelection = {
+    ...selection,
+    model: models.includes(selection.model) ? selection.model : models[0] ?? selection.model,
+  };
+
+  return withLocalProviderSettings(resolvedSelection);
 }
 
 function AiModelSelector({
@@ -1003,7 +1190,24 @@ function AiModelSelector({
   onChange: (selection: AiModelSelection) => void;
   compact?: boolean;
 }) {
-  const models = getProviderModels(selection.provider);
+  const configured = useConfiguredAiProviders();
+  const providerOptions = aiProviderOptions.map((provider) => ({
+    ...provider,
+    isConfigured: isProviderConfigured(provider.value, configured),
+  }));
+  const isSelectedProviderConfigured = isProviderConfigured(selection.provider, configured);
+  const { data: providerModels = [], isLoading: isLoadingModels, isError: modelLoadFailed } = useQuery<string[]>({
+    queryKey: ['ai-provider-models', selection.provider, selection.provider === 'lmstudio' ? configured.lmStudioSettings.baseUrl : 'hosted', configured.settingsVersion],
+    queryFn: () => listProviderModels(selection.provider, selection.provider === 'lmstudio' ? configured.lmStudioSettings.baseUrl : undefined),
+    enabled: isSelectedProviderConfigured,
+  });
+  const models = useMemo(() => isSelectedProviderConfigured ? providerModels : [], [isSelectedProviderConfigured, providerModels]);
+
+  useEffect(() => {
+    if (!models.length) return;
+    if (models.includes(selection.model)) return;
+    onChange({ ...selection, model: models[0] });
+  }, [models, onChange, selection]);
 
   return (
     <div className={compact ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}>
@@ -1014,23 +1218,32 @@ function AiModelSelector({
           value={selection.provider}
           onChange={(event) => {
             const provider = event.target.value as AiModelSelection['provider'];
-            onChange({ provider, model: getProviderModels(provider)[0] ?? selection.model });
+            onChange({ provider, model: '' });
           }}
         >
-          {aiProviderOptions.map((provider) => <option key={provider.value} value={provider.value}>{provider.label}</option>)}
+          {providerOptions.map((provider) => (
+            <option key={provider.value} value={provider.value} disabled={!provider.isConfigured}>
+              {provider.label}{provider.isConfigured ? '' : ' (not configured)'}
+            </option>
+          ))}
         </select>
       </label>
       <label className="block">
         <span className="text-sm font-semibold">Model</span>
-        <input
-          className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
-          list={`models-${selection.provider}`}
-          value={selection.model}
+        <select
+          className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
+          value={models.includes(selection.model) ? selection.model : models[0] ?? ''}
+          disabled={!isSelectedProviderConfigured || models.length === 0}
           onChange={(event) => onChange({ ...selection, model: event.target.value })}
-        />
-        <datalist id={`models-${selection.provider}`}>
-          {models.map((model) => <option key={model} value={model} />)}
-        </datalist>
+        >
+          {!isSelectedProviderConfigured ? <option value="">Configure provider first</option> : null}
+          {isSelectedProviderConfigured && isLoadingModels ? <option value="">Loading models...</option> : null}
+          {isSelectedProviderConfigured && modelLoadFailed ? <option value="">Could not load models</option> : null}
+          {isSelectedProviderConfigured && models.length === 0 ? <option value="">No models available</option> : null}
+          {models.map((model) => <option key={model} value={model}>{model}</option>)}
+        </select>
+        {!isSelectedProviderConfigured ? <p className="mt-2 text-xs leading-5 text-slate-600">This provider is disabled until it is configured in Account.</p> : null}
+        {modelLoadFailed ? <p className="mt-2 text-xs leading-5 text-slate-600">Could not load models from this provider. Check the provider setup and try again.</p> : null}
       </label>
     </div>
   );
@@ -1039,9 +1252,11 @@ function AiModelSelector({
 function ChatPanel({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
   const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const configured = useConfiguredAiProviders();
+  const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
   const { data = [] } = useQuery({ queryKey: ['brief-chat', briefId], queryFn: () => getChatMessages(briefId) });
   const mutation = useMutation({
-    mutationFn: (content: string) => sendChatMessage(briefId, content, aiSelection),
+    mutationFn: (content: string) => sendChatMessage(briefId, content, resolveConfiguredAiSelection(aiSelection, configured)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brief-chat', briefId] }),
   });
   const form = useForm({
@@ -1069,8 +1284,8 @@ function ChatPanel({ briefId }: { briefId: string }) {
           <div key={message.id} className={message.role === 'user' ? 'ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8' : 'mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8'}>
             <p>{message.content}</p>
             {message.aiError ? (
-              <div className="mt-3 rounded-md border border-signal/30 bg-white/80 p-2 text-xs leading-5 text-slate-700">
-                <span className="font-semibold">AI provider notice: </span>
+              <div className={`mt-3 rounded-md border p-2 text-xs leading-5 text-slate-700 ${message.aiError.startsWith('Configured ') ? 'border-red-200 bg-red-50' : 'border-signal/30 bg-white/80'}`}>
+                <span className="font-semibold">{message.aiError.startsWith('Configured ') ? 'AI provider error detected: ' : 'AI provider notice: '}</span>
                 {message.aiError}
               </div>
             ) : null}
@@ -1089,7 +1304,8 @@ function ChatPanel({ briefId }: { briefId: string }) {
             <textarea className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6" placeholder="Ask who is affected, what changed, or what action to take..." value={field.state.value} onChange={(event) => field.handleChange(event.target.value)} />
           )}
         </form.Field>
-        <button className="btn-primary mt-3 w-full" disabled={mutation.isPending} type="submit">
+        {!isAiReady ? <p className="mt-2 text-sm leading-6 text-slate-600">Configure the selected provider before sending a question.</p> : null}
+        <button className="btn-primary mt-3 w-full" disabled={mutation.isPending || !isAiReady} type="submit">
           Send question
         </button>
       </form>
@@ -1102,6 +1318,8 @@ function ActionsPage() {
   const { data: brief } = useQuery({ queryKey: ['brief', briefId], queryFn: () => getBrief(briefId) });
   const mutation = useMutation({ mutationFn: (input: CivicActionInput) => generateAction(briefId, input) });
   const [aiSelection, setAiSelection] = useState<AiModelSelection>(() => readAiDefaults());
+  const configured = useConfiguredAiProviders();
+  const isAiReady = isProviderConfigured(aiSelection.provider, configured) && Boolean(aiSelection.model);
   const form = useForm({
     defaultValues: {
       actionType: 'email' as CivicActionType,
@@ -1109,7 +1327,7 @@ function ActionsPage() {
       audience: 'County official',
       extraContext: '',
     },
-    onSubmit: ({ value }) => mutation.mutate({ ...value, ai: aiSelection }),
+    onSubmit: ({ value }) => mutation.mutate({ ...value, ai: resolveConfiguredAiSelection(aiSelection, configured) }),
   });
 
   return (
@@ -1155,7 +1373,8 @@ function ActionsPage() {
               </label>
             )}
           </form.Field>
-          <button className="btn-primary mt-5 w-full" disabled={mutation.isPending} type="submit">
+          {!isAiReady ? <p className="mt-4 text-sm leading-6 text-slate-600">Configure the selected provider before drafting an action.</p> : null}
+          <button className="btn-primary mt-5 w-full" disabled={mutation.isPending || !isAiReady} type="submit">
             {mutation.isPending ? 'Drafting...' : 'Draft action'}
           </button>
         </form>

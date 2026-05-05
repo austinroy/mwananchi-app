@@ -99,6 +99,7 @@ Supported provider paths:
 - OpenAI through the Responses API
 - OpenRouter through an OpenAI-compatible chat completions endpoint
 - Anthropic through the Messages API
+- LM Studio through its local OpenAI-compatible server
 - Custom OpenAI-compatible providers through `CUSTOM_AI_BASE_URL`
 
 Add the provider keys you need:
@@ -107,11 +108,19 @@ Add the provider keys you need:
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=
 ANTHROPIC_API_KEY=
+LM_STUDIO_BASE_URL=http://127.0.0.1:1234/v1
+LM_STUDIO_API_KEY=
 CUSTOM_AI_API_KEY=
 CUSTOM_AI_BASE_URL=
 ```
 
 Users can set a default provider and model on the account page. Chat and action generation also include per-request model controls so users can switch providers for a single task.
+
+Model lists are loaded from configured providers. Hosted providers use the Mwananchi API because encrypted user keys stay server-side. LM Studio model discovery first tries the browser against the local LM Studio server, then falls back to the Mwananchi API proxy if the browser hits CORS restrictions.
+
+For LM Studio, start the local server in LM Studio and use the account page's local model setup modal to set the base URL and model name. The browser attempts to load available models directly from LM Studio's `/models` endpoint. If LM Studio blocks the browser with CORS, the app falls back to the Mwananchi API proxy, which must be running on the same machine as LM Studio. LM Studio accepts OpenAI-compatible chat completion requests, so generation requests use `/chat/completions` under the configured base URL. A real API key is usually not required locally; the app sends a placeholder key when no LM Studio key is configured.
+
+LM Studio setup is separate from hosted-provider API key storage because it is usually a local connection setting, not a secret. Hosted provider keys remain in the encrypted key manager.
 
 Logged-in users can also store their own provider API keys from the account page. User-owned keys are encrypted in SQLite with AES-256-GCM and are never returned to the browser after saving. Set a stable encryption secret before enabling this in any deployed environment:
 
