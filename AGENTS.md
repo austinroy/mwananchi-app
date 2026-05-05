@@ -71,6 +71,9 @@ Auth status:
 - Logged-in users can store user-owned AI provider keys. The API stores encrypted key material in the `ai_api_keys` SQLite table, using AES-256-GCM with `API_KEY_ENCRYPTION_SECRET`. The browser only receives configured/not-configured status.
 - Hosted provider model lists are fetched through `src/lib/api.ts` and `server/index.mjs` so encrypted keys stay server-side. Do not move hosted-provider model discovery into browser fetches unless the app stops storing encrypted keys.
 - LM Studio setup is intentionally separate from hosted-provider key storage. The account page uses a modal for local base URL/model settings, tries browser-direct model loading from LM Studio's `/models` endpoint, falls back to the Mwananchi API proxy when CORS blocks direct access, and sends those settings with LM Studio generation requests.
+- Brief generation is summary-first. Creating a brief generates only the plain-language summary. The remaining sections are generated from the brief detail page with individual buttons and separate persisted API requests.
+- Existing brief section generation uses `POST /api/briefs/:briefId/sections/:section`. Each section has a focused prompt in `server/index.mjs`, and generated values are saved back into the relevant SQLite columns.
+- The source document is stored with the brief, displayed in a collapsible source document section, and should be treated as the primary reference for chat responses.
 
 ## Development Priorities
 
@@ -147,9 +150,7 @@ Assistant behavior should:
 - Recommend checking official sources for high-stakes claims.
 - Separate document-grounded facts from inferred guidance.
 
-Future AI endpoints should return structured JSON where possible.
-
-Suggested brief analysis shape:
+Brief generation fields remain stored separately:
 
 ```ts
 {

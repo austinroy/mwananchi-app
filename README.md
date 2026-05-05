@@ -29,6 +29,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - SQLite-backed API server for users, briefs, chat messages, and civic actions
 - PDF upload with lightweight text extraction into the brief form
 - Real AI provider integration for brief analysis, chat, and civic action drafts
+- Summary-first brief generation with per-section AI generation from the brief page
 
 ## Auth Status
 
@@ -92,9 +93,23 @@ If the API server is not running, API actions will fail as the browser mock/loca
 
 Brief owners can manage visibility from the brief detail page or the dashboard. Briefs can be toggled between **Private** (owner only) and **Public** (read-only access via `/share/:briefId`). Public briefs provide a copy-to-clipboard link for easy sharing. Shared briefs show the read-only civic brief without chat history or generated actions.
 
+## Brief Generation
+
+New brief creation generates only the plain-language summary first. The remaining civic brief sections are generated from the brief detail page with separate buttons and separate AI requests:
+
+- Key points
+- Who is affected
+- Concerns and risks
+- Questions citizens should ask
+- Suggested next steps
+
+Each section uses a focused prompt for that section only, then the API saves the generated result back to the SQLite brief record. This keeps prompts smaller and reduces provider output that mixes reasoning, schema notes, or unrelated sections.
+
+The source document is retained with the brief, shown in a collapsible source section, and used as the primary reference for chat answers.
+
 ## AI Providers
 
-The API server can call real AI providers for brief analysis, document-grounded chat, and civic action generation. If no provider key is configured, the app falls back to the existing prototype responses.
+The API server can call real AI providers for summary generation, per-section brief generation, document-grounded chat, and civic action generation. If no provider key is configured, the app falls back to the existing prototype responses.
 
 Supported provider paths:
 
