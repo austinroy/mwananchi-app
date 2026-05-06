@@ -16,7 +16,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
 
-  const { data: brief, isLoading } = useQuery({
+  const { data: brief, isLoading, error } = useQuery({
     queryKey: ["brief", briefId],
     queryFn: () => getBrief(briefId),
   });
@@ -61,7 +61,43 @@ export function BriefPage({ briefId }: { briefId: string }) {
       ),
   });
 
-  if (isLoading || !brief) {
+  if (isLoading) {
+    return <main className="page-shell">Loading brief...</main>;
+  }
+
+  if (error instanceof Error) {
+    return (
+      <main className="page-shell">
+        <div className="surface rounded-lg border border-civic-100 bg-white p-6">
+          <p className="text-sm font-semibold text-civic-700">
+            {error.message.includes("Authentication required")
+              ? "This brief is private"
+              : "Brief unavailable"}
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-ink">
+            {error.message.includes("Authentication required")
+              ? "Sign in to view this brief"
+              : "We could not load this brief"}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
+            {error.message.includes("Authentication required")
+              ? "This brief belongs to another account and is only available after signing in with access."
+              : error.message}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link to="/login" className="btn-primary">
+              Sign in
+            </Link>
+            <Link to="/briefs/new" className="btn-secondary">
+              Create a brief
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!brief) {
     return <main className="page-shell">Loading brief...</main>;
   }
 

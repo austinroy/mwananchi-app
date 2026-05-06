@@ -23,11 +23,11 @@ export async function listApiBriefs() {
 }
 
 export async function getApiBrief(briefId: string) {
-  return apiRequest<CivicBrief>(`/api/briefs/${briefId}`);
+  return apiRequestWithStatus<CivicBrief>(`/api/briefs/${briefId}`);
 }
 
 export async function getApiSharedBrief(briefId: string) {
-  return apiRequest<CivicBrief>(`/api/share/briefs/${briefId}`);
+  return apiRequestWithStatus<CivicBrief>(`/api/share/briefs/${briefId}`);
 }
 
 export async function createApiBrief(
@@ -189,6 +189,11 @@ async function listLmStudioModelsDirect(baseUrl: string) {
 }
 
 async function apiRequest<T>(path: string, init?: RequestInit) {
+  const result = await apiRequestWithStatus<T>(path, init);
+  return result?.data ?? null;
+}
+
+async function apiRequestWithStatus<T>(path: string, init?: RequestInit) {
   try {
     const token = await apiAuthContext.getToken?.();
     const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -203,10 +208,12 @@ async function apiRequest<T>(path: string, init?: RequestInit) {
       },
     });
 
-    if (!response.ok) return null;
-    return (await response.json()) as T;
+    if (!response.ok) {
+      return { status: response.status, data: null };
+    }
+    return { status: response.status, data: (await response.json()) as T };
   } catch {
-    return null;
+    return { status: 0, data: null };
   }
 }
 

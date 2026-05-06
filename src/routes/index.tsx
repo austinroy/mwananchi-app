@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { FileText, Home } from "lucide-react";
+import { ArrowRight, FileText, Home } from "lucide-react";
 
 export function LandingPage() {
   return (
@@ -29,15 +29,30 @@ export function LandingPage() {
           </div>
         </div>
         <div className="surface rounded-lg p-4 sm:p-6">
-          <div className="rounded-md bg-civic-900 p-5 text-white">
-            <p className="text-sm text-civic-100">Sample brief</p>
-            <h2 className="mt-2 text-2xl font-bold">
+          <div className="rounded-md border border-civic-100 bg-civic-50 p-5">
+            <p className="text-sm font-semibold text-civic-700">
+              Example brief
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-ink">
               County Budget Public Notice
             </h2>
-            <p className="mt-4 text-sm leading-6 text-civic-100">
-              Key issues: public participation window, ward allocation, service
-              delivery impact, and accountability after approval.
+            <p className="mt-4 text-sm leading-6 text-slate-700">
+              This is a sample brief showing how Mwananchi App explains a real
+              civic document. It is an example only, so you can explore the
+              workflow before creating your own.
             </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                to="/share/brief-sample-budget"
+                className="btn-primary w-full sm:w-auto"
+              >
+                Open the example
+                <ArrowRight size={16} />
+              </Link>
+              <Link to="/briefs/new" className="btn-secondary w-full sm:w-auto">
+                Create your own brief
+              </Link>
+            </div>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {["Explain", "Question", "Act"].map((item) => (
