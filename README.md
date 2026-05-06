@@ -31,6 +31,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Real AI provider integration for brief analysis, chat, and civic action drafts
 - Shared AI provider/model selector for brief creation, chat, and action generation
 - Inline validation for brief title, category, jurisdiction, and document text
+- Route and component organization split across `src/routes/*` and `src/components/*`
 
 ## Auth Status
 
@@ -50,6 +51,8 @@ Protected routes:
 - None during the current dashboard testing pass
 
 Guests can create and act on a brief without signing in. Dashboard access is temporarily open for testing. Login is currently used for workspace/history-style persistence.
+
+Route wrappers now live in `src/routes/` while the heavier page logic lives in reusable components under `src/components/`. The main router file only wires the TanStack route tree.
 
 Generated briefs are strictly stored in SQLite using the local API server.
 
