@@ -29,6 +29,8 @@ Mwananchi App is a civic participation web app for turning public documents into
 - SQLite-backed API server for users, briefs, chat messages, and civic actions
 - PDF upload with lightweight text extraction into the brief form
 - Real AI provider integration for brief analysis, chat, and civic action drafts
+- Shared AI provider/model selector for brief creation, chat, and action generation
+- Inline validation for brief title, category, jurisdiction, and document text
 
 ## Auth Status
 
@@ -138,6 +140,8 @@ The new brief form supports uploading a PDF. The app extracts selectable text fr
 
 If no selectable text is found, the browser falls back to OCR for scanned PDFs using the installed `pdfjs-dist` and `tesseract.js` packages. Vite serves the local Tesseract worker and core assets under `/ocr`. OCR is intentionally capped for responsiveness.
 
+The brief form now also validates required fields before submission so empty titles, weak jurisdiction values, and missing document text are caught early.
+
 Optional OCR configuration:
 
 ```bash
@@ -174,6 +178,8 @@ npm run lint
 ```
 
 Oxlint is installed as a dev dependency and uses the committed `.oxlintrc.json` configuration.
+
+TypeScript remains the primary verification step for the recent router split and validation refactor. In this environment, `oxlint` may fail to load its native binding if the optional dependency install is misaligned.
 
 ## Formatting
 
