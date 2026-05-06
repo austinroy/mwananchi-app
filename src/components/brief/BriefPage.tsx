@@ -66,7 +66,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
   }
 
   return (
-    <main className="page-shell pb-[32rem] lg:pb-6">
+    <main className="page-shell pb-6 lg:pb-[32rem]">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">
