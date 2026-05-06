@@ -37,10 +37,21 @@ Important files:
 - `src/lib/civicOptions.ts`: shared category/action option lists
 - `src/components/AppShell.tsx`: shared navigation shell
 - `src/components/ai/AiModelSelector.tsx`: shared AI provider/model selector and configuration helpers
+- `src/components/auth/AuthForms.tsx`: auth, account, and auth-gate UI
+- `src/components/dashboard/DashboardPage.tsx`: civic brief dashboard and table view
+- `src/components/brief/BriefPage.tsx`: brief detail, chat, share, and action workflows
 - `src/components/FormattedAiText.tsx`: safe React renderer for AI response formatting
 - `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
-- `src/router.tsx`: current route tree and remaining shared page components
+- `src/router.tsx`: route tree wiring only
+- `src/routes/index.tsx`: landing page route
+- `src/routes/dashboard.tsx`: dashboard route
 - `src/routes/briefs/new.tsx`: new brief page and form flow
+- `src/routes/briefs/$briefId.tsx`: brief detail route wrapper
+- `src/routes/briefs/$briefId.actions.tsx`: civic action route wrapper
+- `src/routes/briefs/$briefId.share.tsx`: shared brief route wrapper
+- `src/routes/login.tsx`: sign-in route
+- `src/routes/register.tsx`: sign-up route
+- `src/routes/account.tsx`: account route
 - `src/lib/mockApi.ts`: mock async API and seed data
 - `server/index.mjs`: local SQLite API for users, briefs, chat messages, and civic actions
 - `src/lib/queryClient.ts`: TanStack Query client
@@ -194,3 +205,4 @@ npm install
 - Prefer incremental, working slices over large speculative rewrites.
 - Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
 - The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
+- The route/component organization pass moved auth, dashboard, and brief workflows out of `src/router.tsx`; keep future route files thin and prefer shared component modules for page logic.
