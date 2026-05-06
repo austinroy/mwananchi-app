@@ -59,14 +59,21 @@ export async function listBriefs(userId?: string) {
 
 export async function getBrief(briefId: string) {
   const apiBrief = await getApiBrief(briefId);
-  if (!apiBrief) throw new Error("Brief not found");
-  return apiBrief;
+  if (!apiBrief?.data) {
+    const error = new Error(
+      apiBrief?.status === 401
+        ? "Authentication required to view this private brief."
+        : "Brief not found",
+    );
+    throw error;
+  }
+  return apiBrief.data;
 }
 
 export async function getSharedBrief(briefId: string) {
   const apiBrief = await getApiSharedBrief(briefId);
-  if (!apiBrief) throw new Error("Shared brief not found");
-  return apiBrief;
+  if (!apiBrief?.data) throw new Error("Shared brief not found");
+  return apiBrief.data;
 }
 
 export async function createBrief(

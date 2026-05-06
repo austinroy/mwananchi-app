@@ -33,6 +33,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Shared AI provider/model selector for brief creation, chat, and action generation
 - Inline validation for brief title, category, jurisdiction, and document text
 - Route and component organization split across `src/routes/*` and `src/components/*`
+- Landing page example brief that links to the shared sample brief
 
 ## Auth Status
 
@@ -98,6 +99,8 @@ If the API server is not running, API actions will fail as the browser mock/loca
 
 Brief owners can manage visibility from the brief detail page or the dashboard. Briefs can be toggled between **Private** (owner only) and **Public** (read-only access via `/share/:briefId`). Public briefs provide a copy-to-clipboard link for easy sharing. Shared briefs show the read-only civic brief without chat history or generated actions.
 
+Private briefs that do not belong to the current user now return an authentication-required response, and the brief page prompts the user to sign in instead of treating the brief as missing.
+
 ## AI Providers
 
 The API server can call real AI providers for brief analysis, document-grounded chat, and civic action generation. If no provider key is configured, the app falls back to the existing prototype responses.
@@ -147,6 +150,8 @@ If no selectable text is found, the browser falls back to OCR for scanned PDFs u
 The brief form now also validates required fields before submission so empty titles, weak jurisdiction values, and missing document text are caught early.
 
 In the brief chat composer, Enter sends a message and Cmd/Ctrl+Enter inserts a new line.
+
+The landing page includes an explicitly labeled example brief so new users can open the sample workflow before they create their own brief.
 
 Optional OCR configuration:
 

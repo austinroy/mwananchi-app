@@ -276,8 +276,14 @@ createServer(async (req, res) => {
 
     const briefMatch = url.pathname.match(/^\/api\/briefs\/([^/]+)$/);
     if (briefMatch && req.method === "GET") {
-      const brief = getBrief(briefMatch[1], await getRequestUserId(req));
+      const userId = await getRequestUserId(req);
+      const brief = getBrief(briefMatch[1], userId);
       if (!brief) {
+        const existingBrief = getBriefRecord(briefMatch[1]);
+        if (existingBrief && existingBrief.visibility === "private") {
+          sendJson(res, { error: "Authentication required" }, 401);
+          return;
+        }
         sendJson(res, { error: "Brief not found" }, 404);
         return;
       }
@@ -551,6 +557,10 @@ function getBrief(briefId, userId) {
     )
     .get(briefId, userId || "", "brief-sample-budget");
   return row ? mapBriefRow(row) : null;
+}
+
+function getBriefRecord(briefId) {
+  return db.prepare("SELECT * FROM briefs WHERE id = ?").get(briefId);
 }
 
 function getPublicBrief(briefId) {
