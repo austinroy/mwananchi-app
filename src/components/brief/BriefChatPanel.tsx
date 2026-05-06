@@ -61,7 +61,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
     <>
       {isCollapsed ? (
         <button
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-civic-100 bg-white px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg lg:hidden"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-civic-100 bg-white px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg"
           type="button"
           aria-label="Open chat"
           onClick={() => setIsCollapsed(false)}
@@ -75,7 +75,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
           "surface fixed right-0 top-0 z-40 flex h-[100svh] w-[min(92vw,420px)] flex-col overflow-hidden border-l border-civic-100 bg-white shadow-[-12px_0_32px_rgba(15,23,42,0.14)] transition-transform duration-300",
           "lg:top-auto lg:right-6 lg:bottom-6 lg:h-[min(78vh,720px)] lg:w-[460px] lg:rounded-lg lg:border lg:border-b-0 lg:shadow-[0_-12px_32px_rgba(15,23,42,0.14)]",
           isCollapsed
-            ? "translate-x-full lg:translate-x-0 lg:translate-y-full"
+            ? "translate-x-full lg:translate-x-0 lg:translate-y-full lg:opacity-0 lg:pointer-events-none"
             : "translate-x-0 lg:translate-y-0",
         ].join(" ")}
       >
@@ -174,6 +174,33 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
                   placeholder="Ask who is affected, what changed, or what action to take..."
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") {
+                      return;
+                    }
+
+                    if (event.metaKey || event.ctrlKey) {
+                      const textarea = event.currentTarget;
+                      const start = textarea.selectionStart ?? textarea.value.length;
+                      const end = textarea.selectionEnd ?? textarea.value.length;
+                      const nextValue =
+                        textarea.value.slice(0, start) +
+                        "\n" +
+                        textarea.value.slice(end);
+
+                      event.preventDefault();
+                      field.handleChange(nextValue);
+                      window.requestAnimationFrame(() => {
+                        textarea.selectionStart = start + 1;
+                        textarea.selectionEnd = start + 1;
+                        textarea.focus();
+                      });
+                      return;
+                    }
+
+                    event.preventDefault();
+                    void form.handleSubmit();
+                  }}
                 />
               )}
             </form.Field>
