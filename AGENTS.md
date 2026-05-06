@@ -46,6 +46,7 @@ Important files:
 - `src/components/brief/BriefHeaderActions.tsx`: brief detail header actions
 - `src/components/brief/BriefSections.tsx`: reusable brief section and notice cards
 - `src/components/brief/BriefChatPanel.tsx`: brief chat panel
+- `src/routes/index.tsx`: landing page with an example brief entry linked to the sample brief
 - `src/components/brief/BriefActionForm.tsx`: civic action draft form
 - `src/components/FormattedAiText.tsx`: safe React renderer for AI response formatting
 - `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
@@ -94,6 +95,8 @@ Auth status:
 - Hosted provider model lists are fetched through `src/lib/api.ts` and `server/index.mjs` so encrypted keys stay server-side. Do not move hosted-provider model discovery into browser fetches unless the app stops storing encrypted keys.
 - LM Studio setup is intentionally separate from hosted-provider key storage. The account page uses a modal for local base URL/model settings, tries browser-direct model loading from LM Studio's `/models` endpoint, falls back to the Mwananchi API proxy when CORS blocks direct access, and sends those settings with LM Studio generation requests.
 - The brief chat panel stays collapsed behind a persistent bottom-right button when not in use. The chat window itself retracts out of view, Enter sends a message, and Cmd/Ctrl+Enter inserts a new line in the composer.
+- Private briefs now return an authentication-required response when a non-owner tries to load them. The brief page shows a sign-in prompt for that state instead of a generic not-found error.
+- The landing page now labels the sample brief as an example and links directly to the shared sample brief so users can explore the workflow before creating their own.
 
 ## Development Priorities
 
