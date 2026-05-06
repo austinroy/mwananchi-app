@@ -43,7 +43,8 @@ export function LandingPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
-                to="/share/brief-sample-budget"
+                to="/share/$briefId"
+                params={{ briefId: "brief-sample-budget" }}
                 className="btn-primary w-full sm:w-auto"
               >
                 Open the example
