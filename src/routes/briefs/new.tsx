@@ -3,13 +3,12 @@ import { useForm } from "@tanstack/react-form";
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AiModelSelector, isProviderConfigured, resolveConfiguredAiSelection, useConfiguredAiProviders } from "../../components/ai/AiModelSelector";
 import { useAuth } from "../../lib/auth";
 import { extractPdfText } from "../../lib/pdf";
 import { createBrief } from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
 import { categories } from "../../lib/civicOptions";
-import type { BriefCategory, NewBriefInput, AiModelSelection } from "../../lib/types";
+import type { BriefCategory, NewBriefInput } from "../../lib/types";
 import { validateBriefCategory, validateBriefTitle, validateDocumentText, validateJurisdiction } from "../../lib/validation";
 
 export function NewBriefPage() {
@@ -17,20 +16,11 @@ export function NewBriefPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pdfStatus, setPdfStatus] = useState<string | null>(null);
-  const [aiSelection, setAiSelection] = useState<AiModelSelection>(() =>
-    readAiDefaults(),
-  );
-  const configured = useConfiguredAiProviders();
-  const isAiReady =
-    isProviderConfigured(aiSelection.provider, configured) &&
-    Boolean(aiSelection.model);
+  const aiDefaults = readAiDefaults();
+  const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
   const mutation = useMutation({
     mutationFn: (input: NewBriefInput) =>
-      createBrief(
-        input,
-        auth.user?.id,
-        resolveConfiguredAiSelection(aiSelection, configured),
-      ),
+      createBrief(input, auth.user?.id, aiDefaults),
     onSuccess: async (brief) => {
       await queryClient.invalidateQueries({
         queryKey: ["briefs", auth.user?.id],
@@ -188,15 +178,19 @@ export function NewBriefPage() {
             </div>
           )}
         </form.Field>
-        <div className="mt-5 rounded-md border border-civic-100 bg-civic-50/50 p-4">
-          <p className="mb-3 text-sm font-semibold text-ink">AI provider</p>
-          <AiModelSelector selection={aiSelection} onChange={setAiSelection} />
+        <div className="mt-5 rounded-md border border-civic-100 bg-civic-50/50 p-4 text-sm leading-6 text-slate-700">
+          <p className="font-semibold text-ink">AI model</p>
+          <p className="mt-1">
+            {aiDefaults.provider && aiDefaults.model
+              ? `${aiDefaults.provider} · ${aiDefaults.model}`
+              : "Set your preferred AI model in Account before generating a brief."}
+          </p>
         </div>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">
             {isAiReady
               ? "MVP note: AI responses should still be checked against official sources."
-              : "Configure the selected AI provider before generating a brief."}
+              : "Configure your AI model in Account before generating a brief."}
           </p>
           <button
             className="btn-primary w-full sm:w-auto"

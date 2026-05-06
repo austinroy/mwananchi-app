@@ -38,8 +38,15 @@ Important files:
 - `src/components/AppShell.tsx`: shared navigation shell
 - `src/components/ai/AiModelSelector.tsx`: shared AI provider/model selector and configuration helpers
 - `src/components/auth/AuthForms.tsx`: auth, account, and auth-gate UI
+- `src/components/auth/AuthShell.tsx`: shared auth shell and guard wrappers
 - `src/components/dashboard/DashboardPage.tsx`: civic brief dashboard and table view
+- `src/components/dashboard/BriefTable.tsx`: dashboard table and action menu
+- `src/components/dashboard/DashboardSummaryCards.tsx`: dashboard category summary cards
 - `src/components/brief/BriefPage.tsx`: brief detail, chat, share, and action workflows
+- `src/components/brief/BriefHeaderActions.tsx`: brief detail header actions
+- `src/components/brief/BriefSections.tsx`: reusable brief section and notice cards
+- `src/components/brief/BriefChatPanel.tsx`: brief chat panel
+- `src/components/brief/BriefActionForm.tsx`: civic action draft form
 - `src/components/FormattedAiText.tsx`: safe React renderer for AI response formatting
 - `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
 - `src/router.tsx`: route tree wiring only
@@ -206,3 +213,4 @@ npm install
 - Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
 - The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
 - The route/component organization pass moved auth, dashboard, and brief workflows out of `src/router.tsx`; keep future route files thin and prefer shared component modules for page logic.
+- Continue splitting page-level components into smaller modules where a file still holds multiple independent UI responsibilities.

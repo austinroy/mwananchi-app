@@ -1,1 +1,1 @@
-export { AccountPage } from "../components/auth/AuthForms";
+export { AccountPage } from "../components/auth/AccountPage";

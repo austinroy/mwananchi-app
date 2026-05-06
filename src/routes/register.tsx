@@ -1,1 +1,1 @@
-export { RegisterPage } from "../components/auth/AuthForms";
+export { RegisterPage } from "../components/auth/RegisterPage";
