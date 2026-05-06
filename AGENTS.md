@@ -53,6 +53,7 @@ Important files:
 - `src/routes/index.tsx`: landing page route
 - `src/routes/dashboard.tsx`: dashboard route
 - `src/routes/briefs/new.tsx`: new brief page and form flow
+- `src/components/brief/BriefChatPanel.tsx`: retractable brief chat drawer with a persistent open button and Enter-to-send composer shortcuts
 - `src/routes/briefs/$briefId.tsx`: brief detail route wrapper
 - `src/routes/briefs/$briefId.actions.tsx`: civic action route wrapper
 - `src/routes/briefs/$briefId.share.tsx`: shared brief route wrapper
@@ -92,6 +93,7 @@ Auth status:
 - Logged-in users can store user-owned AI provider keys. The API stores encrypted key material in the `ai_api_keys` SQLite table, using AES-256-GCM with `API_KEY_ENCRYPTION_SECRET`. The browser only receives configured/not-configured status.
 - Hosted provider model lists are fetched through `src/lib/api.ts` and `server/index.mjs` so encrypted keys stay server-side. Do not move hosted-provider model discovery into browser fetches unless the app stops storing encrypted keys.
 - LM Studio setup is intentionally separate from hosted-provider key storage. The account page uses a modal for local base URL/model settings, tries browser-direct model loading from LM Studio's `/models` endpoint, falls back to the Mwananchi API proxy when CORS blocks direct access, and sends those settings with LM Studio generation requests.
+- The brief chat panel stays collapsed behind a persistent bottom-right button when not in use. The chat window itself retracts out of view, Enter sends a message, and Cmd/Ctrl+Enter inserts a new line in the composer.
 
 ## Development Priorities
 

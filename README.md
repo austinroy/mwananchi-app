@@ -24,6 +24,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Brief detail page
 - Chat panel with mock responses
 - Civic action generator
+- Retractable brief chat panel with a persistent open button
 - Clerk-ready auth with local development fallback
 - Logged-in users keep generated briefs stored securely in the SQLite database
 - SQLite-backed API server for users, briefs, chat messages, and civic actions
@@ -144,6 +145,8 @@ The new brief form supports uploading a PDF. The app extracts selectable text fr
 If no selectable text is found, the browser falls back to OCR for scanned PDFs using the installed `pdfjs-dist` and `tesseract.js` packages. Vite serves the local Tesseract worker and core assets under `/ocr`. OCR is intentionally capped for responsiveness.
 
 The brief form now also validates required fields before submission so empty titles, weak jurisdiction values, and missing document text are caught early.
+
+In the brief chat composer, Enter sends a message and Cmd/Ctrl+Enter inserts a new line.
 
 Optional OCR configuration:
 
