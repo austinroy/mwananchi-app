@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { ChevronUp, MessageSquare, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FormattedAiText } from "../FormattedAiText";
 import { clearChatMessages, getChatMessages, sendChatMessage } from "../../lib/mockApi";
@@ -61,18 +61,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
     <>
       {isCollapsed ? (
         <button
-          className="fixed left-0 top-1/2 z-50 flex -translate-y-1/2 items-center gap-2 rounded-r-md border border-l-0 border-civic-100 bg-white px-2 py-2 text-xs font-semibold text-civic-800 shadow-lg lg:hidden"
-          type="button"
-          aria-label="Open chat"
-          onClick={() => setIsCollapsed(false)}
-        >
-          <MessageSquare size={14} />
-          Chat
-        </button>
-      ) : null}
-      {isCollapsed ? (
-        <button
-          className="fixed bottom-4 right-4 z-50 hidden items-center gap-2 rounded-md border border-civic-100 bg-white px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg lg:flex"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-civic-100 bg-white px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg lg:hidden"
           type="button"
           aria-label="Open chat"
           onClick={() => setIsCollapsed(false)}
@@ -103,7 +92,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               aria-label={isCollapsed ? "Expand chat" : "Collapse chat"}
               onClick={() => setIsCollapsed((value) => !value)}
             >
-              {isCollapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {isCollapsed ? <ChevronUp size={16} /> : <X size={16} />}
             </button>
             <button
               className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
@@ -201,7 +190,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               Send question
             </button>
           </form>
-        </>
+          </>
       )}
       </aside>
     </>
