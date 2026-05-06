@@ -219,3 +219,4 @@ npm install
 - The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
 - The route/component organization pass moved auth, dashboard, and brief workflows out of `src/router.tsx`; keep future route files thin and prefer shared component modules for page logic.
 - Continue splitting page-level components into smaller modules where a file still holds multiple independent UI responsibilities.
+- When a code change affects user-facing behavior, routing, auth, layout, or setup flow, update `AGENTS.md` and `README.md` in the same commit unless the user explicitly says not to.
