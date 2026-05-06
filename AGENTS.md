@@ -36,13 +36,16 @@ Important files:
 - `src/lib/aiSettings.ts`: browser-stored default AI provider/model settings
 - `src/lib/civicOptions.ts`: shared category/action option lists
 - `src/components/AppShell.tsx`: shared navigation shell
+- `src/components/ai/AiModelSelector.tsx`: shared AI provider/model selector and configuration helpers
 - `src/components/FormattedAiText.tsx`: safe React renderer for AI response formatting
 - `src/lib/pdf.ts`: selectable-text PDF extraction with OCR fallback for scanned PDFs
-- `src/router.tsx`: current routes and page components
+- `src/router.tsx`: current route tree and remaining shared page components
+- `src/routes/briefs/new.tsx`: new brief page and form flow
 - `src/lib/mockApi.ts`: mock async API and seed data
 - `server/index.mjs`: local SQLite API for users, briefs, chat messages, and civic actions
 - `src/lib/queryClient.ts`: TanStack Query client
 - `src/lib/types.ts`: shared product types
+- `src/lib/validation.ts`: shared brief form validation helpers
 - `src/styles.css`: global styles and Tailwind component classes
 
 Current routes:
@@ -76,13 +79,13 @@ Auth status:
 
 Near-term priorities:
 
-1. Split large route/page code out of `src/router.tsx` into route and component files.
+1. Continue splitting large route/page code out of `src/router.tsx` into route and component files.
 2. Add proper form validation for title, category, jurisdiction, and document text.
 3. [COMPLETED] Replace dashboard list with TanStack Table, including sorting, filtering, and status chips.
 4. Replace prototype API persistence with a production database.
 5. [COMPLETED] Add richer share controls, including private/public toggles and unshare.
 6. Add richer OCR progress and language controls.
-7. Continue moving route/page components out of `src/router.tsx`; AppShell and AI text formatting have already been extracted.
+7. Continue moving route/page components out of `src/router.tsx`; AppShell, AI text formatting, the AI selector, and the new brief page have already been extracted.
 
 ## Suggested File Organization
 
@@ -190,3 +193,4 @@ npm install
 - Keep the app name as `Mwananchi App`.
 - Prefer incremental, working slices over large speculative rewrites.
 - Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
+- The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
