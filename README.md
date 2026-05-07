@@ -175,7 +175,7 @@ Files recently updated for localization:
 
 These changes are available on branch `feature/additional-language-support`.
 
-Testing updates (feature/add-unit-tests):
+Testing updates:
 
 - Tests have been reorganized into per-folder `_tests_` directories under `src/components`, `src/lib`, and `src/routes`.
 - New tests include coverage for `AppShell`, `FormattedAiText`, `civicOptions`, `aiSettings` helpers, `validation` helpers, and the `LandingPage` route.

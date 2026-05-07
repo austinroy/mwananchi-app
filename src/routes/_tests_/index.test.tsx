@@ -11,8 +11,12 @@ describe("LandingPage", () => {
       </I18nProvider>,
     );
 
-    expect(screen.getByText("Turn public documents into public understanding.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Turn public documents into public understanding."),
+    ).toBeInTheDocument();
     // dashboard link should be present
-    expect(screen.getByRole("link", { name: /View dashboard/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /View dashboard/i }),
+    ).toBeInTheDocument();
   });
 });

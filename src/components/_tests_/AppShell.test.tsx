@@ -11,7 +11,11 @@ jest.mock("../../lib/auth", () => ({
 }));
 
 jest.mock("@clerk/clerk-react", () => ({
-  useClerk: () => ({ signOut: jest.fn(), openSignIn: jest.fn(), openSignUp: jest.fn() }),
+  useClerk: () => ({
+    signOut: jest.fn(),
+    openSignIn: jest.fn(),
+    openSignUp: jest.fn(),
+  }),
 }));
 
 import { AppShell } from "../AppShell";

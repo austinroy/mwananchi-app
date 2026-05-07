@@ -102,11 +102,11 @@ Auth status:
 
 Recent updates (feature/additional-language-support):
 
-  - `src/components/auth/AuthShell.tsx`
-  - `src/components/auth/AuthForms.tsx`
-  - `src/components/ai/AiModelSelector.tsx`
+- `src/components/auth/AuthShell.tsx`
+- `src/components/auth/AuthForms.tsx`
+- `src/components/ai/AiModelSelector.tsx`
 
-Testing updates (feature/add-unit-tests):
+Testing updates:
 
 - Added unit tests and reorganized tests into per-folder `_tests_` directories under `src/components`, `src/lib`, and `src/routes`.
 - New tests cover `AppShell`, `FormattedAiText`, `civicOptions`, `aiSettings` helpers, `validation` helpers, and the `LandingPage` route.
