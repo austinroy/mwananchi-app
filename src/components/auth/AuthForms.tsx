@@ -42,7 +42,14 @@ export function LoginPage() {
           : t("auth.welcomeBack.desc.local")
       }
       footer={
-        <span dangerouslySetInnerHTML={{__html: t("auth.footer.newHere").replace('{link}',`<a href=\"/register\" class=\"font-semibold text-civic-700\">${t("auth.button.createAccount")}</a>`)}} />
+        <span
+          dangerouslySetInnerHTML={{
+            __html: t("auth.footer.newHere").replace(
+              "{link}",
+              `<a href=\"/register\" class=\"font-semibold text-civic-700\">${t("auth.button.createAccount")}</a>`,
+            ),
+          }}
+        />
       }
     >
       {auth.isClerkEnabled ? (
@@ -70,7 +77,9 @@ export function LoginPage() {
           <form.Field name="email">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">{t("auth.field.email")}</span>
+                <span className="text-sm font-semibold">
+                  {t("auth.field.email")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   type="email"
@@ -84,7 +93,9 @@ export function LoginPage() {
           <form.Field name="password">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">{t("auth.field.password")}</span>
+                <span className="text-sm font-semibold">
+                  {t("auth.field.password")}
+                </span>
                 <span className="relative mt-2 block">
                   <input
                     className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11"
@@ -95,7 +106,9 @@ export function LoginPage() {
                   />
                   <button
                     aria-label={
-                      isPasswordVisible ? t("auth.hidePassword") : t("auth.showPassword")
+                      isPasswordVisible
+                        ? t("auth.hidePassword")
+                        : t("auth.showPassword")
                     }
                     className="absolute inset-y-0 right-2 grid w-8 place-items-center text-slate-500 transition hover:text-civic-700"
                     type="button"
@@ -157,7 +170,14 @@ export function RegisterPage() {
           : t("auth.register.desc.local")
       }
       footer={
-        <span dangerouslySetInnerHTML={{__html: t("auth.footer.haveAccount").replace('{link}',`<a href=\"/login\" class=\"font-semibold text-civic-700\">${t("auth.button.signin")}</a>`)}} />
+        <span
+          dangerouslySetInnerHTML={{
+            __html: t("auth.footer.haveAccount").replace(
+              "{link}",
+              `<a href=\"/login\" class=\"font-semibold text-civic-700\">${t("auth.button.signin")}</a>`,
+            ),
+          }}
+        />
       }
     >
       {auth.isClerkEnabled ? (
@@ -185,7 +205,9 @@ export function RegisterPage() {
           <form.Field name="name">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">{t("auth.field.name")}</span>
+                <span className="text-sm font-semibold">
+                  {t("auth.field.name")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -198,7 +220,9 @@ export function RegisterPage() {
           <form.Field name="email">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">{t("auth.field.email")}</span>
+                <span className="text-sm font-semibold">
+                  {t("auth.field.email")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   type="email"
@@ -212,7 +236,9 @@ export function RegisterPage() {
           <form.Field name="password">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">{t("auth.field.password")}</span>
+                <span className="text-sm font-semibold">
+                  {t("auth.field.password")}
+                </span>
                 <span className="relative mt-2 block">
                   <input
                     className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11"
@@ -224,7 +250,9 @@ export function RegisterPage() {
                   />
                   <button
                     aria-label={
-                      isPasswordVisible ? t("auth.hidePassword") : t("auth.showPassword")
+                      isPasswordVisible
+                        ? t("auth.hidePassword")
+                        : t("auth.showPassword")
                     }
                     className="absolute inset-y-0 right-2 grid w-8 place-items-center text-slate-500 transition hover:text-civic-700"
                     type="button"

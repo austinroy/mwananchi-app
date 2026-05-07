@@ -3,7 +3,12 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth";
-import { deleteBrief, getBrief, getSharedBrief, updateBriefVisibility } from "../../lib/mockApi";
+import {
+  deleteBrief,
+  getBrief,
+  getSharedBrief,
+  updateBriefVisibility,
+} from "../../lib/mockApi";
 import { BriefActionPage } from "./BriefActionForm";
 import { BriefChatPanel } from "./BriefChatPanel";
 import { BriefErrorNotice, BriefSections } from "./BriefSections";
@@ -19,7 +24,11 @@ export function BriefPage({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
 
-  const { data: brief, isLoading, error } = useQuery({
+  const {
+    data: brief,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["brief", briefId],
     queryFn: () => getBrief(briefId),
   });
@@ -44,7 +53,9 @@ export function BriefPage({ briefId }: { briefId: string }) {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : t("brief.updateVisibilityError"),
+        error instanceof Error
+          ? error.message
+          : t("brief.updateVisibilityError"),
       );
     },
   });
@@ -214,7 +225,10 @@ export function SharedBriefPage({ briefId }: { briefId: string }) {
   );
 }
 
-function getLocalizedSampleBrief(brief: CivicBrief, locale: string): CivicBrief {
+function getLocalizedSampleBrief(
+  brief: CivicBrief,
+  locale: string,
+): CivicBrief {
   if (brief.id !== "brief-sample-budget") return brief;
 
   const samples: Record<string, Partial<CivicBrief>> = {

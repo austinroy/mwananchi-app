@@ -237,15 +237,20 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "ai.noModels": "No models available",
     "auth.redirecting": "Taking you to your dashboard...",
     "auth.signInToContinue": "Sign in to continue",
-    "auth.gateCopy": "Mwananchi App saves briefs, chat history, and generated actions to your workspace.",
+    "auth.gateCopy":
+      "Mwananchi App saves briefs, chat history, and generated actions to your workspace.",
     "auth.welcomeBack.eyebrow": "Welcome back",
     "auth.welcomeBack.title": "Sign in to Mwananchi App",
-    "auth.welcomeBack.desc.clerk": "Use your Mwananchi App account to save briefs, messages, and civic actions.",
-    "auth.welcomeBack.desc.local": "Local development fallback is active until Clerk is configured.",
+    "auth.welcomeBack.desc.clerk":
+      "Use your Mwananchi App account to save briefs, messages, and civic actions.",
+    "auth.welcomeBack.desc.local":
+      "Local development fallback is active until Clerk is configured.",
     "auth.register.eyebrow": "Create workspace",
     "auth.register.title": "Create your Mwananchi account",
-    "auth.register.desc.clerk": "Create an account to keep your civic briefs connected to your workspace.",
-    "auth.register.desc.local": "Local development fallback is active until Clerk is configured.",
+    "auth.register.desc.clerk":
+      "Create an account to keep your civic briefs connected to your workspace.",
+    "auth.register.desc.local":
+      "Local development fallback is active until Clerk is configured.",
     "auth.footer.newHere": "New here? {link}",
     "auth.footer.haveAccount": "Already have an account? {link}",
     "auth.continueWithClerk": "Continue with Clerk",
@@ -377,7 +382,8 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "dashboard.linkCopied": "Kiungo kimenakiliwa!",
     "dashboard.visibilityError": "Imeshindikana kubadilisha mwonekano",
     "newBrief.title": "Unda muhtasari wa kiraia",
-    "newBrief.copy": "Bandika sera, mswada, tangazo la umma, au waraka wa kiraia.",
+    "newBrief.copy":
+      "Bandika sera, mswada, tangazo la umma, au waraka wa kiraia.",
     "newBrief.documentTitle": "Kichwa cha waraka",
     "newBrief.jurisdiction": "Eneo",
     "newBrief.category": "Kategoria",
@@ -424,7 +430,8 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
       "Hifadhi funguo zako za watoa huduma kwa maombi ya AI ukiwa umeingia. Funguo husimbwa na seva ya API na hazionyeshwi tena baada ya kuhifadhi.",
     "account.provider": "Mtoa huduma",
     "account.apiKey": "Ufunguo wa API",
-    "account.replaceKeyPlaceholder": "Weka ufunguo mpya kuchukua nafasi ya uliopo",
+    "account.replaceKeyPlaceholder":
+      "Weka ufunguo mpya kuchukua nafasi ya uliopo",
     "account.keyPlaceholder": "Bandika ufunguo wa API",
     "account.hideKey": "Ficha ufunguo wa API",
     "account.showKey": "Onyesha ufunguo wa API",
@@ -457,7 +464,8 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "account.model": "Muundo",
     "account.loadModelsFirst": "Pakia miundo kwanza",
     "account.modelsLoadedStatus": "Miundo {count} imepakiwa kutoka LM Studio.",
-    "account.noModelsReturned": "LM Studio imejibu, lakini hakuna miundo iliyorejeshwa.",
+    "account.noModelsReturned":
+      "LM Studio imejibu, lakini hakuna miundo iliyorejeshwa.",
     "account.modelsLoadError": "Haikuwezekana kupakia miundo ya LM Studio.",
     "account.cancel": "Ghairi",
     "account.saveLmStudio": "Hifadhi usanidi wa LM Studio",
@@ -470,15 +478,20 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "ai.noModels": "Hakuna miundo inayopatikana",
     "auth.redirecting": "Tunakuletea kwenye dashibodi yako...",
     "auth.signInToContinue": "Ingia ili kuendelea",
-    "auth.gateCopy": "Mwananchi App inahifadhi muhtasari, historia ya gumzo, na hatua zilizounganishwa kwenye nafasi yako.",
+    "auth.gateCopy":
+      "Mwananchi App inahifadhi muhtasari, historia ya gumzo, na hatua zilizounganishwa kwenye nafasi yako.",
     "auth.welcomeBack.eyebrow": "Karibu tena",
     "auth.welcomeBack.title": "Ingia kwenye Mwananchi App",
-    "auth.welcomeBack.desc.clerk": "Tumia akaunti yako ya Mwananchi App kuhifadhi muhtasari, ujumbe, na hatua za kiraia.",
-    "auth.welcomeBack.desc.local": "Mtafsiri wa maendeleo ya ndani unafanya kazi hadi Clerk awe amewekwa.",
+    "auth.welcomeBack.desc.clerk":
+      "Tumia akaunti yako ya Mwananchi App kuhifadhi muhtasari, ujumbe, na hatua za kiraia.",
+    "auth.welcomeBack.desc.local":
+      "Mtafsiri wa maendeleo ya ndani unafanya kazi hadi Clerk awe amewekwa.",
     "auth.register.eyebrow": "Unda nafasi ya kazi",
     "auth.register.title": "Unda akaunti yako ya Mwananchi",
-    "auth.register.desc.clerk": "Tengeneza akaunti ili kuhifadhi muhtasari yako kwenye nafasi yako ya kazi.",
-    "auth.register.desc.local": "Mtafsiri wa maendeleo ya ndani unafanya kazi hadi Clerk awe amewekwa.",
+    "auth.register.desc.clerk":
+      "Tengeneza akaunti ili kuhifadhi muhtasari yako kwenye nafasi yako ya kazi.",
+    "auth.register.desc.local":
+      "Mtafsiri wa maendeleo ya ndani unafanya kazi hadi Clerk awe amewekwa.",
     "auth.footer.newHere": "Hujawahi kutumia? {link}",
     "auth.footer.haveAccount": "Je, tayari una akaunti? {link}",
     "auth.continueWithClerk": "Endelea na Clerk",
@@ -593,8 +606,7 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "chat.processing": "المساعد يعالج الطلب",
     "chat.placeholder":
       "اسأل من يتأثر، أو ما الذي تغيّر، أو ما الإجراء المطلوب...",
-    "chat.configureAi":
-      "اضبط نموذج الذكاء الاصطناعي في الحساب قبل إرسال سؤال.",
+    "chat.configureAi": "اضبط نموذج الذكاء الاصطناعي في الحساب قبل إرسال سؤال.",
     "chat.send": "إرسال السؤال",
     "dashboard.workspace": "مساحة العمل",
     "dashboard.testing": "وضع الاختبار",
@@ -614,7 +626,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "dashboard.linkCopied": "تم نسخ الرابط إلى الحافظة!",
     "dashboard.visibilityError": "فشل تحديث الظهور",
     "newBrief.title": "إنشاء ملخص مدني",
-    "newBrief.copy": "الصق سياسة أو مشروع قانون أو إشعارًا عامًا أو وثيقة مدنية.",
+    "newBrief.copy":
+      "الصق سياسة أو مشروع قانون أو إشعارًا عامًا أو وثيقة مدنية.",
     "newBrief.documentTitle": "عنوان الوثيقة",
     "newBrief.jurisdiction": "الاختصاص",
     "newBrief.category": "الفئة",
@@ -672,7 +685,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "nav.createAccount": "Créer un compte",
     "nav.language": "Langue",
     "landing.eyebrow": "Intelligence civique pour les citoyens",
-    "landing.title": "Transformez les documents publics en compréhension publique.",
+    "landing.title":
+      "Transformez les documents publics en compréhension publique.",
     "landing.copy":
       "Mwananchi App aide les citoyens, journalistes, étudiants et groupes communautaires à expliquer les politiques, poser de meilleures questions et rédiger des actions civiques concrètes.",
     "landing.createBrief": "Créer un résumé civique",
@@ -779,7 +793,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "dashboard.linkCopied": "Lien copié dans le presse-papiers !",
     "dashboard.visibilityError": "Échec de la mise à jour de la visibilité",
     "newBrief.title": "Créer un résumé civique",
-    "newBrief.copy": "Collez une politique, un projet de loi, un avis public ou un document civique.",
+    "newBrief.copy":
+      "Collez une politique, un projet de loi, un avis public ou un document civique.",
     "newBrief.documentTitle": "Titre du document",
     "newBrief.jurisdiction": "Juridiction",
     "newBrief.category": "Catégorie",
@@ -790,7 +805,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "newBrief.generating": "Génération...",
     "account.eyebrow": "Paramètres de l’espace de travail",
     "account.title": "Compte",
-    "account.copy": "Gérez votre identité Mwananchi App et vos paramètres de connexion.",
+    "account.copy":
+      "Gérez votre identité Mwananchi App et vos paramètres de connexion.",
     "account.management": "Gestion du compte",
     "account.defaultAi": "Modèle d’IA par défaut",
     "account.apiKeys": "Clés API utilisateur",
@@ -886,7 +902,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Carregando resumos...",
     "dashboard.empty": "Nenhum resumo encontrado.",
     "newBrief.title": "Criar resumo cívico",
-    "newBrief.copy": "Cole uma política, projeto de lei, aviso público ou documento cívico.",
+    "newBrief.copy":
+      "Cole uma política, projeto de lei, aviso público ou documento cívico.",
     "newBrief.documentTitle": "Título do documento",
     "newBrief.jurisdiction": "Jurisdição",
     "newBrief.category": "Categoria",
@@ -895,7 +912,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "newBrief.generate": "Gerar resumo",
     "account.eyebrow": "Configurações da área de trabalho",
     "account.title": "Conta",
-    "account.copy": "Gerencie sua identidade no Mwananchi App e configurações de entrada.",
+    "account.copy":
+      "Gerencie sua identidade no Mwananchi App e configurações de entrada.",
     "account.management": "Gerenciamento da conta",
     "account.defaultAi": "Modelo de IA padrão",
     "account.apiKeys": "Chaves de API do usuário",
@@ -942,8 +960,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     (key: string, values: Record<string, string | number> = {}) => {
       const template = i18n.__({ phrase: key, locale });
       return Object.entries(values).reduce(
-        (text, [name, value]) =>
-          text.split(`{${name}}`).join(String(value)),
+        (text, [name, value]) => text.split(`{${name}}`).join(String(value)),
         template,
       );
     },
@@ -965,5 +982,11 @@ export function useI18n() {
 }
 
 function isLocale(value: string | null): value is Locale {
-  return value === "en" || value === "sw" || value === "ar" || value === "fr" || value === "pt";
+  return (
+    value === "en" ||
+    value === "sw" ||
+    value === "ar" ||
+    value === "fr" ||
+    value === "pt"
+  );
 }

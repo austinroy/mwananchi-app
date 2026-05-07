@@ -23,7 +23,9 @@ export function DashboardPage() {
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-semibold text-civic-700">
-            {auth.isAuthenticated ? t("dashboard.workspace") : t("dashboard.testing")}
+            {auth.isAuthenticated
+              ? t("dashboard.workspace")
+              : t("dashboard.testing")}
           </p>
           <h1 className="text-3xl font-bold text-ink sm:text-4xl">
             {t("dashboard.title")}

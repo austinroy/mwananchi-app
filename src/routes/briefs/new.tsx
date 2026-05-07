@@ -9,7 +9,12 @@ import { createBrief } from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
 import { categories } from "../../lib/civicOptions";
 import type { BriefCategory, NewBriefInput } from "../../lib/types";
-import { validateBriefCategory, validateBriefTitle, validateDocumentText, validateJurisdiction } from "../../lib/validation";
+import {
+  validateBriefCategory,
+  validateBriefTitle,
+  validateDocumentText,
+  validateJurisdiction,
+} from "../../lib/validation";
 import { useI18n } from "../../lib/i18n";
 
 export function NewBriefPage() {
@@ -44,9 +49,7 @@ export function NewBriefPage() {
   return (
     <main className="page-shell max-w-4xl">
       <h1 className="text-3xl font-bold sm:text-4xl">{t("newBrief.title")}</h1>
-      <p className="mt-2 text-slate-600">
-        {t("newBrief.copy")}
-      </p>
+      <p className="mt-2 text-slate-600">{t("newBrief.copy")}</p>
       <form
         className="mt-6 surface rounded-lg p-4 sm:p-6"
         onSubmit={(event) => {
@@ -80,7 +83,9 @@ export function NewBriefPage() {
           </form.Field>
           <form.Field
             name="jurisdiction"
-            validators={{ onChange: ({ value }) => validateJurisdiction(value) }}
+            validators={{
+              onChange: ({ value }) => validateJurisdiction(value),
+            }}
           >
             {(field) => (
               <label className="block">
@@ -102,7 +107,9 @@ export function NewBriefPage() {
           </form.Field>
           <form.Field
             name="category"
-            validators={{ onChange: ({ value }) => validateBriefCategory(value) }}
+            validators={{
+              onChange: ({ value }) => validateBriefCategory(value),
+            }}
           >
             {(field) => (
               <label className="block">
@@ -200,9 +207,7 @@ export function NewBriefPage() {
         </div>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">
-            {isAiReady
-              ? t("newBrief.mvpNote")
-              : t("newBrief.configureAi")}
+            {isAiReady ? t("newBrief.mvpNote") : t("newBrief.configureAi")}
           </p>
           <button
             className="btn-primary w-full sm:w-auto"
@@ -210,7 +215,9 @@ export function NewBriefPage() {
             type="submit"
           >
             <Sparkles size={16} />
-            {mutation.isPending ? t("newBrief.generating") : t("newBrief.generate")}
+            {mutation.isPending
+              ? t("newBrief.generating")
+              : t("newBrief.generate")}
           </button>
         </div>
       </form>

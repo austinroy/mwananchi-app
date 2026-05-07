@@ -1,4 +1,11 @@
-import { createColumnHelper, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, Globe, Link2, MoreVertical } from "lucide-react";
@@ -58,7 +65,9 @@ export function BriefTable({
           </Link>
         ),
       }),
-      columnHelper.accessor("category", { header: t("dashboard.categoryColumn") }),
+      columnHelper.accessor("category", {
+        header: t("dashboard.categoryColumn"),
+      }),
       columnHelper.accessor("jurisdiction", {
         header: t("dashboard.jurisdictionColumn"),
       }),
@@ -122,7 +131,8 @@ export function BriefTable({
                           briefId: brief.id,
                           visibility: "public",
                         });
-                        const target = document.activeElement?.closest("details");
+                        const target =
+                          document.activeElement?.closest("details");
                         if (target) target.removeAttribute("open");
                       }}
                     >
@@ -138,7 +148,8 @@ export function BriefTable({
                           briefId: brief.id,
                           visibility: "private",
                         });
-                        const target = document.activeElement?.closest("details");
+                        const target =
+                          document.activeElement?.closest("details");
                         if (target) target.removeAttribute("open");
                       }}
                     >

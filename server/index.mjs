@@ -90,7 +90,9 @@ db.exec(`
 `);
 
 ensureColumn("briefs", "visibility", "TEXT NOT NULL DEFAULT 'private'");
-db.exec("UPDATE briefs SET visibility = 'unlisted' WHERE is_public = 1 AND visibility = 'private'");
+db.exec(
+  "UPDATE briefs SET visibility = 'unlisted' WHERE is_public = 1 AND visibility = 'private'",
+);
 ensureColumn("briefs", "ai_error", "TEXT");
 ensureColumn("chat_messages", "ai_error", "TEXT");
 ensureColumn("civic_actions", "ai_error", "TEXT");
@@ -280,7 +282,11 @@ createServer(async (req, res) => {
     if (visibilityMatch && req.method === "PUT") {
       const body = await readJson(req);
       const userId = await getRequestUserId(req);
-      const result = updateBriefVisibility(visibilityMatch[1], userId, body.visibility);
+      const result = updateBriefVisibility(
+        visibilityMatch[1],
+        userId,
+        body.visibility,
+      );
       if (!result) {
         sendJson(res, { error: "Brief not found" }, 404);
         return;
@@ -331,7 +337,11 @@ createServer(async (req, res) => {
         return;
       }
       if (result?.status === "forbidden") {
-        sendJson(res, { error: "You can only delete briefs you created." }, 403);
+        sendJson(
+          res,
+          { error: "You can only delete briefs you created." },
+          403,
+        );
         return;
       }
       sendJson(res, result);
@@ -470,7 +480,8 @@ function getUserAiDefaults(userId) {
 function upsertUserAiDefaults(userId, input) {
   const selection = normalizeAiSelection(input);
   const now = new Date().toISOString();
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO user_ai_defaults (user_id, provider, model, base_url, updated_at)
     VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
@@ -478,7 +489,8 @@ function upsertUserAiDefaults(userId, input) {
       model = excluded.model,
       base_url = excluded.base_url,
       updated_at = excluded.updated_at
-  `).run(
+  `,
+  ).run(
     userId,
     selection.provider,
     selection.model,
@@ -593,7 +605,9 @@ function getBriefRecord(briefId) {
 
 function getPublicBrief(briefId) {
   const row = db
-    .prepare("SELECT * FROM briefs WHERE id = ? AND visibility IN ('unlisted', 'public')")
+    .prepare(
+      "SELECT * FROM briefs WHERE id = ? AND visibility IN ('unlisted', 'public')",
+    )
     .get(briefId);
   return row ? mapBriefRow(row) : null;
 }
@@ -737,16 +751,17 @@ function updateBriefVisibility(briefId, userId, visibility) {
     .get(briefId, userId || "", "brief-sample-budget");
   if (!row) return null;
 
-  db.prepare("UPDATE briefs SET visibility = ? WHERE id = ?").run(visibility, briefId);
+  db.prepare("UPDATE briefs SET visibility = ? WHERE id = ?").run(
+    visibility,
+    briefId,
+  );
   return { ok: true, visibility };
 }
 
 function deleteBrief(briefId, userId) {
   if (briefId === "brief-sample-budget") return { status: "sample" };
 
-  const row = db
-    .prepare("SELECT * FROM briefs WHERE id = ?")
-    .get(briefId);
+  const row = db.prepare("SELECT * FROM briefs WHERE id = ?").get(briefId);
   if (!row) return { status: "not_found" };
   if (row.user_id && row.user_id !== userId) return { status: "forbidden" };
 
@@ -873,7 +888,8 @@ ${input.documentText.slice(0, 24000)}`,
   if (!parsed) {
     return {
       brief: buildBriefFromUnstructuredAiText(text),
-      error: "The AI provider returned prose instead of structured JSON, so Mwananchi App used that response as the brief summary.",
+      error:
+        "The AI provider returned prose instead of structured JSON, so Mwananchi App used that response as the brief summary.",
     };
   }
 
@@ -899,8 +915,7 @@ Source text excerpt: ${brief.sourceText.slice(0, 12000)}`
   const result = await generateAiText({
     ai,
     userId,
-    instructions:
-      `You answer questions about a civic brief. Ground answers in the provided brief/source text. If unsupported, say the brief does not include enough information. ${getLanguageInstruction(ai)}`,
+    instructions: `You answer questions about a civic brief. Ground answers in the provided brief/source text. If unsupported, say the brief does not include enough information. ${getLanguageInstruction(ai)}`,
     input: `${context}
 
 Recent chat:
@@ -928,8 +943,7 @@ async function generateActionWithAi(briefId, input, userId) {
   return generateAiText({
     ai: input.ai,
     userId,
-    instructions:
-      `Draft clear, respectful civic action text. Avoid legal advice. Keep claims grounded in the brief. ${getLanguageInstruction(input.ai)}`,
+    instructions: `Draft clear, respectful civic action text. Avoid legal advice. Keep claims grounded in the brief. ${getLanguageInstruction(input.ai)}`,
     input: `Create a ${input.actionType} with a ${input.tone} tone for ${input.audience || "a public official"}.
 
 Extra context: ${input.extraContext || "None"}
@@ -1332,12 +1346,24 @@ function parseJsonObject(value) {
 
 function normalizeParsedBrief(parsed) {
   return {
-    summary: String(parsed.summary || parsed.plainLanguageSummary || parsed.overview || "").trim(),
-    keyPoints: normalizeStringArray(parsed.keyPoints || parsed.key_points || parsed.points),
-    affectedGroups: normalizeStringArray(parsed.affectedGroups || parsed.affected_groups || parsed.whoIsAffected),
-    concerns: normalizeStringArray(parsed.concerns || parsed.risks || parsed.possibleConcerns),
-    citizenQuestions: normalizeStringArray(parsed.citizenQuestions || parsed.citizen_questions || parsed.questions),
-    nextSteps: normalizeStringArray(parsed.nextSteps || parsed.next_steps || parsed.actions),
+    summary: String(
+      parsed.summary || parsed.plainLanguageSummary || parsed.overview || "",
+    ).trim(),
+    keyPoints: normalizeStringArray(
+      parsed.keyPoints || parsed.key_points || parsed.points,
+    ),
+    affectedGroups: normalizeStringArray(
+      parsed.affectedGroups || parsed.affected_groups || parsed.whoIsAffected,
+    ),
+    concerns: normalizeStringArray(
+      parsed.concerns || parsed.risks || parsed.possibleConcerns,
+    ),
+    citizenQuestions: normalizeStringArray(
+      parsed.citizenQuestions || parsed.citizen_questions || parsed.questions,
+    ),
+    nextSteps: normalizeStringArray(
+      parsed.nextSteps || parsed.next_steps || parsed.actions,
+    ),
   };
 }
 
@@ -1346,10 +1372,21 @@ function buildBriefFromUnstructuredAiText(text) {
   return {
     summary: summarizeUnstructuredText(sections.summary?.join(" ") || text),
     keyPoints: sections.keyPoints || extractListLikeLines(text).slice(0, 5),
-    affectedGroups: sections.affectedGroups || ["Citizens", "Community groups", "Public officials"],
-    concerns: sections.concerns || ["Review the original document before relying on this summary."],
-    citizenQuestions: sections.citizenQuestions || ["What official process, deadline, and responsible office should citizens verify?"],
-    nextSteps: sections.nextSteps || ["Compare this summary against the source document.", "Ask a follow-up question in the chat panel."],
+    affectedGroups: sections.affectedGroups || [
+      "Citizens",
+      "Community groups",
+      "Public officials",
+    ],
+    concerns: sections.concerns || [
+      "Review the original document before relying on this summary.",
+    ],
+    citizenQuestions: sections.citizenQuestions || [
+      "What official process, deadline, and responsible office should citizens verify?",
+    ],
+    nextSteps: sections.nextSteps || [
+      "Compare this summary against the source document.",
+      "Ask a follow-up question in the chat panel.",
+    ],
   };
 }
 
@@ -1361,9 +1398,13 @@ function parseMarkdownishSections(text) {
     const trimmed = line.trim();
     if (!trimmed) return;
 
-    const heading = trimmed.replace(/^#{1,3}\s+/, "").replace(/:$/, "").toLowerCase();
+    const heading = trimmed
+      .replace(/^#{1,3}\s+/, "")
+      .replace(/:$/, "")
+      .toLowerCase();
     if (/key points?/.test(heading)) currentKey = "keyPoints";
-    else if (/affected|who is affected/.test(heading)) currentKey = "affectedGroups";
+    else if (/affected|who is affected/.test(heading))
+      currentKey = "affectedGroups";
     else if (/concerns?|risks?/.test(heading)) currentKey = "concerns";
     else if (/questions?/.test(heading)) currentKey = "citizenQuestions";
     else if (/next steps?|actions?/.test(heading)) currentKey = "nextSteps";
@@ -1390,7 +1431,12 @@ function summarizeUnstructuredText(text) {
 function extractListLikeLines(text) {
   return text
     .split("\n")
-    .map((line) => line.trim().replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, ""))
+    .map((line) =>
+      line
+        .trim()
+        .replace(/^[-*]\s+/, "")
+        .replace(/^\d+[.)]\s+/, ""),
+    )
     .filter((line) => line.length > 20)
     .slice(0, 6);
 }

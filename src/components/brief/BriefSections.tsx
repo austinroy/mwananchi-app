@@ -1,6 +1,10 @@
 import { useI18n } from "../../lib/i18n";
 
-export function BriefSections({ sections }: { sections: { title: string; items: string[] }[] }) {
+export function BriefSections({
+  sections,
+}: {
+  sections: { title: string; items: string[] }[];
+}) {
   return (
     <section className="space-y-4">
       {sections.map((section) => (

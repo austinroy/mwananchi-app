@@ -88,7 +88,9 @@ export function BriefHeaderActions({
         onClick={onDelete}
       >
         <Trash2 size={16} />
-        {isDeletePending ? t("briefActions.deleting") : t("briefActions.delete")}
+        {isDeletePending
+          ? t("briefActions.deleting")
+          : t("briefActions.delete")}
       </button>
     </div>
   );
