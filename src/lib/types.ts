@@ -34,7 +34,7 @@ export type AiModelSelection = {
   provider: AiProviderId;
   model: string;
   baseUrl?: string;
-  language?: "en" | "sw";
+  language?: "en" | "sw" | "ar" | "fr" | "pt";
 };
 
 export type AiApiKeyStatus = {

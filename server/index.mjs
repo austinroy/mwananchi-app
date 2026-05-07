@@ -1294,14 +1294,20 @@ function normalizeAiSelection(ai) {
     ai.baseUrl.trim()
       ? { baseUrl: ai.baseUrl.trim() }
       : {}),
-    ...(["en", "sw"].includes(ai?.language) ? { language: ai.language } : {}),
+    ...(["en", "sw", "ar", "fr", "pt"].includes(ai?.language)
+      ? { language: ai.language }
+      : {}),
   };
 }
 
 function getLanguageInstruction(ai) {
-  return ai?.language === "sw"
-    ? "Respond in Kiswahili. Keep civic/legal wording clear and accessible for Kenyan readers."
-    : "Respond in English.";
+  const instructions = {
+    ar: "Respond in Arabic. Use clear Modern Standard Arabic and keep civic/legal wording accessible.",
+    fr: "Respond in French. Keep civic/legal wording clear and accessible.",
+    pt: "Respond in Portuguese. Keep civic/legal wording clear and accessible.",
+    sw: "Respond in Kiswahili. Keep civic/legal wording clear and accessible for Kenyan readers.",
+  };
+  return instructions[ai?.language] || "Respond in English.";
 }
 
 function parseJsonObject(value) {
