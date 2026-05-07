@@ -54,7 +54,7 @@ export const seedBrief: import("./types").CivicBrief = {
   createdAt: new Date().toISOString(),
 };
 
-export async function listBriefs(userId?: string) {
+export async function listBriefs(_userId?: string) {
   const apiBriefs = await listApiBriefs();
   return apiBriefs ?? [];
 }
@@ -133,7 +133,7 @@ export async function updateBriefVisibility(
   return apiResult;
 }
 
-export async function deleteBrief(briefId: string, userId?: string) {
+export async function deleteBrief(briefId: string, _userId?: string) {
   const apiResult = await deleteApiBrief(briefId);
   if (!apiResult) throw new Error("Failed to delete brief");
   return apiResult;

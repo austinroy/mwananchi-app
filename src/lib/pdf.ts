@@ -1,5 +1,6 @@
 import { createWorker } from "tesseract.js";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
+// eslint-disable-next-line import/default
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 
 export type PdfExtractionProgress = {
@@ -195,22 +196,4 @@ function cleanOcrText(value: string) {
     .trim();
 }
 
-type PdfDocument = {
-  numPages: number;
-  getPage: (pageNumber: number) => Promise<PdfPage>;
-};
-
-type PdfPage = {
-  getViewport: (options: { scale: number }) => PdfViewport;
-  render: (options: {
-    canvasContext: CanvasRenderingContext2D;
-    viewport: PdfViewport;
-  }) => {
-    promise: Promise<void>;
-  };
-};
-
-type PdfViewport = {
-  width: number;
-  height: number;
-};
+// PDF page and viewport types are intentionally omitted — runtime PDF.js types are used.

@@ -356,9 +356,7 @@ createServer(async (req, res) => {
       500,
     );
   }
-}).listen(port, host, () => {
-  console.log(`Mwananchi API listening on http://${host}:${port}`);
-});
+}).listen(port, host, () => {});
 
 function setCorsHeaders(res) {
   res.setHeader(

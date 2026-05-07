@@ -16,8 +16,6 @@ if (typeof (global as any).TextDecoder === "undefined") {
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require("react");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const jestRequire = require;
   if (typeof jest !== "undefined" && jest && jest.mock) {
     jest.mock("@tanstack/react-router", () => ({
       Link: ({ children, ...props }: any) =>
@@ -28,6 +26,6 @@ try {
       useRouter: () => ({}),
     }));
   }
-} catch (e) {
+} catch {
   // ignore in environments without jest/require
 }
