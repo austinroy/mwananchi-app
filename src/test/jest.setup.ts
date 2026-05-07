@@ -10,3 +10,24 @@ if (typeof (global as any).TextEncoder === "undefined") {
 if (typeof (global as any).TextDecoder === "undefined") {
   (global as any).TextDecoder = TextDecoder;
 }
+
+// Provide a light-weight mock for @tanstack/react-router used in components during tests.
+// This avoids needing a full RouterProvider when unit-testing isolated components.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require("react");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const jestRequire = require;
+  if (typeof jest !== "undefined" && jest && jest.mock) {
+    jest.mock("@tanstack/react-router", () => ({
+      Link: ({ children, ...props }: any) =>
+        React.createElement("a", { href: props.to ?? props.href ?? "#", ...props }, children),
+      Outlet: () => null,
+      useNavigate: () => jest.fn(),
+      useLinkProps: () => ({}),
+      useRouter: () => ({}),
+    }));
+  }
+} catch (e) {
+  // ignore in environments without jest/require
+}
