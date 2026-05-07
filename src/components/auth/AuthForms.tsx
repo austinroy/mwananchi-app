@@ -5,11 +5,13 @@ import { Eye, EyeOff, LogIn, UserPlus, UserCog, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth";
 import { AuthFormShell, AuthRedirectingCard } from "./AuthShell";
+import { useI18n } from "../../lib/i18n";
 
 export function LoginPage() {
   const auth = useAuth();
   const clerk = useClerk();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const form = useForm({
     defaultValues: {
@@ -32,20 +34,15 @@ export function LoginPage() {
 
   return (
     <AuthFormShell
-      eyebrow="Welcome back"
-      title="Sign in to Mwananchi App"
+      eyebrow={t("auth.welcomeBack.eyebrow")}
+      title={t("auth.welcomeBack.title")}
       description={
         auth.isClerkEnabled
-          ? "Use your Mwananchi App account to save briefs, messages, and civic actions."
-          : "Local development fallback is active until Clerk is configured."
+          ? t("auth.welcomeBack.desc.clerk")
+          : t("auth.welcomeBack.desc.local")
       }
       footer={
-        <span>
-          New here?{" "}
-          <Link to="/register" className="font-semibold text-civic-700">
-            Create an account
-          </Link>
-        </span>
+        <span dangerouslySetInnerHTML={{__html: t("auth.footer.newHere").replace('{link}',`<a href=\"/register\" class=\"font-semibold text-civic-700\">${t("auth.button.createAccount")}</a>`)}} />
       }
     >
       {auth.isClerkEnabled ? (
@@ -60,7 +57,7 @@ export function LoginPage() {
           }}
         >
           <LogIn size={16} />
-          Continue with Clerk
+          {t("auth.continueWithClerk")}
         </button>
       ) : (
         <form
@@ -73,7 +70,7 @@ export function LoginPage() {
           <form.Field name="email">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Email</span>
+                <span className="text-sm font-semibold">{t("auth.field.email")}</span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   type="email"
@@ -87,7 +84,7 @@ export function LoginPage() {
           <form.Field name="password">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Password</span>
+                <span className="text-sm font-semibold">{t("auth.field.password")}</span>
                 <span className="relative mt-2 block">
                   <input
                     className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11"
@@ -98,7 +95,7 @@ export function LoginPage() {
                   />
                   <button
                     aria-label={
-                      isPasswordVisible ? "Hide password" : "Show password"
+                      isPasswordVisible ? t("auth.hidePassword") : t("auth.showPassword")
                     }
                     className="absolute inset-y-0 right-2 grid w-8 place-items-center text-slate-500 transition hover:text-civic-700"
                     type="button"
@@ -116,7 +113,7 @@ export function LoginPage() {
           </form.Field>
           <button className="btn-primary w-full" type="submit">
             <LogIn size={16} />
-            Sign in
+            {t("auth.button.signin")}
           </button>
         </form>
       )}
@@ -128,6 +125,7 @@ export function RegisterPage() {
   const auth = useAuth();
   const clerk = useClerk();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const form = useForm({
     defaultValues: {
@@ -151,20 +149,15 @@ export function RegisterPage() {
 
   return (
     <AuthFormShell
-      eyebrow="Create workspace"
-      title="Create your Mwananchi account"
+      eyebrow={t("auth.register.eyebrow")}
+      title={t("auth.register.title")}
       description={
         auth.isClerkEnabled
-          ? "Create an account to keep your civic briefs connected to your workspace."
-          : "Local development fallback is active until Clerk is configured."
+          ? t("auth.register.desc.clerk")
+          : t("auth.register.desc.local")
       }
       footer={
-        <span>
-          Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-civic-700">
-            Sign in
-          </Link>
-        </span>
+        <span dangerouslySetInnerHTML={{__html: t("auth.footer.haveAccount").replace('{link}',`<a href=\"/login\" class=\"font-semibold text-civic-700\">${t("auth.button.signin")}</a>`)}} />
       }
     >
       {auth.isClerkEnabled ? (
@@ -179,7 +172,7 @@ export function RegisterPage() {
           }}
         >
           <UserPlus size={16} />
-          Continue with Clerk
+          {t("auth.continueWithClerk")}
         </button>
       ) : (
         <form
@@ -192,7 +185,7 @@ export function RegisterPage() {
           <form.Field name="name">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Name</span>
+                <span className="text-sm font-semibold">{t("auth.field.name")}</span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -205,7 +198,7 @@ export function RegisterPage() {
           <form.Field name="email">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Email</span>
+                <span className="text-sm font-semibold">{t("auth.field.email")}</span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   type="email"
@@ -219,7 +212,7 @@ export function RegisterPage() {
           <form.Field name="password">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Password</span>
+                <span className="text-sm font-semibold">{t("auth.field.password")}</span>
                 <span className="relative mt-2 block">
                   <input
                     className="w-full rounded-md border border-civic-100 px-3 py-2 pr-11"
@@ -231,7 +224,7 @@ export function RegisterPage() {
                   />
                   <button
                     aria-label={
-                      isPasswordVisible ? "Hide password" : "Show password"
+                      isPasswordVisible ? t("auth.hidePassword") : t("auth.showPassword")
                     }
                     className="absolute inset-y-0 right-2 grid w-8 place-items-center text-slate-500 transition hover:text-civic-700"
                     type="button"
@@ -249,7 +242,7 @@ export function RegisterPage() {
           </form.Field>
           <button className="btn-primary w-full" type="submit">
             <UserPlus size={16} />
-            Create account
+            {t("auth.button.createAccount")}
           </button>
         </form>
       )}
