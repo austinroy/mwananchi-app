@@ -88,10 +88,13 @@ export async function updateApiBriefVisibility(
   briefId: string,
   visibility: "private" | "unlisted" | "public",
 ) {
-  return apiRequest<UpdateVisibilityResult>(`/api/briefs/${briefId}/visibility`, {
-    method: "PUT",
-    body: JSON.stringify({ visibility }),
-  });
+  return apiRequest<UpdateVisibilityResult>(
+    `/api/briefs/${briefId}/visibility`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ visibility }),
+    },
+  );
 }
 
 export async function deleteApiBrief(briefId: string) {
@@ -136,10 +139,13 @@ export async function getApiAiDefaults() {
 }
 
 export async function saveApiAiDefaults(selection: AiModelSelection) {
-  const result = await apiRequest<AiDefaultsRecord>("/api/users/me/ai-defaults", {
-    method: "PUT",
-    body: JSON.stringify(selection),
-  });
+  const result = await apiRequest<AiDefaultsRecord>(
+    "/api/users/me/ai-defaults",
+    {
+      method: "PUT",
+      body: JSON.stringify(selection),
+    },
+  );
   if (!result) throw new Error("Could not save AI defaults.");
   return result;
 }

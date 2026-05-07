@@ -1,4 +1,8 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from "@tanstack/react-router";
 import { AppShell } from "./components/AppShell";
 import { LandingPage } from "./routes";
 import { DashboardPage } from "./routes/dashboard";

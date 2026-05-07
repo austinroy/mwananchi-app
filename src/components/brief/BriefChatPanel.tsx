@@ -3,7 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronUp, MessageSquare, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FormattedAiText } from "../FormattedAiText";
-import { clearChatMessages, getChatMessages, sendChatMessage } from "../../lib/mockApi";
+import {
+  clearChatMessages,
+  getChatMessages,
+  sendChatMessage,
+} from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
 import { useI18n } from "../../lib/i18n";
 
@@ -32,7 +36,9 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
     onSuccess: async () => {
       setClearError(null);
       queryClient.setQueryData(["brief-chat", briefId], []);
-      await queryClient.invalidateQueries({ queryKey: ["brief-chat", briefId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["brief-chat", briefId],
+      });
     },
     onError: (error) =>
       setClearError(
@@ -81,146 +87,148 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
             : "translate-x-0 lg:translate-y-0",
         ].join(" ")}
       >
-      <div className="border-b border-civic-100 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 font-bold">
-            <MessageSquare size={18} />
-            {t("chat.title")}
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
-              type="button"
-              aria-label={isCollapsed ? t("chat.expand") : t("chat.collapse")}
-              onClick={() => setIsCollapsed((value) => !value)}
-            >
-              {isCollapsed ? <ChevronUp size={16} /> : <X size={16} />}
-            </button>
-            <button
-              className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
-              type="button"
-              disabled={!data.length || clearMutation.isPending}
-              onClick={() => {
-                setClearError(null);
-                if (window.confirm(t("chat.clearConfirm"))) {
-                  clearMutation.mutate();
-                }
-              }}
-            >
-              {clearMutation.isPending ? t("chat.clearing") : t("chat.clear")}
-            </button>
+        <div className="border-b border-civic-100 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 font-bold">
+              <MessageSquare size={18} />
+              {t("chat.title")}
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
+                type="button"
+                aria-label={isCollapsed ? t("chat.expand") : t("chat.collapse")}
+                onClick={() => setIsCollapsed((value) => !value)}
+              >
+                {isCollapsed ? <ChevronUp size={16} /> : <X size={16} />}
+              </button>
+              <button
+                className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
+                type="button"
+                disabled={!data.length || clearMutation.isPending}
+                onClick={() => {
+                  setClearError(null);
+                  if (window.confirm(t("chat.clearConfirm"))) {
+                    clearMutation.mutate();
+                  }
+                }}
+              >
+                {clearMutation.isPending ? t("chat.clearing") : t("chat.clear")}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      {isCollapsed ? null : (
-        <>
-          <div className="border-b border-civic-100 px-4 pb-3 pt-4 text-sm leading-6 text-slate-700">
-            <p className="font-semibold text-ink">{t("chat.aiModel")}</p>
-            <p className="mt-1">
-              {aiDefaults.provider && aiDefaults.model
-                ? `${aiDefaults.provider} · ${aiDefaults.model}`
-                : t("chat.aiNotReady")}
-            </p>
-          </div>
-          {clearError ? (
-            <p className="mx-4 mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-semibold text-red-700">
-              {clearError}
-            </p>
-          ) : null}
-          <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-3 sm:p-4">
-            {data.map((message) => (
-              <div
-                key={message.id}
-                className={
-                  message.role === "user"
-                    ? "ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8"
-                    : "mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8"
-                }
-              >
-                {message.role === "assistant" ? (
-                  <FormattedAiText content={message.content} />
-                ) : (
-                  <p>{message.content}</p>
-                )}
-              </div>
-            ))}
-            {pendingMessage ? (
-              <>
-                <div className="ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8">
-                  <p>{pendingMessage}</p>
-                </div>
-                <div className="mr-4 inline-flex rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8">
-                  <span
-                    className="typing-dots"
-                    aria-label={t("chat.processing")}
-                  >
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                </div>
-              </>
-            ) : null}
-          </div>
-          <form
-            className="sticky bottom-0 border-t border-civic-100 bg-white p-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void form.handleSubmit();
-            }}
-          >
-            <form.Field name="message">
-              {(field) => (
-                <textarea
-                  className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6"
-                  placeholder={t("chat.placeholder")}
-                  value={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter") {
-                      return;
-                    }
-
-                    if (event.metaKey || event.ctrlKey) {
-                      const textarea = event.currentTarget;
-                      const start = textarea.selectionStart ?? textarea.value.length;
-                      const end = textarea.selectionEnd ?? textarea.value.length;
-                      const nextValue =
-                        textarea.value.slice(0, start) +
-                        "\n" +
-                        textarea.value.slice(end);
-
-                      event.preventDefault();
-                      field.handleChange(nextValue);
-                      window.requestAnimationFrame(() => {
-                        textarea.selectionStart = start + 1;
-                        textarea.selectionEnd = start + 1;
-                        textarea.focus();
-                      });
-                      return;
-                    }
-
-                    event.preventDefault();
-                    void form.handleSubmit();
-                  }}
-                />
-              )}
-            </form.Field>
-            {!isAiReady ? (
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                {t("chat.configureAi")}
+        {isCollapsed ? null : (
+          <>
+            <div className="border-b border-civic-100 px-4 pb-3 pt-4 text-sm leading-6 text-slate-700">
+              <p className="font-semibold text-ink">{t("chat.aiModel")}</p>
+              <p className="mt-1">
+                {aiDefaults.provider && aiDefaults.model
+                  ? `${aiDefaults.provider} · ${aiDefaults.model}`
+                  : t("chat.aiNotReady")}
+              </p>
+            </div>
+            {clearError ? (
+              <p className="mx-4 mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-semibold text-red-700">
+                {clearError}
               </p>
             ) : null}
-            <button
-              className="btn-primary mt-3 w-full"
-              disabled={mutation.isPending || !isAiReady}
-              type="submit"
+            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-3 sm:p-4">
+              {data.map((message) => (
+                <div
+                  key={message.id}
+                  className={
+                    message.role === "user"
+                      ? "ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8"
+                      : "mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8"
+                  }
+                >
+                  {message.role === "assistant" ? (
+                    <FormattedAiText content={message.content} />
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
+                </div>
+              ))}
+              {pendingMessage ? (
+                <>
+                  <div className="ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8">
+                    <p>{pendingMessage}</p>
+                  </div>
+                  <div className="mr-4 inline-flex rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8">
+                    <span
+                      className="typing-dots"
+                      aria-label={t("chat.processing")}
+                    >
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  </div>
+                </>
+              ) : null}
+            </div>
+            <form
+              className="sticky bottom-0 border-t border-civic-100 bg-white p-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void form.handleSubmit();
+              }}
             >
-              {t("chat.send")}
-            </button>
-          </form>
+              <form.Field name="message">
+                {(field) => (
+                  <textarea
+                    className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6"
+                    placeholder={t("chat.placeholder")}
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") {
+                        return;
+                      }
+
+                      if (event.metaKey || event.ctrlKey) {
+                        const textarea = event.currentTarget;
+                        const start =
+                          textarea.selectionStart ?? textarea.value.length;
+                        const end =
+                          textarea.selectionEnd ?? textarea.value.length;
+                        const nextValue =
+                          textarea.value.slice(0, start) +
+                          "\n" +
+                          textarea.value.slice(end);
+
+                        event.preventDefault();
+                        field.handleChange(nextValue);
+                        window.requestAnimationFrame(() => {
+                          textarea.selectionStart = start + 1;
+                          textarea.selectionEnd = start + 1;
+                          textarea.focus();
+                        });
+                        return;
+                      }
+
+                      event.preventDefault();
+                      void form.handleSubmit();
+                    }}
+                  />
+                )}
+              </form.Field>
+              {!isAiReady ? (
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {t("chat.configureAi")}
+                </p>
+              ) : null}
+              <button
+                className="btn-primary mt-3 w-full"
+                disabled={mutation.isPending || !isAiReady}
+                type="submit"
+              >
+                {t("chat.send")}
+              </button>
+            </form>
           </>
-      )}
+        )}
       </aside>
     </>
   );

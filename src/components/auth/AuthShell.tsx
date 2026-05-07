@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { LogIn } from "lucide-react";
 import type React from "react";
 import { useAuth } from "../../lib/auth";
+import { useI18n } from "../../lib/i18n";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
@@ -40,18 +41,18 @@ export function AuthFormShell({
 }
 
 export function AuthRedirectingCard() {
+  const { t } = useI18n();
   return (
     <main className="page-shell grid min-h-[72vh] place-items-center">
       <section className="surface w-full max-w-md rounded-lg p-5 text-center sm:p-6">
-        <h1 className="text-2xl font-bold text-ink">
-          Taking you to your dashboard...
-        </h1>
+        <h1 className="text-2xl font-bold text-ink">{t("auth.redirecting")}</h1>
       </section>
     </main>
   );
 }
 
 export function AuthGateCard() {
+  const { t } = useI18n();
   return (
     <main className="page-shell grid min-h-[70vh] place-items-center">
       <section className="surface w-full max-w-xl rounded-lg p-5 text-center sm:p-8">
@@ -59,18 +60,15 @@ export function AuthGateCard() {
           <LogIn size={22} />
         </div>
         <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">
-          Sign in to continue
+          {t("auth.signInToContinue")}
         </h1>
-        <p className="mt-3 text-slate-600">
-          Mwananchi App saves briefs, chat history, and generated actions to
-          your workspace.
-        </p>
+        <p className="mt-3 text-slate-600">{t("auth.gateCopy")}</p>
         <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
           <Link to="/login" className="btn-primary w-full sm:w-auto">
-            Sign in
+            {t("auth.button.signin")}
           </Link>
           <Link to="/register" className="btn-secondary w-full sm:w-auto">
-            Create account
+            {t("auth.button.createAccount")}
           </Link>
         </div>
       </section>

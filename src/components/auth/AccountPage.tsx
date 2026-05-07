@@ -115,7 +115,9 @@ export function AccountPage() {
           </section>
         </div>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
-          <h2 className="text-xl font-bold text-ink">{t("account.defaultAi")}</h2>
+          <h2 className="text-xl font-bold text-ink">
+            {t("account.defaultAi")}
+          </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             {t("account.defaultAiCopy")}
           </p>
@@ -129,7 +131,9 @@ export function AccountPage() {
           <AiApiKeysForm />
         </section>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
-          <h2 className="text-xl font-bold text-ink">{t("account.localModels")}</h2>
+          <h2 className="text-xl font-bold text-ink">
+            {t("account.localModels")}
+          </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             {t("account.localModelsCopy")}
           </p>
@@ -196,10 +200,14 @@ function AiDefaultsForm() {
         type="button"
         disabled={!isSelectionAvailable || saveMutation.isPending}
         onClick={() => {
-          saveMutation.mutate(resolveConfiguredAiSelection(selection, configured));
+          saveMutation.mutate(
+            resolveConfiguredAiSelection(selection, configured),
+          );
         }}
       >
-        {saveMutation.isPending ? t("account.saving") : t("account.saveDefaults")}
+        {saveMutation.isPending
+          ? t("account.saving")
+          : t("account.saveDefaults")}
       </button>
       {!isSelectionAvailable ? (
         <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -447,9 +455,7 @@ function LmStudioModal({
     },
     onError: (error) =>
       setStatus(
-        error instanceof Error
-          ? error.message
-          : t("account.modelsLoadError"),
+        error instanceof Error ? error.message : t("account.modelsLoadError"),
       ),
   });
 

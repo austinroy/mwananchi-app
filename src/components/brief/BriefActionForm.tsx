@@ -111,7 +111,9 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           <form.Field name="actionType">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">{t("action.type")}</span>
+                <span className="text-sm font-semibold">
+                  {t("action.type")}
+                </span>
                 <select
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -133,7 +135,9 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           <form.Field name="tone">
             {(field) => (
               <label className="mt-4 block">
-                <span className="text-sm font-semibold">{t("action.tone")}</span>
+                <span className="text-sm font-semibold">
+                  {t("action.tone")}
+                </span>
                 <select
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -155,7 +159,9 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           <form.Field name="audience">
             {(field) => (
               <label className="mt-4 block">
-                <span className="text-sm font-semibold">{t("action.audience")}</span>
+                <span className="text-sm font-semibold">
+                  {t("action.audience")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}

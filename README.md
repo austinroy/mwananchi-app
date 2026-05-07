@@ -157,7 +157,18 @@ The landing page includes an explicitly labeled example brief so new users can o
 
 ## Language Support
 
-The app uses the installed `i18n` package with static English (`en`) and Kiswahili (`sw`) dictionaries. Users can change the UI language from the navigation menu, and the choice is saved in browser `localStorage`. The selected language is also sent with AI brief, chat, and action-generation requests so new generated content follows the UI language.
+The app uses the installed `i18n` package with static English (`en`), Kiswahili (`sw`), Arabic (`ar`), French (`fr`), and Portuguese (`pt`) dictionaries. Recent work localized authentication flows and the AI model selector so these screens now render using the same translation catalog instead of hardcoded strings.
+
+Users can change the UI language from the navigation menu, and the choice is saved in browser `localStorage`. The selected language is also sent with AI brief, chat, and action-generation requests so new generated content follows the UI language.
+
+Files recently updated for localization:
+
+- `src/lib/i18n.tsx` — added `ar`, `fr`, `pt` entries and helper keys for AI and auth UI.
+- `src/components/auth/AuthShell.tsx`
+- `src/components/auth/AuthForms.tsx`
+- `src/components/ai/AiModelSelector.tsx`
+
+These changes are available on branch `feature/additional-language-support`.
 
 Optional OCR configuration:
 

@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { AiModelSelection, AiProviderId, AiApiKeyStatus } from "../../lib/types";
+import type {
+  AiModelSelection,
+  AiProviderId,
+  AiApiKeyStatus,
+} from "../../lib/types";
 import {
   aiProviderOptions,
   getProviderModels,
@@ -8,6 +12,7 @@ import {
 } from "../../lib/aiSettings";
 import { listAiApiKeyStatuses, listProviderModels } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
+import { useI18n } from "../../lib/i18n";
 
 export function useConfiguredAiProviders() {
   const auth = useAuth();
@@ -81,6 +86,7 @@ export function AiModelSelector({
   compact?: boolean;
 }) {
   const configured = useConfiguredAiProviders();
+  const { t } = useI18n();
   const providerOptions = aiProviderOptions.map((provider) => ({
     ...provider,
     isConfigured: isProviderConfigured(provider.value, configured),
@@ -123,9 +129,13 @@ export function AiModelSelector({
   }, [models, onChange, selection]);
 
   return (
-    <div className={compact ? "grid gap-2 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"}>
+    <div
+      className={
+        compact ? "grid gap-2 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"
+      }
+    >
       <label className="block">
-        <span className="text-sm font-semibold">Provider</span>
+        <span className="text-sm font-semibold">{t("ai.providerLabel")}</span>
         <select
           className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
           value={selection.provider}
@@ -135,27 +145,47 @@ export function AiModelSelector({
           }}
         >
           {providerOptions.map((provider) => (
-            <option key={provider.value} value={provider.value} disabled={!provider.isConfigured}>
+            <option
+              key={provider.value}
+              value={provider.value}
+              disabled={!provider.isConfigured}
+            >
               {provider.label}
-              {provider.isConfigured ? "" : " (not configured)"}
+              {provider.isConfigured ? "" : ` ${t("ai.notConfigured")}`}
             </option>
           ))}
         </select>
       </label>
       <label className="block">
-        <span className="text-sm font-semibold">Model</span>
+        <span className="text-sm font-semibold">{t("ai.modelLabel")}</span>
         <select
           className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
-          value={models.includes(selection.model) ? selection.model : (models[0] ?? "")}
+          value={
+            models.includes(selection.model)
+              ? selection.model
+              : (models[0] ?? "")
+          }
           disabled={!isSelectedProviderConfigured || models.length === 0}
-          onChange={(event) => onChange({ ...selection, model: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...selection, model: event.target.value })
+          }
         >
-          {!isSelectedProviderConfigured ? <option value="">Configure provider first</option> : null}
-          {isSelectedProviderConfigured && isLoadingModels ? <option value="">Loading models...</option> : null}
-          {isSelectedProviderConfigured && modelLoadFailed ? <option value="">Could not load models</option> : null}
-          {isSelectedProviderConfigured && models.length === 0 ? <option value="">No models available</option> : null}
+          {!isSelectedProviderConfigured ? (
+            <option value="">{t("ai.configureProviderFirst")}</option>
+          ) : null}
+          {isSelectedProviderConfigured && isLoadingModels ? (
+            <option value="">{t("ai.loadingModels")}</option>
+          ) : null}
+          {isSelectedProviderConfigured && modelLoadFailed ? (
+            <option value="">{t("ai.modelsLoadError")}</option>
+          ) : null}
+          {isSelectedProviderConfigured && models.length === 0 ? (
+            <option value="">{t("ai.noModels")}</option>
+          ) : null}
           {models.map((model) => (
-            <option key={model} value={model}>{model}</option>
+            <option key={model} value={model}>
+              {model}
+            </option>
           ))}
         </select>
       </label>

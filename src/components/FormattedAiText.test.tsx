@@ -26,10 +26,9 @@ describe("FormattedAiText", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("county")).toBeInTheDocument();
     expect(screen.getByText("fees")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "official source" })).toHaveAttribute(
-      "href",
-      "https://example.com",
-    );
+    expect(
+      screen.getByRole("link", { name: "official source" }),
+    ).toHaveAttribute("href", "https://example.com");
 
     const lists = screen.getAllByRole("list");
     expect(within(lists[0]).getAllByRole("listitem")).toHaveLength(2);

@@ -3,7 +3,16 @@ module.exports = {
   clearMocks: true,
   extensionsToTreatAsEsm: [".ts", ".tsx"],
   rootDir: ".",
-  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "cjs", "mjs", "json", "node"],
+  moduleFileExtensions: [
+    "ts",
+    "tsx",
+    "js",
+    "jsx",
+    "cjs",
+    "mjs",
+    "json",
+    "node",
+  ],
   moduleNameMapper: {
     "\\.(css|less|scss|sass)$": "<rootDir>/src/test/styleMock.cjs",
   },

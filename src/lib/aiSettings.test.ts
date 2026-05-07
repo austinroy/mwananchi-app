@@ -102,19 +102,19 @@ describe("AI settings helpers", () => {
       model: "civic-local-model",
     });
 
-    expect(withLocalProviderSettings({ provider: "lmstudio", model: "" })).toEqual(
-      {
-        provider: "lmstudio",
-        model: "local-model",
-        baseUrl: "http://127.0.0.1:4321/v1",
-      },
-    );
-    expect(withLocalProviderSettings({ provider: "openai", model: "" })).toEqual(
-      {
-        provider: "openai",
-        model: "gpt-5.4-mini",
-      },
-    );
+    expect(
+      withLocalProviderSettings({ provider: "lmstudio", model: "" }),
+    ).toEqual({
+      provider: "lmstudio",
+      model: "local-model",
+      baseUrl: "http://127.0.0.1:4321/v1",
+    });
+    expect(
+      withLocalProviderSettings({ provider: "openai", model: "" }),
+    ).toEqual({
+      provider: "openai",
+      model: "gpt-5.4-mini",
+    });
   });
 
   it("returns known models for configured providers", () => {
