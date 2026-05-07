@@ -100,6 +100,28 @@ Auth status:
 - Private briefs now return an authentication-required response when a non-owner tries to load them. The brief page shows a sign-in prompt for that state instead of a generic not-found error.
 - The landing page now labels the sample brief as an example and links directly to the interactive sample brief so users can explore chat and action generation before creating their own.
 
+Recent updates (feature/additional-language-support):
+
+- Added internationalization keys and translations to support Arabic (`ar`), French (`fr`), and Portuguese (`pt`) alongside English and Kiswahili.
+- Localized authentication UI and AI model selector texts to use the app's i18n system (`src/lib/i18n.tsx`), removing several hardcoded strings in:
+  - `src/components/auth/AuthShell.tsx`
+  - `src/components/auth/AuthForms.tsx`
+  - `src/components/ai/AiModelSelector.tsx`
+- New i18n keys added for AI helper messages (loading, not configured, no models, load error) and auth flows (buttons, field labels, footers).
+- Changes were committed and pushed to branch `feature/additional-language-support`.
+
+Verification steps:
+
+1. Run the dev server:
+
+```bash
+npm run dev
+```
+
+2. Open the app, open the header menu, and switch `Language` to `العربية`, `Français`, or `Português` to verify translated strings appear on the Login/Register pages and the AI model selector.
+
+3. Check `src/lib/i18n.tsx` for the `extendedDictionaries` and `staticCatalog` configuration.
+
 ## Development Priorities
 
 Near-term priorities:
