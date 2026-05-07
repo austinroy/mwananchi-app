@@ -12,6 +12,7 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Tailwind CSS
 - Lucide React icons
 - Sonner toasts
+- Jest + React Testing Library
 - Local Node API using built-in `node:sqlite` (with watch mode)
 - Oxlint
 
@@ -181,12 +182,15 @@ The API server listens on `http://localhost:8787` and stores data in `data/mwana
 
 ## Quality Checks
 
-Run TypeScript and Oxlint:
+Run unit tests, TypeScript, and Oxlint:
 
 ```bash
+npm run test
 npm run typecheck
 npm run lint
 ```
+
+Unit tests use Jest with React Testing Library for component coverage.
 
 Oxlint is installed as a dev dependency and uses the committed `.oxlintrc.json` configuration.
 
