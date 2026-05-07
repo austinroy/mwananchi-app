@@ -24,6 +24,7 @@ The app should feel trustworthy, calm, accessible, and useful for Kenyan civic c
 - Tailwind CSS
 - Lucide React icons
 - Sonner toasts
+- Jest with React Testing Library via `npm run test`
 - Oxlint via `npm run lint`
 - Node API server using built-in `node:sqlite` (with watch mode)
 
@@ -195,6 +196,7 @@ Common commands:
 ```bash
 npm run dev
 npm run api
+npm run test
 npm run typecheck
 npm run lint
 npm run build
