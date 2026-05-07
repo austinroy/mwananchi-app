@@ -71,6 +71,19 @@ export async function generateApiAction(
   });
 }
 
+export async function listApiActions(briefId: string) {
+  return apiRequest<CivicAction[]>(`/api/briefs/${briefId}/actions`);
+}
+
+export async function deleteApiAction(briefId: string, actionId: string) {
+  return apiRequestStrict<{ ok: boolean }>(
+    `/api/briefs/${briefId}/actions/${actionId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
 export async function updateApiBriefVisibility(
   briefId: string,
   visibility: "private" | "unlisted" | "public",

@@ -15,12 +15,14 @@ import { useState } from "react";
 import type React from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "../lib/auth";
+import { localeOptions, useI18n } from "../lib/i18n";
 
 export function AppShell() {
   const auth = useAuth();
   const clerk = useClerk();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { locale, setLocale, t } = useI18n();
 
   const closeMenu = () => setIsMenuOpen(false);
   const signOut = async () => {
@@ -46,34 +48,48 @@ export function AppShell() {
             <span className="grid size-9 shrink-0 place-items-center rounded-md bg-civic-700 text-white">
               <Sparkles size={18} />
             </span>
-            <span className="truncate">Mwananchi App</span>
+            <span className="truncate">{t("app.name")}</span>
           </Link>
           <button
             aria-expanded={isMenuOpen}
-            aria-label={
-              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
-            }
+            aria-label={isMenuOpen ? t("nav.close") : t("nav.open")}
             className="btn-secondary px-3"
             type="button"
             onClick={() => setIsMenuOpen((value) => !value)}
           >
             {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
-            <span className="hidden sm:inline">Menu</span>
+            <span className="hidden sm:inline">{t("nav.menu")}</span>
           </button>
           {isMenuOpen ? (
             <div className="absolute right-4 top-[calc(100%-0.5rem)] z-20 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-civic-100 bg-white p-2 shadow-lg">
+              <label className="mb-2 block px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {t("nav.language")}
+                <select
+                  className="mt-1 w-full rounded-md border border-civic-100 bg-white px-2 py-1.5 text-sm font-semibold normal-case tracking-normal text-slate-700"
+                  value={locale}
+                  onChange={(event) =>
+                    setLocale(event.target.value as typeof locale)
+                  }
+                >
+                  {localeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               {auth.isAuthenticated ? (
                 <div className="grid gap-1">
                   <MenuLink
                     to="/dashboard"
                     icon={<LayoutDashboard size={16} />}
-                    label="Dashboard"
+                    label={t("nav.dashboard")}
                     onSelect={closeMenu}
                   />
                   <MenuLink
                     to="/account"
                     icon={<UserCog size={16} />}
-                    label="Account"
+                    label={t("nav.account")}
                     onSelect={closeMenu}
                   />
                   <Link
@@ -82,7 +98,7 @@ export function AppShell() {
                     onClick={closeMenu}
                   >
                     <FileText size={16} />
-                    New brief
+                    {t("nav.newBrief")}
                   </Link>
                   <button
                     className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
@@ -92,7 +108,7 @@ export function AppShell() {
                     }}
                   >
                     <LogOut size={16} />
-                    Sign out
+                    {t("nav.signOut")}
                   </button>
                 </div>
               ) : (
@@ -103,7 +119,7 @@ export function AppShell() {
                     onClick={closeMenu}
                   >
                     <LogIn size={16} />
-                    Sign in
+                    {t("nav.signIn")}
                   </Link>
                   <Link
                     to="/register"
@@ -111,7 +127,7 @@ export function AppShell() {
                     onClick={closeMenu}
                   >
                     <UserPlus size={16} />
-                    Create account
+                    {t("nav.createAccount")}
                   </Link>
                 </div>
               )}

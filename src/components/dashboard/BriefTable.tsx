@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import type { CivicBrief } from "../../lib/types";
 import { updateBriefVisibility } from "../../lib/mockApi";
 import { useAuth } from "../../lib/auth";
+import { useI18n } from "../../lib/i18n";
 
 const columnHelper = createColumnHelper<CivicBrief>();
 
@@ -21,6 +22,7 @@ export function BriefTable({
   globalFilter: string;
   onGlobalFilterChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
   const auth = useAuth();
   const queryClient = useQueryClient();
   const visibilityMutation = useMutation({
@@ -37,7 +39,7 @@ export function BriefTable({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update visibility",
+        error instanceof Error ? error.message : t("dashboard.visibilityError"),
       );
     },
   });
@@ -45,7 +47,7 @@ export function BriefTable({
   const briefColumns = useMemo(
     () => [
       columnHelper.accessor("title", {
-        header: "Title",
+        header: t("dashboard.titleColumn"),
         cell: (info) => (
           <Link
             to="/briefs/$briefId"
@@ -56,10 +58,12 @@ export function BriefTable({
           </Link>
         ),
       }),
-      columnHelper.accessor("category", { header: "Category" }),
-      columnHelper.accessor("jurisdiction", { header: "Jurisdiction" }),
+      columnHelper.accessor("category", { header: t("dashboard.categoryColumn") }),
+      columnHelper.accessor("jurisdiction", {
+        header: t("dashboard.jurisdictionColumn"),
+      }),
       columnHelper.accessor("visibility", {
-        header: "Visibility",
+        header: t("dashboard.visibilityColumn"),
         cell: (info) => {
           const val = info.getValue() || "private";
           const style =
@@ -76,7 +80,7 @@ export function BriefTable({
         },
       }),
       columnHelper.accessor("createdAt", {
-        header: "Created Date",
+        header: t("dashboard.createdColumn"),
         cell: (info) => new Date(info.getValue()).toLocaleDateString(),
       }),
       columnHelper.display({
@@ -102,7 +106,7 @@ export function BriefTable({
                         window.location.origin,
                       ).toString();
                       await navigator.clipboard?.writeText(absoluteUrl);
-                      toast.success("Link copied to clipboard!");
+                      toast.success(t("dashboard.linkCopied"));
                     }}
                   >
                     <Link2 size={14} />
@@ -123,7 +127,7 @@ export function BriefTable({
                       }}
                     >
                       <Globe size={14} />
-                      Make Public
+                      {t("briefActions.makePublic")}
                     </button>
                   ) : (
                     <button
@@ -139,7 +143,7 @@ export function BriefTable({
                       }}
                     >
                       <EyeOff size={14} />
-                      Make Private
+                      {t("briefActions.makePrivate")}
                     </button>
                   )}
                 </div>
@@ -149,7 +153,7 @@ export function BriefTable({
         },
       }),
     ],
-    [visibilityMutation],
+    [t, visibilityMutation],
   );
 
   const table = useReactTable({
@@ -167,10 +171,10 @@ export function BriefTable({
   return (
     <section className="surface mt-8 rounded-lg">
       <div className="flex flex-col gap-4 border-b border-civic-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <h2 className="text-xl font-bold">Recent briefs</h2>
+        <h2 className="text-xl font-bold">{t("dashboard.recent")}</h2>
         <input
           type="text"
-          placeholder="Search briefs..."
+          placeholder={t("dashboard.search")}
           value={globalFilter}
           onChange={(e) => onGlobalFilterChange(e.target.value)}
           className="rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-civic-500 focus:ring-1 focus:ring-civic-500"
@@ -209,7 +213,7 @@ export function BriefTable({
                   colSpan={briefColumns.length}
                   className="p-5 text-center text-slate-600"
                 >
-                  Loading briefs...
+                  {t("dashboard.loading")}
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
@@ -218,7 +222,7 @@ export function BriefTable({
                   colSpan={briefColumns.length}
                   className="p-5 text-center text-slate-600"
                 >
-                  No briefs found.
+                  {t("dashboard.empty")}
                 </td>
               </tr>
             ) : (

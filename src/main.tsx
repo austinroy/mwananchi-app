@@ -4,16 +4,19 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { AuthProvider, clerkPublishableKey } from "./lib/auth";
+import { I18nProvider } from "./lib/i18n";
 import { queryClient } from "./lib/queryClient";
 import { router } from "./router";
 import "./styles.css";
 
 const app = (
-  <AuthProvider>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </AuthProvider>
+  <I18nProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </AuthProvider>
+  </I18nProvider>
 );
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

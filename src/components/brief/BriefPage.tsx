@@ -9,8 +9,10 @@ import { BriefChatPanel } from "./BriefChatPanel";
 import { BriefErrorNotice, BriefSections } from "./BriefSections";
 import { BriefHeaderActions } from "./BriefHeaderActions";
 import { FileText } from "lucide-react";
+import { useI18n } from "../../lib/i18n";
 
 export function BriefPage({ briefId }: { briefId: string }) {
+  const { t } = useI18n();
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -36,12 +38,12 @@ export function BriefPage({ briefId }: { briefId: string }) {
         await navigator.clipboard?.writeText(absoluteUrl);
         toast.success(`Link copied! Brief is now ${result.visibility}`);
       } else {
-        toast.success("Brief is now private.");
+        toast.success(t("brief.privateToast"));
       }
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Could not update visibility.",
+        error instanceof Error ? error.message : t("brief.updateVisibilityError"),
       );
     },
   });
@@ -53,16 +55,16 @@ export function BriefPage({ briefId }: { briefId: string }) {
       });
       await queryClient.removeQueries({ queryKey: ["brief", briefId] });
       await navigate({ to: "/dashboard" });
-      toast.success("Brief deleted successfully.");
+      toast.success(t("brief.deleted"));
     },
     onError: (error) =>
       setDeleteStatus(
-        error instanceof Error ? error.message : "Could not delete this brief.",
+        error instanceof Error ? error.message : t("brief.deleteError"),
       ),
   });
 
   if (isLoading) {
-    return <main className="page-shell">Loading brief...</main>;
+    return <main className="page-shell">{t("brief.loading")}</main>;
   }
 
   if (error instanceof Error) {
@@ -71,25 +73,25 @@ export function BriefPage({ briefId }: { briefId: string }) {
         <div className="surface rounded-lg border border-civic-100 bg-white p-6">
           <p className="text-sm font-semibold text-civic-700">
             {error.message.includes("Authentication required")
-              ? "This brief is private"
-              : "Brief unavailable"}
+              ? t("brief.private")
+              : t("brief.unavailable")}
           </p>
           <h1 className="mt-2 text-3xl font-bold text-ink">
             {error.message.includes("Authentication required")
-              ? "Sign in to view this brief"
-              : "We could not load this brief"}
+              ? t("brief.signInTitle")
+              : t("brief.loadErrorTitle")}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
             {error.message.includes("Authentication required")
-              ? "This brief belongs to another account and is only available after signing in with access."
+              ? t("brief.privateCopy")
               : error.message}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link to="/login" className="btn-primary">
-              Sign in
+              {t("nav.signIn")}
             </Link>
             <Link to="/briefs/new" className="btn-secondary">
-              Create a brief
+              {t("brief.createBrief")}
             </Link>
           </div>
         </div>
@@ -98,7 +100,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
   }
 
   if (!brief) {
-    return <main className="page-shell">Loading brief...</main>;
+    return <main className="page-shell">{t("brief.loading")}</main>;
   }
 
   return (
@@ -125,15 +127,11 @@ export function BriefPage({ briefId }: { briefId: string }) {
               window.location.origin,
             ).toString();
             await navigator.clipboard?.writeText(absoluteUrl);
-            toast.success("Link copied!");
+            toast.success(t("brief.linkCopied"));
           }}
           onDelete={() => {
             setDeleteStatus(null);
-            if (
-              window.confirm(
-                "Delete this brief and its chat/action history? This cannot be undone.",
-              )
-            ) {
+            if (window.confirm(t("brief.deleteConfirm"))) {
               deleteMutation.mutate();
             }
           }}
@@ -148,15 +146,15 @@ export function BriefPage({ briefId }: { briefId: string }) {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <BriefSections
           sections={[
-            { title: "Plain-language summary", items: [brief.summary] },
-            { title: "Key points", items: brief.keyPoints },
-            { title: "Who is affected", items: brief.affectedGroups },
-            { title: "Concerns and risks", items: brief.concerns },
+            { title: t("brief.summary"), items: [brief.summary] },
+            { title: t("brief.keyPoints"), items: brief.keyPoints },
+            { title: t("brief.affected"), items: brief.affectedGroups },
+            { title: t("brief.concerns"), items: brief.concerns },
             {
-              title: "Questions citizens should ask",
+              title: t("brief.questions"),
               items: brief.citizenQuestions,
             },
-            { title: "Suggested next steps", items: brief.nextSteps },
+            { title: t("brief.nextSteps"), items: brief.nextSteps },
           ]}
         />
         <BriefChatPanel briefId={briefId} />
@@ -166,41 +164,42 @@ export function BriefPage({ briefId }: { briefId: string }) {
 }
 
 export function SharedBriefPage({ briefId }: { briefId: string }) {
+  const { t } = useI18n();
   const { data: brief, isLoading } = useQuery({
     queryKey: ["shared-brief", briefId],
     queryFn: () => getSharedBrief(briefId),
   });
 
   if (isLoading)
-    return <main className="page-shell">Loading shared brief...</main>;
+    return <main className="page-shell">{t("brief.sharedLoading")}</main>;
   if (!brief)
-    return <main className="page-shell">Shared brief not found.</main>;
+    return <main className="page-shell">{t("brief.sharedNotFound")}</main>;
 
   return (
     <main className="page-shell pb-6">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">
-            Shared brief · {brief.category} · {brief.jurisdiction}
+            {t("brief.sharedLabel")} · {brief.category} · {brief.jurisdiction}
           </p>
           <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
         </div>
         <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
           <FileText size={16} />
-          Create your own brief
+          {t("landing.createOwn")}
         </Link>
       </div>
       <BriefSections
         sections={[
-          { title: "Plain-language summary", items: [brief.summary] },
-          { title: "Key points", items: brief.keyPoints },
-          { title: "Who is affected", items: brief.affectedGroups },
-          { title: "Concerns and risks", items: brief.concerns },
+          { title: t("brief.summary"), items: [brief.summary] },
+          { title: t("brief.keyPoints"), items: brief.keyPoints },
+          { title: t("brief.affected"), items: brief.affectedGroups },
+          { title: t("brief.concerns"), items: brief.concerns },
           {
-            title: "Questions citizens should ask",
+            title: t("brief.questions"),
             items: brief.citizenQuestions,
           },
-          { title: "Suggested next steps", items: brief.nextSteps },
+          { title: t("brief.nextSteps"), items: brief.nextSteps },
         ]}
       />
     </main>

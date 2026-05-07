@@ -235,6 +235,16 @@ createServer(async (req, res) => {
     const briefActionsMatch = url.pathname.match(
       /^\/api\/briefs\/([^/]+)\/actions$/,
     );
+    if (briefActionsMatch && req.method === "GET") {
+      const userId = await getRequestUserId(req);
+      if (!canAccessBrief(briefActionsMatch[1], userId)) {
+        sendJson(res, { error: "Brief not found" }, 404);
+        return;
+      }
+      sendJson(res, listActions(briefActionsMatch[1]));
+      return;
+    }
+
     if (briefActionsMatch && req.method === "POST") {
       const body = await readJson(req);
       const userId = await getRequestUserId(req);
@@ -243,6 +253,24 @@ createServer(async (req, res) => {
         return;
       }
       sendJson(res, await createAction(briefActionsMatch[1], body, userId));
+      return;
+    }
+
+    const briefActionMatch = url.pathname.match(
+      /^\/api\/briefs\/([^/]+)\/actions\/([^/]+)$/,
+    );
+    if (briefActionMatch && req.method === "DELETE") {
+      const userId = await getRequestUserId(req);
+      if (!canAccessBrief(briefActionMatch[1], userId)) {
+        sendJson(res, { error: "Brief not found" }, 404);
+        return;
+      }
+      const result = deleteAction(briefActionMatch[1], briefActionMatch[2]);
+      if (!result) {
+        sendJson(res, { error: "Draft action not found" }, 404);
+        return;
+      }
+      sendJson(res, result);
       return;
     }
 
@@ -630,6 +658,22 @@ function listMessages(briefId) {
 
 function clearMessages(briefId) {
   db.prepare("DELETE FROM chat_messages WHERE brief_id = ?").run(briefId);
+}
+
+function listActions(briefId) {
+  return db
+    .prepare(
+      "SELECT * FROM civic_actions WHERE brief_id = ? ORDER BY created_at DESC",
+    )
+    .all(briefId)
+    .map(mapActionRow);
+}
+
+function deleteAction(briefId, actionId) {
+  const result = db
+    .prepare("DELETE FROM civic_actions WHERE brief_id = ? AND id = ?")
+    .run(briefId, actionId);
+  return result.changes ? { ok: true } : null;
 }
 
 async function sendMessage(briefId, content, ai, userId) {
@@ -1425,6 +1469,20 @@ function mapBriefRow(row) {
     concerns: JSON.parse(row.concerns),
     citizenQuestions: JSON.parse(row.citizen_questions),
     nextSteps: JSON.parse(row.next_steps),
+    aiError: row.ai_error || undefined,
+    createdAt: row.created_at,
+  };
+}
+
+function mapActionRow(row) {
+  return {
+    id: row.id,
+    briefId: row.brief_id,
+    actionType: row.action_type,
+    tone: row.tone,
+    audience: row.audience,
+    extraContext: row.extra_context || undefined,
+    content: row.content,
     aiError: row.ai_error || undefined,
     createdAt: row.created_at,
   };

@@ -1,3 +1,5 @@
+import { useI18n } from "../../lib/i18n";
+
 export function BriefSections({ sections }: { sections: { title: string; items: string[] }[] }) {
   return (
     <section className="space-y-4">
@@ -22,6 +24,8 @@ export function BriefErrorNotice({
   message?: string;
   className?: string;
 }) {
+  const { t } = useI18n();
+
   if (!message) return null;
   const isConfiguredFailure = message.startsWith("Configured ");
 
@@ -30,7 +34,7 @@ export function BriefErrorNotice({
       className={`rounded-md border ${isConfiguredFailure ? "border-red-200 bg-red-50" : "border-signal/30 bg-white"} p-3 text-sm leading-6 text-slate-700 ${className}`}
     >
       <p className="font-semibold text-civic-900">
-        {isConfiguredFailure ? "AI provider error detected" : "AI provider notice"}
+        {isConfiguredFailure ? t("brief.aiError") : t("brief.aiNotice")}
       </p>
       <p className="mt-1">{message}</p>
     </div>

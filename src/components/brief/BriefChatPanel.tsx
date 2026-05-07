@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { FormattedAiText } from "../FormattedAiText";
 import { clearChatMessages, getChatMessages, sendChatMessage } from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
+import { useI18n } from "../../lib/i18n";
 
 export function BriefChatPanel({ briefId }: { briefId: string }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [clearError, setClearError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
     },
     onError: (error) =>
       setClearError(
-        error instanceof Error ? error.message : "Could not clear chat history.",
+        error instanceof Error ? error.message : t("chat.clearError"),
       ),
   });
   const form = useForm({
@@ -63,11 +65,11 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
         <button
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-civic-100 bg-white px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg"
           type="button"
-          aria-label="Open chat"
+          aria-label={t("chat.open")}
           onClick={() => setIsCollapsed(false)}
         >
           <MessageSquare size={14} />
-          Chat
+          {t("chat.label")}
         </button>
       ) : null}
       <aside
@@ -83,13 +85,13 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-bold">
             <MessageSquare size={18} />
-            Ask about this brief
+            {t("chat.title")}
           </h2>
           <div className="flex items-center gap-2">
             <button
               className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
               type="button"
-              aria-label={isCollapsed ? "Expand chat" : "Collapse chat"}
+              aria-label={isCollapsed ? t("chat.expand") : t("chat.collapse")}
               onClick={() => setIsCollapsed((value) => !value)}
             >
               {isCollapsed ? <ChevronUp size={16} /> : <X size={16} />}
@@ -100,12 +102,12 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               disabled={!data.length || clearMutation.isPending}
               onClick={() => {
                 setClearError(null);
-                if (window.confirm("Clear this chat history?")) {
+                if (window.confirm(t("chat.clearConfirm"))) {
                   clearMutation.mutate();
                 }
               }}
             >
-              {clearMutation.isPending ? "Clearing..." : "Clear chat"}
+              {clearMutation.isPending ? t("chat.clearing") : t("chat.clear")}
             </button>
           </div>
         </div>
@@ -113,11 +115,11 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
       {isCollapsed ? null : (
         <>
           <div className="border-b border-civic-100 px-4 pb-3 pt-4 text-sm leading-6 text-slate-700">
-            <p className="font-semibold text-ink">AI model</p>
+            <p className="font-semibold text-ink">{t("chat.aiModel")}</p>
             <p className="mt-1">
               {aiDefaults.provider && aiDefaults.model
                 ? `${aiDefaults.provider} · ${aiDefaults.model}`
-                : "Configure your preferred AI model in Account before chatting."}
+                : t("chat.aiNotReady")}
             </p>
           </div>
           {clearError ? (
@@ -150,7 +152,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
                 <div className="mr-4 inline-flex rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8">
                   <span
                     className="typing-dots"
-                    aria-label="Assistant is processing"
+                    aria-label={t("chat.processing")}
                   >
                     <span />
                     <span />
@@ -171,7 +173,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               {(field) => (
                 <textarea
                   className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6"
-                  placeholder="Ask who is affected, what changed, or what action to take..."
+                  placeholder={t("chat.placeholder")}
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   onKeyDown={(event) => {
@@ -206,7 +208,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
             </form.Field>
             {!isAiReady ? (
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Configure your AI model in Account before sending a question.
+                {t("chat.configureAi")}
               </p>
             ) : null}
             <button
@@ -214,7 +216,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               disabled={mutation.isPending || !isAiReady}
               type="submit"
             >
-              Send question
+              {t("chat.send")}
             </button>
           </form>
           </>

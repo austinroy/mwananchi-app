@@ -34,7 +34,8 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Shared AI provider/model selector for brief creation, chat, and action generation
 - Inline validation for brief title, category, jurisdiction, and document text
 - Route and component organization split across `src/routes/*` and `src/components/*`
-- Landing page example brief that links to the shared sample brief
+- Landing page example brief that opens the interactive sample workflow
+- English and Kiswahili UI language support with a persisted language selector
 
 ## Auth Status
 
@@ -152,7 +153,11 @@ The brief form now also validates required fields before submission so empty tit
 
 In the brief chat composer, Enter sends a message and Cmd/Ctrl+Enter inserts a new line.
 
-The landing page includes an explicitly labeled example brief so new users can open the sample workflow before they create their own brief.
+The landing page includes an explicitly labeled example brief so new users can open the sample workflow, ask chat questions, and generate civic action drafts before they create their own brief.
+
+## Language Support
+
+The app uses the installed `i18n` package with static English (`en`) and Kiswahili (`sw`) dictionaries. Users can change the UI language from the navigation menu, and the choice is saved in browser `localStorage`.
 
 Optional OCR configuration:
 

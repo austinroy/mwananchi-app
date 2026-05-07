@@ -1,11 +1,18 @@
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { Copy, Sparkles, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { FormattedAiText } from "../FormattedAiText";
-import { generateAction, getBrief } from "../../lib/mockApi";
+import {
+  deleteAction,
+  generateAction,
+  getBrief,
+  listActions,
+} from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
-import type { CivicActionInput } from "../../lib/types";
+import type { CivicAction, CivicActionInput } from "../../lib/types";
+import { useI18n } from "../../lib/i18n";
 
 const actionTypes: CivicActionInput["actionType"][] = [
   "email",
@@ -23,12 +30,34 @@ const actionTones: CivicActionInput["tone"][] = [
 ];
 
 export function BriefActionPage({ briefId }: { briefId: string }) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
   const { data: brief } = useQuery({
     queryKey: ["brief", briefId],
     queryFn: () => getBrief(briefId),
   });
+  const { data: actions = [] } = useQuery({
+    queryKey: ["brief-actions", briefId],
+    queryFn: () => listActions(briefId),
+  });
   const mutation = useMutation({
     mutationFn: (input: CivicActionInput) => generateAction(briefId, input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["brief-actions", briefId] }),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (actionId: string) => deleteAction(briefId, actionId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["brief-actions", briefId],
+      });
+      toast.success(t("action.deleted"));
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : t("action.deleteError"),
+      );
+    },
   });
   const aiDefaults = readAiDefaults();
   const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
@@ -53,13 +82,15 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
         params={{ briefId }}
         className="text-sm font-semibold text-civic-700"
       >
-        Back to brief
+        {t("action.back")}
       </Link>
       <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
-        Generate civic action
+        {t("action.title")}
       </h1>
       <p className="mt-2 text-slate-600">
-        {brief?.title ?? "Brief"} · choose a format and audience.
+        {t("action.subtitle", {
+          title: brief?.title ?? t("action.briefFallback"),
+        })}
       </p>
       <div className="mt-6 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <form
@@ -70,22 +101,24 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           }}
         >
           <div className="rounded-md border border-civic-100 bg-civic-50/70 p-4 text-sm leading-6 text-slate-700">
-            <p className="font-semibold text-ink">AI model</p>
+            <p className="font-semibold text-ink">{t("action.aiModel")}</p>
             <p className="mt-1">
               {aiDefaults.provider && aiDefaults.model
                 ? `${aiDefaults.provider} · ${aiDefaults.model}`
-                : "Configure your preferred AI model in Account before drafting."}
+                : t("action.aiNotReady")}
             </p>
           </div>
           <form.Field name="actionType">
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Action type</span>
+                <span className="text-sm font-semibold">{t("action.type")}</span>
                 <select
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
                   onChange={(event) =>
-                    field.handleChange(event.target.value as CivicActionInput["actionType"])
+                    field.handleChange(
+                      event.target.value as CivicActionInput["actionType"],
+                    )
                   }
                 >
                   {actionTypes.map((action) => (
@@ -100,12 +133,14 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           <form.Field name="tone">
             {(field) => (
               <label className="mt-4 block">
-                <span className="text-sm font-semibold">Tone</span>
+                <span className="text-sm font-semibold">{t("action.tone")}</span>
                 <select
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
                   onChange={(event) =>
-                    field.handleChange(event.target.value as CivicActionInput["tone"])
+                    field.handleChange(
+                      event.target.value as CivicActionInput["tone"],
+                    )
                   }
                 >
                   {actionTones.map((tone) => (
@@ -120,7 +155,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           <form.Field name="audience">
             {(field) => (
               <label className="mt-4 block">
-                <span className="text-sm font-semibold">Audience</span>
+                <span className="text-sm font-semibold">{t("action.audience")}</span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -132,7 +167,9 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           <form.Field name="extraContext">
             {(field) => (
               <label className="mt-4 block">
-                <span className="text-sm font-semibold">Extra context</span>
+                <span className="text-sm font-semibold">
+                  {t("action.extraContext")}
+                </span>
                 <textarea
                   className="mt-2 min-h-28 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -147,22 +184,91 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
             type="submit"
           >
             <Sparkles size={16} />
-            {mutation.isPending ? "Drafting..." : "Draft action"}
+            {mutation.isPending ? t("action.drafting") : t("action.draft")}
           </button>
         </form>
         <section className="surface rounded-lg p-4 sm:p-5">
-          <h2 className="text-xl font-bold text-ink">Draft preview</h2>
+          <h2 className="text-xl font-bold text-ink">{t("action.preview")}</h2>
           {mutation.data ? (
             <div className="mt-3 text-sm leading-6 text-slate-700">
               <FormattedAiText content={mutation.data.content} />
             </div>
           ) : (
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Your civic action draft will appear here.
+              {t("action.empty")}
             </p>
           )}
+          {actions.length ? (
+            <div className="mt-6 border-t border-civic-100 pt-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-civic-700">
+                {t("action.generated")}
+              </h3>
+              <div className="mt-3 space-y-3">
+                {actions.map((action) => (
+                  <article
+                    key={action.id}
+                    className="rounded-md border border-civic-100 bg-white p-3"
+                  >
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-civic-700">
+                        {formatActionType(action.actionType)} · {action.tone}
+                      </p>
+                      <div className="grid gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                        <button
+                          className="btn-secondary min-h-9 w-full px-3 py-1.5 text-xs sm:w-auto"
+                          type="button"
+                          onClick={async () => {
+                            await navigator.clipboard?.writeText(
+                              formatActionForCopy(action),
+                            );
+                            toast.success(t("action.copied"));
+                          }}
+                        >
+                          <Copy size={14} />
+                          {t("action.copyDraft")}
+                        </button>
+                        <button
+                          className="btn-danger min-h-9 w-full px-3 py-1.5 text-xs sm:w-auto"
+                          type="button"
+                          disabled={deleteMutation.isPending}
+                          onClick={() => {
+                            if (window.confirm(t("action.deleteConfirm"))) {
+                              deleteMutation.mutate(action.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          {deleteMutation.isPending
+                            ? t("action.deletingDraft")
+                            : t("action.deleteDraft")}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-sm leading-6 text-slate-700">
+                      <FormattedAiText content={action.content} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       </div>
     </main>
   );
+}
+
+function formatActionForCopy(action: CivicAction) {
+  return `${formatActionType(action.actionType)}
+Tone: ${action.tone}
+Audience: ${action.audience}
+
+${action.content}`;
+}
+
+function formatActionType(actionType: CivicActionInput["actionType"]) {
+  return actionType
+    .split("_")
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
 }

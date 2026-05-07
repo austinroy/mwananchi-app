@@ -6,11 +6,13 @@ import type {
 import {
   clearApiChatMessages,
   createApiBrief,
+  deleteApiAction,
   deleteApiBrief,
   generateApiAction,
   getApiBrief,
   getApiChatMessages,
   getApiSharedBrief,
+  listApiActions,
   listApiBriefs,
   sendApiChatMessage,
   updateApiBriefVisibility,
@@ -111,6 +113,15 @@ export async function generateAction(briefId: string, input: CivicActionInput) {
   const apiAction = await generateApiAction(briefId, input);
   if (!apiAction) throw new Error("Failed to generate action");
   return apiAction;
+}
+
+export async function listActions(briefId: string) {
+  const apiActions = await listApiActions(briefId);
+  return apiActions ?? [];
+}
+
+export async function deleteAction(briefId: string, actionId: string) {
+  return deleteApiAction(briefId, actionId);
 }
 
 export async function updateBriefVisibility(

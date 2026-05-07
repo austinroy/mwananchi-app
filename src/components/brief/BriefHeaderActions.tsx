@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { EyeOff, Globe, Link2, Share, Sparkles, Trash2 } from "lucide-react";
+import { useI18n } from "../../lib/i18n";
 
 export function BriefHeaderActions({
   briefId,
@@ -20,12 +21,14 @@ export function BriefHeaderActions({
   onCopyShareLink: () => Promise<void>;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <div className="grid items-center gap-2 sm:flex sm:flex-wrap">
       <details className="dropdown relative inline-block">
         <summary className="btn-secondary flex cursor-pointer list-none items-center gap-2 outline-none">
           <Share size={16} />
-          Share & Actions
+          {t("briefActions.menu")}
         </summary>
         <div className="absolute right-0 z-50 mt-1 min-w-[160px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
           <button
@@ -38,7 +41,7 @@ export function BriefHeaderActions({
             }}
           >
             <Link2 size={14} />
-            Copy link
+            {t("briefActions.copyLink")}
           </button>
           <div className="my-1 border-t border-slate-100" />
           {visibility === "private" ? (
@@ -52,7 +55,7 @@ export function BriefHeaderActions({
               }}
             >
               <Globe size={14} />
-              Make Public
+              {t("briefActions.makePublic")}
             </button>
           ) : (
             <button
@@ -65,7 +68,7 @@ export function BriefHeaderActions({
               }}
             >
               <EyeOff size={14} />
-              Make Private
+              {t("briefActions.makePrivate")}
             </button>
           )}
         </div>
@@ -76,7 +79,7 @@ export function BriefHeaderActions({
         className="btn-primary"
       >
         <Sparkles size={16} />
-        Generate actions
+        {t("briefActions.generate")}
       </Link>
       <button
         className="btn-danger w-full sm:w-auto"
@@ -85,7 +88,7 @@ export function BriefHeaderActions({
         onClick={onDelete}
       >
         <Trash2 size={16} />
-        {isDeletePending ? "Deleting..." : "Delete brief"}
+        {isDeletePending ? t("briefActions.deleting") : t("briefActions.delete")}
       </button>
     </div>
   );

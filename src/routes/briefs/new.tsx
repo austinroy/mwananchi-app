@@ -10,8 +10,10 @@ import { readAiDefaults } from "../../lib/aiSettings";
 import { categories } from "../../lib/civicOptions";
 import type { BriefCategory, NewBriefInput } from "../../lib/types";
 import { validateBriefCategory, validateBriefTitle, validateDocumentText, validateJurisdiction } from "../../lib/validation";
+import { useI18n } from "../../lib/i18n";
 
 export function NewBriefPage() {
+  const { t } = useI18n();
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -41,9 +43,9 @@ export function NewBriefPage() {
 
   return (
     <main className="page-shell max-w-4xl">
-      <h1 className="text-3xl font-bold sm:text-4xl">Create a civic brief</h1>
+      <h1 className="text-3xl font-bold sm:text-4xl">{t("newBrief.title")}</h1>
       <p className="mt-2 text-slate-600">
-        Paste a policy, bill, public notice, or civic document.
+        {t("newBrief.copy")}
       </p>
       <form
         className="mt-6 surface rounded-lg p-4 sm:p-6"
@@ -60,7 +62,9 @@ export function NewBriefPage() {
           >
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Document title</span>
+                <span className="text-sm font-semibold">
+                  {t("newBrief.documentTitle")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -80,7 +84,9 @@ export function NewBriefPage() {
           >
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Jurisdiction</span>
+                <span className="text-sm font-semibold">
+                  {t("newBrief.jurisdiction")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -100,7 +106,9 @@ export function NewBriefPage() {
           >
             {(field) => (
               <label className="block">
-                <span className="text-sm font-semibold">Category</span>
+                <span className="text-sm font-semibold">
+                  {t("newBrief.category")}
+                </span>
                 <select
                   className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
                   value={field.state.value}
@@ -128,7 +136,9 @@ export function NewBriefPage() {
           {(field) => (
             <div className="mt-5">
               <label className="block">
-                <span className="text-sm font-semibold">Upload PDF</span>
+                <span className="text-sm font-semibold">
+                  {t("newBrief.uploadPdf")}
+                </span>
                 <input
                   className="mt-2 w-full rounded-md border border-civic-100 bg-white px-3 py-2 text-sm"
                   type="file"
@@ -136,7 +146,7 @@ export function NewBriefPage() {
                   onChange={async (event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
-                    setPdfStatus("Extracting text from PDF...");
+                    setPdfStatus(t("newBrief.extracting"));
                     try {
                       const result = await extractPdfText(file, (progress) =>
                         setPdfStatus(progress.message),
@@ -144,14 +154,14 @@ export function NewBriefPage() {
                       field.handleChange(result.text);
                       setPdfStatus(
                         result.method === "ocr"
-                          ? `OCR extracted text from ${file.name}. Review it before generating the brief.`
-                          : `Extracted text from ${file.name}. Review it before generating the brief.`,
+                          ? t("newBrief.ocrDone", { fileName: file.name })
+                          : t("newBrief.extractDone", { fileName: file.name }),
                       );
                     } catch (error) {
                       setPdfStatus(
                         error instanceof Error
                           ? error.message
-                          : "Could not extract text from this PDF.",
+                          : t("newBrief.extractError"),
                       );
                     }
                   }}
@@ -163,7 +173,9 @@ export function NewBriefPage() {
                 </p>
               ) : null}
               <label className="mt-5 block">
-                <span className="text-sm font-semibold">Document text</span>
+                <span className="text-sm font-semibold">
+                  {t("newBrief.documentText")}
+                </span>
                 <textarea
                   className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64"
                   value={field.state.value}
@@ -179,18 +191,18 @@ export function NewBriefPage() {
           )}
         </form.Field>
         <div className="mt-5 rounded-md border border-civic-100 bg-civic-50/50 p-4 text-sm leading-6 text-slate-700">
-          <p className="font-semibold text-ink">AI model</p>
+          <p className="font-semibold text-ink">{t("newBrief.aiModel")}</p>
           <p className="mt-1">
             {aiDefaults.provider && aiDefaults.model
               ? `${aiDefaults.provider} · ${aiDefaults.model}`
-              : "Set your preferred AI model in Account before generating a brief."}
+              : t("newBrief.aiNotReady")}
           </p>
         </div>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">
             {isAiReady
-              ? "MVP note: AI responses should still be checked against official sources."
-              : "Configure your AI model in Account before generating a brief."}
+              ? t("newBrief.mvpNote")
+              : t("newBrief.configureAi")}
           </p>
           <button
             className="btn-primary w-full sm:w-auto"
@@ -198,7 +210,7 @@ export function NewBriefPage() {
             type="submit"
           >
             <Sparkles size={16} />
-            {mutation.isPending ? "Generating..." : "Generate brief"}
+            {mutation.isPending ? t("newBrief.generating") : t("newBrief.generate")}
           </button>
         </div>
       </form>
