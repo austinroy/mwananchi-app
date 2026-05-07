@@ -17,6 +17,7 @@ module.exports = {
     "\\.(css|less|scss|sass)$": "<rootDir>/src/test/styleMock.cjs",
   },
   testEnvironment: "jsdom",
+  setupFiles: ["<rootDir>/src/test/jest.setup.ts"],
   testMatch: ["<rootDir>/src/**/*.test.ts", "<rootDir>/src/**/*.test.tsx"],
   transform: {
     "^.+\\.(ts|tsx)$": [
