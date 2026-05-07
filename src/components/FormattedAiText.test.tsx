@@ -51,8 +51,8 @@ describe("FormattedAiText", () => {
     );
 
     expect(screen.getByText("Before")).toBeInTheDocument();
-    expect(
-      screen.getByText("const message = '**not bold**';\nconsole.log(message);"),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/const message/).textContent).toBe(
+      "const message = '**not bold**';\nconsole.log(message);",
+    );
   });
 });
