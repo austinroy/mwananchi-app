@@ -157,7 +157,7 @@ The landing page includes an explicitly labeled example brief so new users can o
 
 ## Language Support
 
-The app uses the installed `i18n` package with static English (`en`) and Kiswahili (`sw`) dictionaries. Users can change the UI language from the navigation menu, and the choice is saved in browser `localStorage`.
+The app uses the installed `i18n` package with static English (`en`) and Kiswahili (`sw`) dictionaries. Users can change the UI language from the navigation menu, and the choice is saved in browser `localStorage`. The selected language is also sent with AI brief, chat, and action-generation requests so new generated content follows the UI language.
 
 Optional OCR configuration:
 

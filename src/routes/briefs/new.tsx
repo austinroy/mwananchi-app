@@ -13,7 +13,7 @@ import { validateBriefCategory, validateBriefTitle, validateDocumentText, valida
 import { useI18n } from "../../lib/i18n";
 
 export function NewBriefPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -22,7 +22,7 @@ export function NewBriefPage() {
   const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
   const mutation = useMutation({
     mutationFn: (input: NewBriefInput) =>
-      createBrief(input, auth.user?.id, aiDefaults),
+      createBrief(input, auth.user?.id, { ...aiDefaults, language: locale }),
     onSuccess: async (brief) => {
       await queryClient.invalidateQueries({
         queryKey: ["briefs", auth.user?.id],

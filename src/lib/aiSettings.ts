@@ -134,6 +134,9 @@ export function normalizeAiSelection(
     ...(provider === "lmstudio" && selection.baseUrl
       ? { baseUrl: selection.baseUrl }
       : {}),
+    ...(selection.language === "sw" || selection.language === "en"
+      ? { language: selection.language }
+      : {}),
   };
 }
 

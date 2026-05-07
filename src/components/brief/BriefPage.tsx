@@ -10,9 +10,10 @@ import { BriefErrorNotice, BriefSections } from "./BriefSections";
 import { BriefHeaderActions } from "./BriefHeaderActions";
 import { FileText } from "lucide-react";
 import { useI18n } from "../../lib/i18n";
+import type { CivicBrief } from "../../lib/types";
 
 export function BriefPage({ briefId }: { briefId: string }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -102,15 +103,18 @@ export function BriefPage({ briefId }: { briefId: string }) {
   if (!brief) {
     return <main className="page-shell">{t("brief.loading")}</main>;
   }
+  const displayBrief = getLocalizedSampleBrief(brief, locale);
 
   return (
     <main className="page-shell pb-6 lg:pb-[32rem]">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">
-            {brief.category} · {brief.jurisdiction}
+            {displayBrief.category} · {displayBrief.jurisdiction}
           </p>
-          <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">
+            {displayBrief.title}
+          </h1>
         </div>
         <BriefHeaderActions
           briefId={briefId}
@@ -146,15 +150,15 @@ export function BriefPage({ briefId }: { briefId: string }) {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <BriefSections
           sections={[
-            { title: t("brief.summary"), items: [brief.summary] },
-            { title: t("brief.keyPoints"), items: brief.keyPoints },
-            { title: t("brief.affected"), items: brief.affectedGroups },
-            { title: t("brief.concerns"), items: brief.concerns },
+            { title: t("brief.summary"), items: [displayBrief.summary] },
+            { title: t("brief.keyPoints"), items: displayBrief.keyPoints },
+            { title: t("brief.affected"), items: displayBrief.affectedGroups },
+            { title: t("brief.concerns"), items: displayBrief.concerns },
             {
               title: t("brief.questions"),
-              items: brief.citizenQuestions,
+              items: displayBrief.citizenQuestions,
             },
-            { title: t("brief.nextSteps"), items: brief.nextSteps },
+            { title: t("brief.nextSteps"), items: displayBrief.nextSteps },
           ]}
         />
         <BriefChatPanel briefId={briefId} />
@@ -164,7 +168,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
 }
 
 export function SharedBriefPage({ briefId }: { briefId: string }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { data: brief, isLoading } = useQuery({
     queryKey: ["shared-brief", briefId],
     queryFn: () => getSharedBrief(briefId),
@@ -174,15 +178,19 @@ export function SharedBriefPage({ briefId }: { briefId: string }) {
     return <main className="page-shell">{t("brief.sharedLoading")}</main>;
   if (!brief)
     return <main className="page-shell">{t("brief.sharedNotFound")}</main>;
+  const displayBrief = getLocalizedSampleBrief(brief, locale);
 
   return (
     <main className="page-shell pb-6">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">
-            {t("brief.sharedLabel")} · {brief.category} · {brief.jurisdiction}
+            {t("brief.sharedLabel")} · {displayBrief.category} ·{" "}
+            {displayBrief.jurisdiction}
           </p>
-          <h1 className="text-3xl font-bold sm:text-4xl">{brief.title}</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">
+            {displayBrief.title}
+          </h1>
         </div>
         <Link to="/briefs/new" className="btn-primary w-full sm:w-auto">
           <FileText size={16} />
@@ -191,17 +199,54 @@ export function SharedBriefPage({ briefId }: { briefId: string }) {
       </div>
       <BriefSections
         sections={[
-          { title: t("brief.summary"), items: [brief.summary] },
-          { title: t("brief.keyPoints"), items: brief.keyPoints },
-          { title: t("brief.affected"), items: brief.affectedGroups },
-          { title: t("brief.concerns"), items: brief.concerns },
+          { title: t("brief.summary"), items: [displayBrief.summary] },
+          { title: t("brief.keyPoints"), items: displayBrief.keyPoints },
+          { title: t("brief.affected"), items: displayBrief.affectedGroups },
+          { title: t("brief.concerns"), items: displayBrief.concerns },
           {
             title: t("brief.questions"),
-            items: brief.citizenQuestions,
+            items: displayBrief.citizenQuestions,
           },
-          { title: t("brief.nextSteps"), items: brief.nextSteps },
+          { title: t("brief.nextSteps"), items: displayBrief.nextSteps },
         ]}
       />
     </main>
   );
+}
+
+function getLocalizedSampleBrief(brief: CivicBrief, locale: string): CivicBrief {
+  if (brief.id !== "brief-sample-budget" || locale !== "sw") return brief;
+
+  return {
+    ...brief,
+    title: "Tangazo la Umma la Bajeti ya Kaunti",
+    jurisdiction: "Kaunti ya Nairobi",
+    summary:
+      "Tangazo linawaalika wakazi kutoa maoni kuhusu vipaumbele vya bajeti vilivyopendekezwa. Masuala muhimu kwa umma ni utoaji wa huduma, mgawanyo katika ngazi ya wadi, na kama mipango ya matumizi ni rahisi kwa wananchi kufuatilia.",
+    keyPoints: [
+      "Wakazi wana kipindi maalum cha kushiriki kutoa maoni.",
+      "Pendekezo linaathiri huduma za kaunti kama barabara, kliniki, shule, na usafi.",
+      "Maelezo ya bajeti yanapaswa kulinganishwa na mgao wa awali na matumizi halisi.",
+    ],
+    affectedGroups: [
+      "Wakazi",
+      "Wawakilishi wa wadi",
+      "Biashara ndogo",
+      "Mashirika ya jamii",
+    ],
+    concerns: [
+      "Tangazo huenda halielezi maamuzi magumu kwa lugha rahisi.",
+      "Baadhi ya wakazi huenda hawana muda au njia ya kushiriki kikamilifu.",
+    ],
+    citizenQuestions: [
+      "Ni wadi zipi zinapata ongezeko au upungufu mkubwa zaidi?",
+      "Wakazi wataonaje kama fedha zimetumika kama ilivyoahidiwa?",
+      "Ni huduma zipi zitacheleweshwa kama bajeti hii itaidhinishwa?",
+    ],
+    nextSteps: [
+      "Andaa maoni mafupi ya umma kabla ya tarehe ya mwisho.",
+      "Muulize MCA au ofisi ya kaunti maelezo ya mgao kwa kila wadi.",
+      "Shiriki muhtasari wa lugha rahisi na kikundi chako cha jamii.",
+    ],
+  };
 }
