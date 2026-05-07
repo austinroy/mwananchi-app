@@ -33,8 +33,10 @@ import type {
   AiProviderId,
 } from "../../lib/types";
 import { RequireAuth } from "./AuthShell";
+import { useI18n } from "../../lib/i18n";
 
 export function AccountPage() {
+  const { t } = useI18n();
   const auth = useAuth();
   const clerk = useClerk();
   const navigate = useNavigate();
@@ -53,11 +55,13 @@ export function AccountPage() {
       <main className="page-shell max-w-4xl">
         <div className="mb-6">
           <p className="text-sm font-semibold text-civic-700">
-            Workspace settings
+            {t("account.eyebrow")}
           </p>
-          <h1 className="text-3xl font-bold text-ink sm:text-4xl">Account</h1>
+          <h1 className="text-3xl font-bold text-ink sm:text-4xl">
+            {t("account.title")}
+          </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Manage your Mwananchi App identity and sign-in settings.
+            {t("account.copy")}
           </p>
         </div>
         <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
@@ -66,23 +70,25 @@ export function AccountPage() {
               <UserCog size={24} />
             </div>
             <h2 className="mt-5 text-xl font-bold text-ink">
-              {auth.user?.name ?? "Mwananchi user"}
+              {auth.user?.name ?? t("account.userFallback")}
             </h2>
             <p className="mt-1 break-words text-sm text-slate-600">
               {auth.user?.email}
             </p>
             <p className="mt-4 rounded-md bg-civic-50 px-3 py-2 text-sm font-semibold text-civic-800">
               {auth.isClerkEnabled
-                ? "Clerk account"
-                : "Local development account"}
+                ? t("account.clerkAccount")
+                : t("account.localAccount")}
             </p>
           </section>
           <section className="surface rounded-lg p-5 sm:p-6">
-            <h2 className="text-xl font-bold text-ink">Account management</h2>
+            <h2 className="text-xl font-bold text-ink">
+              {t("account.management")}
+            </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               {auth.isClerkEnabled
-                ? "Open Clerk account management to update profile details, password, security settings, connected sign-in methods, and account deletion."
-                : "Local fallback accounts are stored in this browser for development. Configure Clerk to enable production profile and security management."}
+                ? t("account.managementClerk")
+                : t("account.managementLocal")}
             </p>
             <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
               {auth.isClerkEnabled ? (
@@ -92,7 +98,7 @@ export function AccountPage() {
                   onClick={() => void clerk.openUserProfile()}
                 >
                   <UserCog size={16} />
-                  Manage with Clerk
+                  {t("account.manageClerk")}
                 </button>
               ) : null}
               <button
@@ -103,32 +109,29 @@ export function AccountPage() {
                 }}
               >
                 <LogOut size={16} />
-                Sign out
+                {t("nav.signOut")}
               </button>
             </div>
           </section>
         </div>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
-          <h2 className="text-xl font-bold text-ink">Default AI model</h2>
+          <h2 className="text-xl font-bold text-ink">{t("account.defaultAi")}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Choose the provider and model Mwananchi App should use by default.
-            Chat and action drafts can override this per request.
+            {t("account.defaultAiCopy")}
           </p>
           <AiDefaultsForm />
         </section>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
-          <h2 className="text-xl font-bold text-ink">User API keys</h2>
+          <h2 className="text-xl font-bold text-ink">{t("account.apiKeys")}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Store your own provider keys for logged-in AI requests. Keys are
-            encrypted by the API server and are never shown again after saving.
+            {t("account.apiKeysCopy")}
           </p>
           <AiApiKeysForm />
         </section>
         <section className="surface mt-6 rounded-lg p-5 sm:p-6">
-          <h2 className="text-xl font-bold text-ink">Local models</h2>
+          <h2 className="text-xl font-bold text-ink">{t("account.localModels")}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Connect LM Studio when you want Mwananchi App to use an open-source
-            model running on this machine.
+            {t("account.localModelsCopy")}
           </p>
           <LmStudioSetup />
         </section>
@@ -138,6 +141,7 @@ export function AccountPage() {
 }
 
 function AiDefaultsForm() {
+  const { t } = useI18n();
   const auth = useAuth();
   const queryClient = useQueryClient();
   const [selection, setSelection] = useState<AiModelSelection>(() =>
@@ -168,14 +172,14 @@ function AiDefaultsForm() {
     onSuccess: async (nextSelection) => {
       saveAiDefaults(nextSelection);
       setSelection(nextSelection);
-      setStatus("Default AI model saved.");
+      setStatus(t("account.defaultsSaved"));
       await queryClient.invalidateQueries({
         queryKey: ["ai-defaults", auth.user?.id],
       });
     },
     onError: (error) =>
       setStatus(
-        error instanceof Error ? error.message : "Could not save AI defaults.",
+        error instanceof Error ? error.message : t("account.defaultsError"),
       ),
   });
 
@@ -195,11 +199,11 @@ function AiDefaultsForm() {
           saveMutation.mutate(resolveConfiguredAiSelection(selection, configured));
         }}
       >
-        {saveMutation.isPending ? "Saving..." : "Save AI defaults"}
+        {saveMutation.isPending ? t("account.saving") : t("account.saveDefaults")}
       </button>
       {!isSelectionAvailable ? (
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Configure this provider before saving it as your default.
+          {t("account.providerUnavailable")}
         </p>
       ) : null}
       {status ? (
@@ -210,6 +214,7 @@ function AiDefaultsForm() {
 }
 
 function AiApiKeysForm() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { data = [], isLoading } = useQuery({
     queryKey: ["ai-api-key-statuses"],
@@ -231,27 +236,27 @@ function AiApiKeysForm() {
     mutationFn: () => saveAiApiKey(provider, apiKey),
     onSuccess: async () => {
       setApiKey("");
-      setStatus("API key saved.");
+      setStatus(t("account.keySaved"));
       await queryClient.invalidateQueries({
         queryKey: ["ai-api-key-statuses"],
       });
     },
     onError: (error) =>
       setStatus(
-        error instanceof Error ? error.message : "Could not save API key.",
+        error instanceof Error ? error.message : t("account.keySaveError"),
       ),
   });
   const deleteMutation = useMutation({
     mutationFn: (nextProvider: AiProviderId) => deleteAiApiKey(nextProvider),
     onSuccess: async () => {
-      setStatus("API key removed.");
+      setStatus(t("account.keyRemoved"));
       await queryClient.invalidateQueries({
         queryKey: ["ai-api-key-statuses"],
       });
     },
     onError: (error) =>
       setStatus(
-        error instanceof Error ? error.message : "Could not remove API key.",
+        error instanceof Error ? error.message : t("account.keyRemoveError"),
       ),
   });
 
@@ -259,7 +264,7 @@ function AiApiKeysForm() {
     <div className="mt-5 grid gap-5">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_1fr]">
         <label className="text-sm font-semibold text-slate-700">
-          Provider
+          {t("account.provider")}
           <select
             className="mt-2 w-full rounded-md border border-civic-100 bg-white px-3 py-2 text-sm"
             value={provider}
@@ -276,7 +281,7 @@ function AiApiKeysForm() {
           </select>
         </label>
         <label className="text-sm font-semibold text-slate-700">
-          API key
+          {t("account.apiKey")}
           <div className="mt-2 flex rounded-md border border-civic-100 bg-white focus-within:ring-2 focus-within:ring-civic-100">
             <input
               className="min-w-0 flex-1 rounded-l-md px-3 py-2 text-sm outline-none"
@@ -288,15 +293,15 @@ function AiApiKeysForm() {
               }}
               placeholder={
                 selectedStatus
-                  ? "Enter a new key to replace the stored key"
-                  : "Paste provider API key"
+                  ? t("account.replaceKeyPlaceholder")
+                  : t("account.keyPlaceholder")
               }
             />
             <button
               className="grid w-11 place-items-center text-slate-500"
               type="button"
               onClick={() => setShowKey((value) => !value)}
-              aria-label={showKey ? "Hide API key" : "Show API key"}
+              aria-label={showKey ? t("account.hideKey") : t("account.showKey")}
             >
               {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -312,7 +317,7 @@ function AiApiKeysForm() {
           onClick={() => saveMutation.mutate()}
         >
           <KeyRound size={16} />
-          {selectedStatus ? "Replace key" : "Save encrypted key"}
+          {selectedStatus ? t("account.replaceKey") : t("account.saveKey")}
         </button>
         {selectedStatus ? (
           <button
@@ -322,15 +327,17 @@ function AiApiKeysForm() {
             onClick={() => deleteMutation.mutate(provider)}
           >
             <Trash2 size={16} />
-            Remove stored key
+            {t("account.removeKey")}
           </button>
         ) : null}
         <span className="text-sm text-slate-600">
           {isLoading
-            ? "Checking stored keys..."
+            ? t("account.checkingKeys")
             : selectedStatus
-              ? `Configured ${new Date(selectedStatus.updatedAt).toLocaleDateString()}`
-              : "No key stored for this provider."}
+              ? t("account.configuredOn", {
+                  date: new Date(selectedStatus.updatedAt).toLocaleDateString(),
+                })
+              : t("account.noKey")}
         </span>
       </div>
 
@@ -344,7 +351,7 @@ function AiApiKeysForm() {
             >
               <span className="font-semibold text-ink">{option.label}</span>
               <span className="ml-2 text-slate-600">
-                {item ? "Configured" : "Not configured"}
+                {item ? t("account.configured") : t("account.notConfigured")}
               </span>
             </div>
           );
@@ -359,6 +366,7 @@ function AiApiKeysForm() {
 }
 
 function LmStudioSetup() {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState(() => readLmStudioSettings());
 
@@ -381,8 +389,8 @@ function LmStudioSetup() {
         <p className="break-all">Model: {settings.model}</p>
         <p>
           {settings.models.length
-            ? `${settings.models.length} models loaded from LM Studio`
-            : "No LM Studio models loaded yet"}
+            ? t("account.modelsLoaded", { count: settings.models.length })
+            : t("account.noModelsLoaded")}
         </p>
       </div>
       <button
@@ -391,7 +399,7 @@ function LmStudioSetup() {
         onClick={() => setIsOpen(true)}
       >
         <Laptop size={16} />
-        Set up LM Studio
+        {t("account.setupLmStudio")}
       </button>
       {isOpen ? (
         <LmStudioModal
@@ -413,6 +421,7 @@ function LmStudioModal({
   onClose: () => void;
   onSave: (settings: typeof defaultLmStudioSettings) => void;
 }) {
+  const { t } = useI18n();
   const [baseUrl, setBaseUrl] = useState(initialSettings.baseUrl);
   const [model, setModel] = useState(initialSettings.model);
   const [models, setModels] = useState<string[]>(initialSettings.models);
@@ -432,15 +441,15 @@ function LmStudioModal({
       );
       setStatus(
         nextModels.length
-          ? `Loaded ${nextModels.length} model${nextModels.length === 1 ? "" : "s"} from LM Studio.`
-          : "LM Studio responded, but no models were returned.",
+          ? t("account.modelsLoadedStatus", { count: nextModels.length })
+          : t("account.noModelsReturned"),
       );
     },
     onError: (error) =>
       setStatus(
         error instanceof Error
           ? error.message
-          : "Could not load LM Studio models.",
+          : t("account.modelsLoadError"),
       ),
   });
 
@@ -450,27 +459,26 @@ function LmStudioModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-civic-700">
-              Local model setup
+              {t("account.localSetup")}
             </p>
             <h2 className="mt-1 text-2xl font-bold text-ink">
-              Connect LM Studio
+              {t("account.connectLmStudio")}
             </h2>
           </div>
           <button
             className="grid size-9 place-items-center rounded-md border border-civic-100 text-slate-600"
             type="button"
             onClick={onClose}
-            aria-label="Close LM Studio setup"
+            aria-label={t("account.closeLmStudio")}
           >
             <X size={18} />
           </button>
         </div>
         <div className="mt-5 rounded-md border border-civic-100 bg-civic-50 p-3 text-sm leading-6 text-slate-700">
-          Start the LM Studio local server, load a model, then use the
-          OpenAI-compatible server URL and model name here.
+          {t("account.lmStudioHelp")}
         </div>
         <label className="mt-5 block text-sm font-semibold text-slate-700">
-          Base URL
+          {t("account.baseUrl")}
           <input
             className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
             value={baseUrl}
@@ -489,11 +497,11 @@ function LmStudioModal({
           onClick={() => modelMutation.mutate()}
         >
           {modelMutation.isPending
-            ? "Loading models..."
-            : "Load models from LM Studio"}
+            ? t("account.loadingModels")
+            : t("account.loadModels")}
         </button>
         <label className="mt-4 block text-sm font-semibold text-slate-700">
-          Model
+          {t("account.model")}
           <select
             className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
             value={models.includes(model) ? model : ""}
@@ -501,7 +509,7 @@ function LmStudioModal({
             onChange={(event) => setModel(event.target.value)}
           >
             {models.length === 0 ? (
-              <option value="">Load models first</option>
+              <option value="">{t("account.loadModelsFirst")}</option>
             ) : null}
             {models.map((modelOption) => (
               <option key={modelOption} value={modelOption}>
@@ -519,7 +527,7 @@ function LmStudioModal({
             type="button"
             onClick={onClose}
           >
-            Cancel
+            {t("account.cancel")}
           </button>
           <button
             className="btn-primary w-full sm:w-auto"
@@ -535,7 +543,7 @@ function LmStudioModal({
             }
             disabled={models.length === 0}
           >
-            Save LM Studio setup
+            {t("account.saveLmStudio")}
           </button>
         </div>
       </section>

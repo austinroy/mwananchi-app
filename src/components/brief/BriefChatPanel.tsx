@@ -8,7 +8,7 @@ import { readAiDefaults } from "../../lib/aiSettings";
 import { useI18n } from "../../lib/i18n";
 
 export function BriefChatPanel({ briefId }: { briefId: string }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const queryClient = useQueryClient();
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [clearError, setClearError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
   });
   const mutation = useMutation({
     mutationFn: (content: string) =>
-      sendChatMessage(briefId, content, aiDefaults),
+      sendChatMessage(briefId, content, { ...aiDefaults, language: locale }),
     onMutate: (content) => setPendingMessage(content),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["brief-chat", briefId] }),

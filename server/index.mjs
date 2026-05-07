@@ -857,6 +857,7 @@ async function generateBriefWithAi(input, ai, userId) {
     instructions:
       "You are a careful civic document explainer. Do not invent facts. If the document is unclear, say what is uncertain. Return only valid JSON.",
     input: `Analyze this civic document and return JSON with keys summary, keyPoints, affectedGroups, concerns, citizenQuestions, nextSteps. Arrays should contain 3 to 5 concise items.
+${getLanguageInstruction(ai)}
 
 Title: ${input.title}
 Category: ${input.category}
@@ -899,7 +900,7 @@ Source text excerpt: ${brief.sourceText.slice(0, 12000)}`
     ai,
     userId,
     instructions:
-      "You answer questions about a civic brief. Ground answers in the provided brief/source text. If unsupported, say the brief does not include enough information.",
+      `You answer questions about a civic brief. Ground answers in the provided brief/source text. If unsupported, say the brief does not include enough information. ${getLanguageInstruction(ai)}`,
     input: `${context}
 
 Recent chat:
@@ -928,7 +929,7 @@ async function generateActionWithAi(briefId, input, userId) {
     ai: input.ai,
     userId,
     instructions:
-      "Draft clear, respectful civic action text. Avoid legal advice. Keep claims grounded in the brief.",
+      `Draft clear, respectful civic action text. Avoid legal advice. Keep claims grounded in the brief. ${getLanguageInstruction(input.ai)}`,
     input: `Create a ${input.actionType} with a ${input.tone} tone for ${input.audience || "a public official"}.
 
 Extra context: ${input.extraContext || "None"}
@@ -1293,7 +1294,14 @@ function normalizeAiSelection(ai) {
     ai.baseUrl.trim()
       ? { baseUrl: ai.baseUrl.trim() }
       : {}),
+    ...(["en", "sw"].includes(ai?.language) ? { language: ai.language } : {}),
   };
+}
+
+function getLanguageInstruction(ai) {
+  return ai?.language === "sw"
+    ? "Respond in Kiswahili. Keep civic/legal wording clear and accessible for Kenyan readers."
+    : "Respond in English.";
 }
 
 function parseJsonObject(value) {

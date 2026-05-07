@@ -30,7 +30,7 @@ const actionTones: CivicActionInput["tone"][] = [
 ];
 
 export function BriefActionPage({ briefId }: { briefId: string }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const queryClient = useQueryClient();
   const { data: brief } = useQuery({
     queryKey: ["brief", briefId],
@@ -71,7 +71,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
     onSubmit: ({ value }) =>
       mutation.mutate({
         ...value,
-        ai: aiDefaults,
+        ai: { ...aiDefaults, language: locale },
       }),
   });
 
