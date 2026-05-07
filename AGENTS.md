@@ -102,13 +102,29 @@ Auth status:
 
 Recent updates (feature/additional-language-support):
 
-- Added internationalization keys and translations to support Arabic (`ar`), French (`fr`), and Portuguese (`pt`) alongside English and Kiswahili.
-- Localized authentication UI and AI model selector texts to use the app's i18n system (`src/lib/i18n.tsx`), removing several hardcoded strings in:
   - `src/components/auth/AuthShell.tsx`
   - `src/components/auth/AuthForms.tsx`
   - `src/components/ai/AiModelSelector.tsx`
-- New i18n keys added for AI helper messages (loading, not configured, no models, load error) and auth flows (buttons, field labels, footers).
-- Changes were committed and pushed to branch `feature/additional-language-support`.
+
+Testing updates (feature/add-unit-tests):
+
+- Added unit tests and reorganized tests into per-folder `_tests_` directories under `src/components`, `src/lib`, and `src/routes`.
+- New tests cover `AppShell`, `FormattedAiText`, `civicOptions`, `aiSettings` helpers, `validation` helpers, and the `LandingPage` route.
+- Tests live in:
+  - `src/components/_tests_/`
+  - `src/lib/_tests_/`
+  - `src/routes/_tests_/`
+
+Verification steps:
+
+1. Install dependencies (if needed) and run tests:
+
+```bash
+npm install
+npm run test
+```
+
+2. See test output for passed suites and open failing tests for quick fixes.
 
 Verification steps:
 

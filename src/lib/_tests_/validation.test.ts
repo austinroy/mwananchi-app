@@ -4,7 +4,7 @@ import {
   validateDocumentText,
   validateJurisdiction,
   validateRequiredText,
-} from "./validation";
+} from "../validation";
 
 describe("validation helpers", () => {
   it("requires trimmed text before checking minimum length", () => {

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
 
-import { FormattedAiText } from "./FormattedAiText";
+import { FormattedAiText } from "../FormattedAiText";
 
 describe("FormattedAiText", () => {
   it("renders headings, paragraphs, links, emphasis, inline code, and lists", () => {
