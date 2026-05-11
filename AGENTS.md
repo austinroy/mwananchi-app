@@ -176,6 +176,7 @@ Use a civic-tech style:
 - Charcoal text
 - Amber only as a restrained accent
 - Clear accessible spacing and typography
+- The current theme is Neatlab-inspired green glass: mint gradient backgrounds, translucent blurred surfaces, deep emerald controls, muted amber accents, and a Plus Jakarta Sans-first font stack while preserving the original civic workflow layout.
 
 UI rules:
 

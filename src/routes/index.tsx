@@ -30,7 +30,7 @@ export function LandingPage() {
           </div>
         </div>
         <div className="surface rounded-lg p-4 sm:p-6">
-          <div className="rounded-md border border-civic-100 bg-civic-50 p-5">
+          <div className="rounded-md border border-white/45 bg-white/45 p-5 backdrop-blur-xl">
             <p className="text-sm font-semibold text-civic-700">
               {t("landing.exampleLabel")}
             </p>
@@ -56,18 +56,25 @@ export function LandingPage() {
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {[
-              t("landing.workflowExplain"),
-              t("landing.workflowQuestion"),
-              t("landing.workflowAct"),
+              {
+                title: t("landing.workflowExplain"),
+                copy: t("landing.workflowExplainCopy"),
+              },
+              {
+                title: t("landing.workflowQuestion"),
+                copy: t("landing.workflowQuestionCopy"),
+              },
+              {
+                title: t("landing.workflowAct"),
+                copy: t("landing.workflowActCopy"),
+              },
             ].map((item) => (
               <div
-                key={item}
+                key={item.title}
                 className="rounded-md border border-civic-100 p-4"
               >
-                <p className="font-semibold text-civic-900">{item}</p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {t("landing.workflowCaption")}
-                </p>
+                <p className="font-semibold text-civic-900">{item.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{item.copy}</p>
               </div>
             ))}
           </div>

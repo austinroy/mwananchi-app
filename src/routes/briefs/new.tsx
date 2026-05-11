@@ -69,7 +69,7 @@ export function NewBriefPage() {
                   {t("newBrief.documentTitle")}
                 </span>
                 <input
-                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -93,7 +93,7 @@ export function NewBriefPage() {
                   {t("newBrief.jurisdiction")}
                 </span>
                 <input
-                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -117,7 +117,7 @@ export function NewBriefPage() {
                   {t("newBrief.category")}
                 </span>
                 <select
-                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(event.target.value as BriefCategory)
@@ -147,7 +147,7 @@ export function NewBriefPage() {
                   {t("newBrief.uploadPdf")}
                 </span>
                 <input
-                  className="mt-2 w-full rounded-md border border-civic-100 bg-white px-3 py-2 text-sm"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 text-sm outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   type="file"
                   accept="application/pdf"
                   onChange={async (event) => {
@@ -184,7 +184,7 @@ export function NewBriefPage() {
                   {t("newBrief.documentText")}
                 </span>
                 <textarea
-                  className="mt-2 min-h-56 w-full rounded-md border border-civic-100 px-3 py-2 leading-7 sm:min-h-64"
+                  className="mt-2 min-h-56 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 leading-7 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100 sm:min-h-64"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -197,7 +197,7 @@ export function NewBriefPage() {
             </div>
           )}
         </form.Field>
-        <div className="mt-5 rounded-md border border-civic-100 bg-civic-50/50 p-4 text-sm leading-6 text-slate-700">
+        <div className="mt-5 rounded-md border border-white/45 bg-white/45 p-4 text-sm leading-6 text-slate-700 backdrop-blur-xl">
           <p className="font-semibold text-ink">{t("newBrief.aiModel")}</p>
           <p className="mt-1">
             {aiDefaults.provider && aiDefaults.model

@@ -30,7 +30,7 @@ export function BriefHeaderActions({
           <Share size={16} />
           {t("briefActions.menu")}
         </summary>
-        <div className="absolute right-0 z-50 mt-1 min-w-[160px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+        <div className="absolute right-0 z-50 mt-1 min-w-[160px] rounded-md border border-white/45 bg-white/70 p-1 shadow-lg backdrop-blur-xl">
           <button
             className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50"
             disabled={visibility === "private"}

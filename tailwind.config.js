@@ -4,18 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#17201b",
+        ink: "#102018",
         civic: {
-          50: "#f4f8f6",
-          100: "#e2eee8",
-          500: "#28715a",
-          700: "#174b3c",
-          900: "#0e2d25",
+          50: "#eaf8ef",
+          100: "#cfe9d8",
+          500: "#4b8f62",
+          700: "#1f6a43",
+          900: "#0b3a28",
         },
-        signal: "#d99122",
+        signal: "#c99a42",
       },
       boxShadow: {
-        soft: "0 18px 50px rgba(23, 32, 27, 0.08)",
+        soft: "0 24px 70px rgba(7, 58, 40, 0.13)",
       },
     },
   },

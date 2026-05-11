@@ -82,7 +82,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
   if (error instanceof Error) {
     return (
       <main className="page-shell">
-        <div className="surface rounded-lg border border-civic-100 bg-white p-6">
+        <div className="surface rounded-lg p-6">
           <p className="text-sm font-semibold text-civic-700">
             {error.message.includes("Authentication required")
               ? t("brief.private")
