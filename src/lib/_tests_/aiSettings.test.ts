@@ -1,4 +1,4 @@
-import type { AiModelSelection } from "./types";
+import type { AiModelSelection } from "../types";
 import {
   defaultAiSelection,
   defaultLmStudioSettings,
@@ -9,7 +9,7 @@ import {
   saveAiDefaults,
   saveLmStudioSettings,
   withLocalProviderSettings,
-} from "./aiSettings";
+} from "../aiSettings";
 
 describe("AI settings helpers", () => {
   beforeEach(() => {

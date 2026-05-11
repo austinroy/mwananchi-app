@@ -9,7 +9,6 @@ import {
   getSharedBrief,
   updateBriefVisibility,
 } from "../../lib/mockApi";
-import { BriefActionPage } from "./BriefActionForm";
 import { BriefChatPanel } from "./BriefChatPanel";
 import { BriefErrorNotice, BriefSections } from "./BriefSections";
 import { BriefHeaderActions } from "./BriefHeaderActions";
