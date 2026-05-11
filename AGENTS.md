@@ -87,6 +87,7 @@ Auth status:
 - Guests can use `/briefs/new`, `/briefs/$briefId`, and `/briefs/$briefId/actions` without signing in.
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
 - When `npm run api` is running, users, briefs, chat messages, and civic actions are stored in `data/mwananchi.sqlite`.
+- Local encrypted-at-rest SQLite is available by setting `LOCAL_SQLITE_ENCRYPTION_SECRET` before starting the API. In that mode, the API persists `data/mwananchi.sqlite.enc` and uses a private temporary SQLite file while running. `LOCAL_SQLITE_ENCRYPTED_PATH` can override the encrypted file path.
 - API ownership is derived from auth headers. `CLERK_JWKS_URL` enables Clerk bearer token verification; local fallback headers are development-only.
 - The app now strictly relies on the SQLite API for persistence. `src/lib/mockApi.ts` acts as a direct wrapper for the API calls and local storage fallbacks have been removed.
 - Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.

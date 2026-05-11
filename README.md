@@ -212,6 +212,14 @@ pnpm dev
 
 The API server listens on `http://localhost:8787` and stores data in `data/mwananchi.sqlite`.
 
+For local encrypted-at-rest SQLite storage, set a stable secret before starting the API:
+
+```bash
+LOCAL_SQLITE_ENCRYPTION_SECRET=use-a-long-random-secret-at-least-32-characters
+```
+
+When this variable is set, the API stores the encrypted database at `data/mwananchi.sqlite.enc` and uses a private temporary SQLite file only while the server is running. If an existing plaintext `data/mwananchi.sqlite` is present and no encrypted database exists yet, the API uses it as the initial migration source and writes the encrypted database on startup. You can override the encrypted file path with `LOCAL_SQLITE_ENCRYPTED_PATH`.
+
 ## Quality Checks
 
 Run unit tests, TypeScript, and Oxlint:
