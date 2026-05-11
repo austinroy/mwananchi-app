@@ -28,10 +28,11 @@ describe("AppShell", () => {
       </I18nProvider>,
     );
 
-    // app name comes from i18n
-    expect(screen.getByText("Mwananchi App")).toBeInTheDocument();
-    // language label is present in the menu button (hidden on small screens may not appear), but the select exists in the DOM when opened
-    const menuButton = screen.getByRole("button");
+    expect(screen.getAllByText("Mwananchi App")).toHaveLength(2);
+
+    const menuButton = screen.getByRole("button", {
+      name: "Open navigation menu",
+    });
     expect(menuButton).toBeInTheDocument();
   });
 });
