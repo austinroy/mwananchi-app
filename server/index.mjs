@@ -1,15 +1,6 @@
 import { createServer } from "node:http";
-import {
-  chmodSync,
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import {
@@ -25,8 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(__dirname, "..", "data");
 mkdirSync(dataDir, { recursive: true });
 
-const databaseConfig = prepareLocalDatabase();
-const db = new DatabaseSync(databaseConfig.path);
+const db = new DatabaseSync(join(dataDir, "mwananchi.sqlite"));
 const host = process.env.API_HOST || "127.0.0.1";
 const port = Number(process.env.API_PORT || 8787);
 const clerkJwksUrl = process.env.CLERK_JWKS_URL;
@@ -107,9 +97,8 @@ ensureColumn("briefs", "ai_error", "TEXT");
 ensureColumn("chat_messages", "ai_error", "TEXT");
 ensureColumn("civic_actions", "ai_error", "TEXT");
 seedSampleBrief();
-persistDatabase();
 
-const server = createServer(async (req, res) => {
+createServer(async (req, res) => {
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
@@ -367,124 +356,7 @@ const server = createServer(async (req, res) => {
       500,
     );
   }
-});
-
-server.listen(port, host);
-
-for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.on(signal, () => {
-    closeDatabase();
-    process.exit(0);
-  });
-}
-
-process.on("exit", closeDatabase);
-
-function prepareLocalDatabase() {
-  const plainPath = join(dataDir, "mwananchi.sqlite");
-  const encryptedPath = resolveOptionalPath(
-    process.env.LOCAL_SQLITE_ENCRYPTED_PATH,
-    join(dataDir, "mwananchi.sqlite.enc"),
-  );
-  const secret = process.env.LOCAL_SQLITE_ENCRYPTION_SECRET;
-
-  if (!secret) {
-    return { encrypted: false, path: plainPath };
-  }
-
-  if (secret.length < 32) {
-    throw new Error(
-      "LOCAL_SQLITE_ENCRYPTION_SECRET must be at least 32 characters.",
-    );
-  }
-
-  const runtimePath = join(
-    tmpdir(),
-    `mwananchi-${process.pid}-${randomBytes(6).toString("hex")}.sqlite`,
-  );
-
-  if (existsSync(encryptedPath)) {
-    writeFileSync(runtimePath, decryptSqliteFile(readFileSync(encryptedPath)));
-  } else if (existsSync(plainPath)) {
-    copyFileSync(plainPath, runtimePath);
-  }
-
-  if (existsSync(runtimePath)) {
-    chmodSync(runtimePath, 0o600);
-  }
-  return {
-    encrypted: true,
-    path: runtimePath,
-    encryptedPath,
-    key: createHash("sha256").update(secret).digest(),
-  };
-}
-
-function resolveOptionalPath(value, fallback) {
-  if (!value) return fallback;
-  return isAbsolute(value) ? value : join(process.cwd(), value);
-}
-
-function persistDatabase() {
-  if (!databaseConfig.encrypted) return;
-  db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
-  const encrypted = encryptSqliteFile(readFileSync(databaseConfig.path));
-  mkdirSync(dirname(databaseConfig.encryptedPath), { recursive: true });
-  writeFileSync(databaseConfig.encryptedPath, encrypted, { mode: 0o600 });
-}
-
-function closeDatabase() {
-  try {
-    persistDatabase();
-    db.close();
-  } catch {
-    // Best-effort shutdown persistence.
-  }
-
-  if (databaseConfig.encrypted) {
-    try {
-      unlinkSync(databaseConfig.path);
-    } catch {
-      // The runtime database may already be gone.
-    }
-  }
-}
-
-function encryptSqliteFile(bytes) {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", databaseConfig.key, iv);
-  const encrypted = Buffer.concat([cipher.update(bytes), cipher.final()]);
-  return Buffer.from(
-    JSON.stringify({
-      version: 1,
-      algorithm: "aes-256-gcm",
-      iv: iv.toString("base64"),
-      authTag: cipher.getAuthTag().toString("base64"),
-      data: encrypted.toString("base64"),
-    }),
-    "utf8",
-  );
-}
-
-function decryptSqliteFile(bytes) {
-  const payload = JSON.parse(bytes.toString("utf8"));
-  if (payload.version !== 1 || payload.algorithm !== "aes-256-gcm") {
-    throw new Error("Unsupported encrypted SQLite file format.");
-  }
-
-  const decipher = createDecipheriv(
-    "aes-256-gcm",
-    createHash("sha256")
-      .update(process.env.LOCAL_SQLITE_ENCRYPTION_SECRET)
-      .digest(),
-    Buffer.from(payload.iv, "base64"),
-  );
-  decipher.setAuthTag(Buffer.from(payload.authTag, "base64"));
-  return Buffer.concat([
-    decipher.update(Buffer.from(payload.data, "base64")),
-    decipher.final(),
-  ]);
-}
+}).listen(port, host, () => {});
 
 function setCorsHeaders(res) {
   res.setHeader(
@@ -528,7 +400,6 @@ function upsertUser(input) {
     ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email
   `,
   ).run(user.id, user.name, user.email, user.createdAt);
-  persistDatabase();
 
   return user;
 }
@@ -573,7 +444,6 @@ function upsertUserAiKey(userId, input) {
     now,
     now,
   );
-  persistDatabase();
 
   return {
     provider,
@@ -589,7 +459,6 @@ function deleteUserAiKey(userId, providerValue) {
     userId,
     provider,
   );
-  persistDatabase();
 }
 
 function getUserAiDefaults(userId) {
@@ -626,7 +495,6 @@ function upsertUserAiDefaults(userId, input) {
     selection.baseUrl || null,
     now,
   );
-  persistDatabase();
 
   return {
     ...selection,
@@ -802,7 +670,6 @@ function listMessages(briefId) {
 
 function clearMessages(briefId) {
   db.prepare("DELETE FROM chat_messages WHERE brief_id = ?").run(briefId);
-  persistDatabase();
 }
 
 function listActions(briefId) {
@@ -818,7 +685,6 @@ function deleteAction(briefId, actionId) {
   const result = db
     .prepare("DELETE FROM civic_actions WHERE brief_id = ? AND id = ?")
     .run(briefId, actionId);
-  if (result.changes) persistDatabase();
   return result.changes ? { ok: true } : null;
 }
 
@@ -870,7 +736,6 @@ async function createAction(briefId, input, userId) {
     action.aiError || null,
     action.createdAt,
   );
-  persistDatabase();
 
   return action;
 }
@@ -888,7 +753,6 @@ function updateBriefVisibility(briefId, userId, visibility) {
     visibility,
     briefId,
   );
-  persistDatabase();
   return { ok: true, visibility };
 }
 
@@ -902,7 +766,6 @@ function deleteBrief(briefId, userId) {
   db.prepare("DELETE FROM chat_messages WHERE brief_id = ?").run(briefId);
   db.prepare("DELETE FROM civic_actions WHERE brief_id = ?").run(briefId);
   db.prepare("DELETE FROM briefs WHERE id = ?").run(briefId);
-  persistDatabase();
 
   return { ok: true };
 }
@@ -921,7 +784,6 @@ function insertMessage(message) {
     message.aiError || null,
     message.createdAt,
   );
-  persistDatabase();
 }
 
 async function buildBrief(input, userId, ai) {

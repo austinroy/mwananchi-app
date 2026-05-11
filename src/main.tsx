@@ -5,9 +5,26 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { AuthProvider, clerkPublishableKey } from "./lib/auth";
 import { I18nProvider } from "./lib/i18n";
+import { syncOfflineChanges } from "./lib/api";
 import { queryClient } from "./lib/queryClient";
 import { router } from "./router";
 import "./styles.css";
+
+window.addEventListener("online", () => {
+  void syncOfflineChanges().then((result) => {
+    if (result.synced) {
+      void queryClient.invalidateQueries();
+    }
+  });
+});
+
+if (navigator.onLine) {
+  void syncOfflineChanges().then((result) => {
+    if (result.synced) {
+      void queryClient.invalidateQueries();
+    }
+  });
+}
 
 const app = (
   <I18nProvider>

@@ -134,6 +134,8 @@ CUSTOM_AI_BASE_URL=
 
 Users can set a default provider and model on the account page. Signed-in user defaults are stored by the API and browser `localStorage` remains the guest/offline fallback. Chat and action generation also include per-request model controls so users can switch providers for a single task.
 
+Offline work is queued in the browser when the API is unreachable. Brief creation, chat messages, action drafts, visibility changes, and deletes are saved to an encrypted IndexedDB-backed local queue and retried when the browser comes back online. The API remains the primary source of truth; offline storage is only a temporary client-side sync layer.
+
 Model lists are loaded from configured providers. Hosted providers use the Mwananchi API because encrypted user keys stay server-side. LM Studio model discovery first tries the browser against the local LM Studio server, then falls back to the Mwananchi API proxy if the browser hits CORS restrictions.
 
 For LM Studio, start the local server in LM Studio and use the account page's local model setup modal to set the base URL and model name. The browser attempts to load available models directly from LM Studio's `/models` endpoint. If LM Studio blocks the browser with CORS, the app falls back to the Mwananchi API proxy, which must be running on the same machine as LM Studio. LM Studio accepts OpenAI-compatible chat completion requests, so generation requests use `/chat/completions` under the configured base URL. A real API key is usually not required locally; the app sends a placeholder key when no LM Studio key is configured.
@@ -211,14 +213,6 @@ pnpm dev
 ```
 
 The API server listens on `http://localhost:8787` and stores data in `data/mwananchi.sqlite`.
-
-For local encrypted-at-rest SQLite storage, set a stable secret before starting the API:
-
-```bash
-LOCAL_SQLITE_ENCRYPTION_SECRET=use-a-long-random-secret-at-least-32-characters
-```
-
-When this variable is set, the API stores the encrypted database at `data/mwananchi.sqlite.enc` and uses a private temporary SQLite file only while the server is running. If an existing plaintext `data/mwananchi.sqlite` is present and no encrypted database exists yet, the API uses it as the initial migration source and writes the encrypted database on startup. You can override the encrypted file path with `LOCAL_SQLITE_ENCRYPTED_PATH`.
 
 ## Quality Checks
 
