@@ -100,7 +100,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
             void form.handleSubmit();
           }}
         >
-          <div className="rounded-md border border-civic-100 bg-civic-50/70 p-4 text-sm leading-6 text-slate-700">
+          <div className="rounded-md border border-white/45 bg-white/45 p-4 text-sm leading-6 text-slate-700 backdrop-blur-xl">
             <p className="font-semibold text-ink">{t("action.aiModel")}</p>
             <p className="mt-1">
               {aiDefaults.provider && aiDefaults.model
@@ -115,7 +115,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                   {t("action.type")}
                 </span>
                 <select
-                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(
@@ -139,7 +139,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                   {t("action.tone")}
                 </span>
                 <select
-                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(
@@ -163,7 +163,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                   {t("action.audience")}
                 </span>
                 <input
-                  className="mt-2 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -177,7 +177,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                   {t("action.extraContext")}
                 </span>
                 <textarea
-                  className="mt-2 min-h-28 w-full rounded-md border border-civic-100 px-3 py-2"
+                  className="mt-2 min-h-28 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -213,7 +213,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                 {actions.map((action) => (
                   <article
                     key={action.id}
-                    className="rounded-md border border-civic-100 bg-white p-3"
+                    className="rounded-md border border-white/45 bg-white/50 p-3 backdrop-blur-xl"
                   >
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-civic-700">

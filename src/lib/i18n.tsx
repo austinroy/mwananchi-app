@@ -50,6 +50,12 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "landing.workflowQuestion": "Question",
     "landing.workflowAct": "Act",
     "landing.workflowCaption": "Plain language workflow",
+    "landing.workflowExplainCopy":
+      "Turn dense notices, bills, and reports into a plain-language brief.",
+    "landing.workflowQuestionCopy":
+      "Surface the gaps, deadlines, affected groups, and questions citizens should ask.",
+    "landing.workflowActCopy":
+      "Draft emails, comments, talking points, petitions, and shareable summaries.",
     "brief.loading": "Loading brief...",
     "brief.unavailable": "Brief unavailable",
     "brief.private": "This brief is private",
@@ -290,6 +296,12 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "landing.workflowQuestion": "Uliza",
     "landing.workflowAct": "Chukua hatua",
     "landing.workflowCaption": "Mtiririko wa lugha rahisi",
+    "landing.workflowExplainCopy":
+      "Geuza matangazo, miswada, na ripoti ndefu kuwa muhtasari wa lugha rahisi.",
+    "landing.workflowQuestionCopy":
+      "Tambua mapengo, tarehe muhimu, makundi yaliyoathiriwa, na maswali ya kuuliza.",
+    "landing.workflowActCopy":
+      "Andaa barua pepe, maoni ya umma, hoja za kuzungumza, petisheni, na muhtasari wa kushiriki.",
     "brief.loading": "Inapakia muhtasari...",
     "brief.unavailable": "Muhtasari haupatikani",
     "brief.private": "Muhtasari huu ni binafsi",
@@ -535,6 +547,12 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "landing.workflowQuestion": "اسأل",
     "landing.workflowAct": "تحرّك",
     "landing.workflowCaption": "سير عمل بلغة واضحة",
+    "landing.workflowExplainCopy":
+      "حوّل الإشعارات والمشروعات والتقارير المعقدة إلى ملخص واضح بلغة بسيطة.",
+    "landing.workflowQuestionCopy":
+      "استخرج الفجوات والمواعيد والفئات المتأثرة والأسئلة التي ينبغي للمواطنين طرحها.",
+    "landing.workflowActCopy":
+      "صغ رسائل وتعليقات عامة ونقاط حديث وعرائض وملخصات قابلة للمشاركة.",
     "brief.loading": "جارٍ تحميل الملخص...",
     "brief.unavailable": "الملخص غير متاح",
     "brief.private": "هذا الملخص خاص",
@@ -701,6 +719,12 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "landing.workflowQuestion": "Questionner",
     "landing.workflowAct": "Agir",
     "landing.workflowCaption": "Flux en langage clair",
+    "landing.workflowExplainCopy":
+      "Transformez avis, projets et rapports complexes en résumé clair.",
+    "landing.workflowQuestionCopy":
+      "Repérez les zones floues, délais, groupes concernés et questions à poser.",
+    "landing.workflowActCopy":
+      "Rédigez emails, commentaires publics, arguments, pétitions et résumés partageables.",
     "brief.loading": "Chargement du résumé...",
     "brief.unavailable": "Résumé indisponible",
     "brief.private": "Ce résumé est privé",
@@ -841,6 +865,12 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "landing.workflowQuestion": "Perguntar",
     "landing.workflowAct": "Agir",
     "landing.workflowCaption": "Fluxo em linguagem clara",
+    "landing.workflowExplainCopy":
+      "Transforme avisos, projetos e relatórios densos em um resumo claro.",
+    "landing.workflowQuestionCopy":
+      "Identifique lacunas, prazos, grupos afetados e perguntas que cidadãos devem fazer.",
+    "landing.workflowActCopy":
+      "Redija e-mails, comentários públicos, pontos de fala, petições e resumos compartilháveis.",
     "brief.loading": "Carregando resumo...",
     "brief.unavailable": "Resumo indisponível",
     "brief.private": "Este resumo é privado",

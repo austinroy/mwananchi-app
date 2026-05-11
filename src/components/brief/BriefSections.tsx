@@ -35,7 +35,7 @@ export function BriefErrorNotice({
 
   return (
     <div
-      className={`rounded-md border ${isConfiguredFailure ? "border-red-200 bg-red-50" : "border-signal/30 bg-white"} p-3 text-sm leading-6 text-slate-700 ${className}`}
+      className={`rounded-md border ${isConfiguredFailure ? "border-red-200 bg-red-50" : "border-signal/30 bg-white/55 backdrop-blur-xl"} p-3 text-sm leading-6 text-slate-700 ${className}`}
     >
       <p className="font-semibold text-civic-900">
         {isConfiguredFailure ? t("brief.aiError") : t("brief.aiNotice")}

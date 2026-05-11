@@ -40,6 +40,7 @@ Mwananchi App is licensed under the Apache License, Version 2.0. See [LICENSE](.
 - Route and component organization split across `src/routes/*` and `src/components/*`
 - Landing page example brief that opens the interactive sample workflow
 - English and Kiswahili UI language support with a persisted language selector
+- Neatlab-inspired green glass visual theme with mint gradients, translucent blurred surfaces, deep emerald controls, muted amber accents, and a Plus Jakarta Sans-first font stack
 
 ## Auth Status
 

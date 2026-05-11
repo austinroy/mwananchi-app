@@ -3,9 +3,10 @@
 @tailwind utilities;
 
 :root {
-  color: #17201b;
-  background: #f7faf8;
+  color: #102018;
+  background: #eaf8ef;
   font-family:
+    "Plus Jakarta Sans",
     Inter,
     ui-sans-serif,
     system-ui,
@@ -18,6 +19,19 @@
 body {
   margin: 0;
   min-width: 320px;
+  background:
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(109, 191, 132, 0.34),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 88% 8%,
+      rgba(33, 134, 82, 0.2),
+      transparent 28rem
+    ),
+    linear-gradient(135deg, #edf9f0 0%, #d8efe0 46%, #f7f4e8 100%);
+  background-attachment: fixed;
 }
 
 button,
@@ -25,6 +39,7 @@ input,
 textarea,
 select {
   font: inherit;
+  background-color: rgba(255, 255, 255, 0.55);
 }
 
 @layer components {
@@ -33,19 +48,19 @@ select {
   }
 
   .surface {
-    @apply border border-civic-100 bg-white shadow-soft;
+    @apply border border-white/45 bg-white/55 shadow-soft backdrop-blur-xl;
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-civic-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-civic-900 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/20 bg-civic-900/95 px-4 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur transition hover:bg-civic-700 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-civic-100 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-civic-50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/50 bg-white/55 px-4 py-2.5 text-sm font-semibold text-ink shadow-sm backdrop-blur-xl transition hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-danger {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-red-200 bg-white/65 px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm backdrop-blur-xl transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .typing-dots {
@@ -86,11 +101,11 @@ select {
   }
 
   .ai-response pre {
-    @apply overflow-auto rounded-md bg-white p-3 text-xs leading-5 text-slate-800;
+    @apply overflow-auto rounded-md border border-white/45 bg-white/55 p-3 text-xs leading-5 text-slate-800 backdrop-blur-xl;
   }
 
   .ai-response :not(pre) > code {
-    @apply rounded bg-white px-1.5 py-0.5 text-xs font-semibold text-civic-900;
+    @apply rounded bg-white/60 px-1.5 py-0.5 text-xs font-semibold text-civic-900;
   }
 
   .ai-response a {

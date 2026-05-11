@@ -69,7 +69,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
     <>
       {isCollapsed ? (
         <button
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-civic-100 bg-white px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-white/45 bg-white/65 px-3 py-2 text-xs font-semibold text-civic-800 shadow-lg backdrop-blur-xl"
           type="button"
           aria-label={t("chat.open")}
           onClick={() => setIsCollapsed(false)}
@@ -80,8 +80,8 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
       ) : null}
       <aside
         className={[
-          "surface fixed right-0 top-0 z-40 flex h-[100svh] w-[min(92vw,420px)] flex-col overflow-hidden border-l border-civic-100 bg-white shadow-[-12px_0_32px_rgba(15,23,42,0.14)] transition-transform duration-300",
-          "lg:top-auto lg:right-6 lg:bottom-6 lg:h-[min(78vh,720px)] lg:w-[460px] lg:rounded-lg lg:border lg:border-b-0 lg:shadow-[0_-12px_32px_rgba(15,23,42,0.14)]",
+          "surface fixed right-0 top-0 z-40 flex h-[100svh] w-[min(92vw,420px)] flex-col overflow-hidden border-l border-white/45 bg-white/60 shadow-[-12px_0_32px_rgba(7,58,40,0.16)] transition-transform duration-300",
+          "lg:top-auto lg:right-6 lg:bottom-6 lg:h-[min(78vh,720px)] lg:w-[460px] lg:rounded-lg lg:border lg:border-b-0 lg:shadow-[0_-12px_32px_rgba(7,58,40,0.16)]",
           isCollapsed
             ? "translate-x-full lg:translate-x-0 lg:translate-y-full lg:opacity-0 lg:pointer-events-none"
             : "translate-x-0 lg:translate-y-0",
@@ -140,7 +140,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
                   className={
                     message.role === "user"
                       ? "ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8"
-                      : "mr-4 rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8"
+                      : "mr-4 rounded-md border border-white/45 bg-white/50 p-3 text-sm leading-6 text-slate-700 backdrop-blur-xl sm:mr-8"
                   }
                 >
                   {message.role === "assistant" ? (
@@ -155,7 +155,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
                   <div className="ml-4 rounded-md bg-civic-700 p-3 text-sm leading-6 text-white sm:ml-8">
                     <p>{pendingMessage}</p>
                   </div>
-                  <div className="mr-4 inline-flex rounded-md bg-civic-50 p-3 text-sm leading-6 text-slate-700 sm:mr-8">
+                  <div className="mr-4 inline-flex rounded-md border border-white/45 bg-white/50 p-3 text-sm leading-6 text-slate-700 backdrop-blur-xl sm:mr-8">
                     <span
                       className="typing-dots"
                       aria-label={t("chat.processing")}
@@ -169,7 +169,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               ) : null}
             </div>
             <form
-              className="sticky bottom-0 border-t border-civic-100 bg-white p-4"
+              className="sticky bottom-0 border-t border-white/45 bg-white/45 p-4 backdrop-blur-xl"
               onSubmit={(event) => {
                 event.preventDefault();
                 void form.handleSubmit();
@@ -178,7 +178,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
               <form.Field name="message">
                 {(field) => (
                   <textarea
-                    className="min-h-24 w-full rounded-md border border-civic-100 p-3 text-sm leading-6"
+                    className="min-h-24 w-full rounded-md border border-white/50 bg-white/55 p-3 text-sm leading-6 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                     placeholder={t("chat.placeholder")}
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
