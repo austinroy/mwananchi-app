@@ -16,6 +16,10 @@ Mwananchi App is a civic participation web app for turning public documents into
 - Local Node API using built-in `node:sqlite` (with watch mode)
 - Oxlint
 
+## License
+
+Mwananchi App is licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
+
 ## Current MVP
 
 - Landing page
