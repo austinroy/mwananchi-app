@@ -100,7 +100,23 @@ data/mwananchi.sqlite
 
 The frontend uses `VITE_API_BASE_URL` when provided. Without it, local browser runs default to `http://localhost:8787`, while deployed hosts use same-origin `/api/*` requests so Netlify can route them to functions. Include the protocol in external deployed values, for example `https://api.example.com`; host-only values are normalized to HTTPS before requests are sent.
 
-Netlify routes `/api/*` to `netlify/functions/api.mjs` before the SPA fallback. The current function is a scaffold with health/CORS handling; the full `server/index.mjs` API routes still need to be moved into a reusable function handler and backed by durable production storage before Netlify can serve the complete API.
+Netlify routes `/api/*` to `netlify/functions/api.mjs` before the SPA fallback. The current function supports health checks, user sync, and user AI default reads/writes using Turso over HTTP. The remaining `server/index.mjs` API routes still need to be moved into the serverless handler before Netlify can serve the complete API.
+
+For Netlify production API storage, create a Turso database and configure these environment variables in Netlify:
+
+```bash
+TURSO_DATABASE_URL=https://your-database-your-org.turso.io
+TURSO_AUTH_TOKEN=your-database-token
+```
+
+You can get them with:
+
+```bash
+turso db show <database-name> --http-url
+turso db tokens create <database-name>
+```
+
+The function creates the `users` and `user_ai_defaults` tables automatically on first use. Set `VITE_API_BASE_URL` only when the frontend should call a separate backend origin; leave it unset for same-origin Netlify Functions.
 
 If the API server is not running, API actions will fail as the browser mock/localStorage fallbacks have been removed.
 
