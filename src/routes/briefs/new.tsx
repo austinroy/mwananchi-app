@@ -39,11 +39,14 @@ export function NewBriefPage() {
   const form = useForm({
     defaultValues: {
       title: "",
-      category: "Budget" as BriefCategory,
-      jurisdiction: "Kenya",
+      category: "" as BriefCategory | "",
+      jurisdiction: "",
       documentText: "",
     },
-    onSubmit: ({ value }) => mutation.mutate(value as NewBriefInput),
+    onSubmit: ({ value }) => {
+      if (validateBriefCategory(value.category)) return;
+      mutation.mutate(value as NewBriefInput);
+    },
   });
 
   return (
@@ -70,6 +73,7 @@ export function NewBriefPage() {
                 </span>
                 <input
                   className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
+                  placeholder="e.g. Finance Bill public notice"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -94,6 +98,7 @@ export function NewBriefPage() {
                 </span>
                 <input
                   className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
+                  placeholder="e.g. Nairobi County, Kenya"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -120,11 +125,16 @@ export function NewBriefPage() {
                   className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) =>
-                    field.handleChange(event.target.value as BriefCategory)
+                    field.handleChange(event.target.value as BriefCategory | "")
                   }
                 >
+                  <option value="" disabled>
+                    Select a category
+                  </option>
                   {categories.map((category) => (
-                    <option key={category}>{category}</option>
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
                   ))}
                 </select>
                 {field.state.meta.errors?.[0] ? (
@@ -185,6 +195,7 @@ export function NewBriefPage() {
                 </span>
                 <textarea
                   className="mt-2 min-h-56 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 leading-7 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100 sm:min-h-64"
+                  placeholder="Paste the public notice, bill, report, or policy text here."
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />

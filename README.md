@@ -98,7 +98,7 @@ The API listens on `http://localhost:8787` and stores local data in:
 data/mwananchi.sqlite
 ```
 
-The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`.
+The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`. Include the protocol in deployed values, for example `https://api.example.com`; host-only values are normalized to HTTPS before requests are sent.
 
 If the API server is not running, API actions will fail as the browser mock/localStorage fallbacks have been removed.
 
@@ -153,6 +153,7 @@ Keep this value stable. Changing it makes previously stored user API keys unread
 ## PDF Upload
 
 The new brief form supports uploading a PDF. The app extracts selectable text from the PDF and places it into the document text area for review before generating a brief.
+Create-brief and civic-action form fields start blank with placeholder guidance instead of preselected civic defaults, so users make an explicit jurisdiction, category, audience, tone, and action-format choice.
 
 If no selectable text is found, the browser falls back to OCR for scanned PDFs using the installed `pdfjs-dist` and `tesseract.js` packages. Vite serves the local Tesseract worker and core assets under `/ocr`. OCR is intentionally capped for responsiveness.
 

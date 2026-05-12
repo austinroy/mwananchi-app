@@ -88,6 +88,7 @@ Auth status:
 - Login should be required later for saved briefs, cross-device history, sharing controls, and account settings.
 - When `npm run api` is running, users, briefs, chat messages, and civic actions are stored in `data/mwananchi.sqlite`.
 - API ownership is derived from auth headers. `CLERK_JWKS_URL` enables Clerk bearer token verification; local fallback headers are development-only.
+- Frontend API requests use `normalizeApiBaseUrl` in `src/lib/apiBaseUrl.ts` so host-only `VITE_API_BASE_URL` deploy values are converted to HTTPS instead of becoming relative app paths.
 - The app now strictly relies on the SQLite API for persistence. `src/lib/mockApi.ts` acts as a direct wrapper for the API calls and local storage fallbacks have been removed.
 - Scanned PDFs are handled in-browser with installed `pdfjs-dist` and `tesseract.js` packages. `vite.config.ts` serves/copies Tesseract worker and core assets under `/ocr`. `VITE_OCR_MAX_PAGES` controls the OCR page cap.
 - Real AI integration lives in `server/index.mjs`. OpenAI uses the Responses API, OpenRouter, LM Studio, and custom providers use OpenAI-compatible chat completions, and Anthropic uses the Messages API. Missing provider keys intentionally fall back to prototype responses.
@@ -258,8 +259,10 @@ npm install
 - Do not introduce Next.js unless the user explicitly changes direction.
 - Keep the app name as `Mwananchi App`.
 - Prefer incremental, working slices over large speculative rewrites.
+- Run `npm run format` before creating commits so Prettier-normalized changes are included.
 - Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
 - The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
+- Create-brief and civic-action forms start blank with placeholder guidance instead of preselected defaults, so users make explicit choices.
 - The route/component organization pass moved auth, dashboard, and brief workflows out of `src/router.tsx`; keep future route files thin and prefer shared component modules for page logic.
 - Continue splitting page-level components into smaller modules where a file still holds multiple independent UI responsibilities.
 - When a code change affects user-facing behavior, routing, auth, layout, or setup flow, update `AGENTS.md` and `README.md` in the same commit unless the user explicitly says not to.
