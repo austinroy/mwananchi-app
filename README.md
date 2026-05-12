@@ -98,7 +98,9 @@ The API listens on `http://localhost:8787` and stores local data in:
 data/mwananchi.sqlite
 ```
 
-The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`. Include the protocol in deployed values, for example `https://api.example.com`; host-only values are normalized to HTTPS before requests are sent.
+The frontend uses `VITE_API_BASE_URL` when provided. Without it, local browser runs default to `http://localhost:8787`, while deployed hosts use same-origin `/api/*` requests so Netlify can route them to functions. Include the protocol in external deployed values, for example `https://api.example.com`; host-only values are normalized to HTTPS before requests are sent.
+
+Netlify routes `/api/*` to `netlify/functions/api.mjs` before the SPA fallback. The current function is a scaffold with health/CORS handling; the full `server/index.mjs` API routes still need to be moved into a reusable function handler and backed by durable production storage before Netlify can serve the complete API.
 
 If the API server is not running, API actions will fail as the browser mock/localStorage fallbacks have been removed.
 
