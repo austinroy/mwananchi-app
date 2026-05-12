@@ -56,11 +56,20 @@ export const seedBrief: import("./types").CivicBrief = {
 
 export async function listBriefs(_userId?: string) {
   const apiBriefs = await listApiBriefs();
-  return apiBriefs ?? [];
+  const briefs = apiBriefs ?? [];
+  if (_userId || briefs.some((brief) => brief.id === seedBrief.id)) {
+    return briefs;
+  }
+
+  return [seedBrief, ...briefs];
 }
 
 export async function getBrief(briefId: string) {
   const apiBrief = await getApiBrief(briefId);
+  if (!apiBrief?.data && briefId === seedBrief.id) {
+    return seedBrief;
+  }
+
   if (!apiBrief?.data) {
     const error = new Error(
       apiBrief?.status === 401
