@@ -87,6 +87,15 @@ db.exec(`
     base_url TEXT,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS user_offline_keys (
+    user_id TEXT PRIMARY KEY,
+    encrypted_key TEXT NOT NULL,
+    iv TEXT NOT NULL,
+    auth_tag TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 ensureColumn("briefs", "visibility", "TEXT NOT NULL DEFAULT 'private'");
@@ -137,6 +146,13 @@ createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/users") {
       const body = await readJson(req);
       sendJson(res, upsertUser(body));
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/users/me/offline-key") {
+      const userId = await getRequiredRequestUserId(req, res);
+      if (!userId) return;
+      sendJson(res, getUserOfflineKey(userId));
       return;
     }
 
@@ -502,6 +518,43 @@ function upsertUserAiDefaults(userId, input) {
   };
 }
 
+function getUserOfflineKey(userId) {
+  const row = db
+    .prepare(
+      "SELECT encrypted_key, iv, auth_tag, updated_at FROM user_offline_keys WHERE user_id = ?",
+    )
+    .get(userId);
+
+  if (row) {
+    return {
+      key: decryptSecret(row),
+      updatedAt: row.updated_at,
+    };
+  }
+
+  const rawKey = randomBytes(32).toString("base64");
+  const encrypted = encryptSecret(rawKey);
+  const now = new Date().toISOString();
+  db.prepare(
+    `
+    INSERT INTO user_offline_keys (user_id, encrypted_key, iv, auth_tag, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `,
+  ).run(
+    userId,
+    encrypted.encryptedKey,
+    encrypted.iv,
+    encrypted.authTag,
+    now,
+    now,
+  );
+
+  return {
+    key: rawKey,
+    updatedAt: now,
+  };
+}
+
 function getDecryptedUserAiKey(userId, providerValue) {
   const provider = normalizeProvider(providerValue);
   if (!provider) return null;
@@ -521,11 +574,15 @@ function getDecryptedUserAiKey(userId, providerValue) {
 }
 
 function encryptApiKey(apiKey) {
+  return encryptSecret(apiKey);
+}
+
+function encryptSecret(value) {
   const key = getApiKeyEncryptionKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const encrypted = Buffer.concat([
-    cipher.update(apiKey, "utf8"),
+    cipher.update(value, "utf8"),
     cipher.final(),
   ]);
 
@@ -537,6 +594,10 @@ function encryptApiKey(apiKey) {
 }
 
 function decryptApiKey(row) {
+  return decryptSecret(row);
+}
+
+function decryptSecret(row) {
   const decipher = createDecipheriv(
     "aes-256-gcm",
     getApiKeyEncryptionKey(),

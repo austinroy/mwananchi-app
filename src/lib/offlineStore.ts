@@ -25,6 +25,7 @@ type OfflineEncryptionContext = {
   userId?: string;
   isClerkEnabled?: boolean;
   getToken?: () => Promise<string | null>;
+  getServerKey?: () => Promise<string | null>;
 };
 
 export function setOfflineEncryptionContext(context: OfflineEncryptionContext) {
@@ -166,10 +167,18 @@ async function importEncryptionKey(rawKey: string) {
 
 async function getPrimaryKeyMaterial() {
   if (offlineEncryptionContext.isClerkEnabled) {
+    const serverKey = await offlineEncryptionContext.getServerKey?.();
+    if (serverKey && offlineEncryptionContext.userId) {
+      return {
+        scope: `server-user:${offlineEncryptionContext.userId}`,
+        value: `${offlineEncryptionContext.userId}:${serverKey}`,
+      };
+    }
+
     const token = await offlineEncryptionContext.getToken?.();
     if (token && offlineEncryptionContext.userId) {
       return {
-        scope: `clerk:${offlineEncryptionContext.userId}`,
+        scope: `clerk-session:${offlineEncryptionContext.userId}`,
         value: `${offlineEncryptionContext.userId}:${token}`,
       };
     }
@@ -191,10 +200,15 @@ async function getPrimaryKeyMaterial() {
 async function getCandidateKeyMaterials(recordScope?: string) {
   const primary = await getPrimaryKeyMaterial();
   const candidates = [primary];
-  const legacyLocal = {
-    scope: "legacy-local",
-    value: getOrCreateLocalKey(),
-  };
+  const legacyLocal = { scope: "legacy-local", value: getOrCreateLocalKey() };
+  const token = await offlineEncryptionContext.getToken?.();
+
+  if (token && offlineEncryptionContext.userId) {
+    candidates.push({
+      scope: `clerk-session:${offlineEncryptionContext.userId}`,
+      value: `${offlineEncryptionContext.userId}:${token}`,
+    });
+  }
 
   if (recordScope !== primary.scope) {
     candidates.push(legacyLocal);

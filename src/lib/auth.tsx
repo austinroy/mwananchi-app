@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
-import { setApiAuthContext } from "./api";
+import { getApiOfflineEncryptionKey, setApiAuthContext } from "./api";
 import { setOfflineEncryptionContext } from "./offlineStore";
 
 export type AuthUser = {
@@ -66,6 +66,7 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
       userId: user?.id,
       isClerkEnabled: true,
       getToken,
+      getServerKey: getApiOfflineEncryptionKey,
     });
   }, [getToken, user?.id]);
 
