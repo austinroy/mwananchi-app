@@ -19,7 +19,11 @@ try {
   if (typeof jest !== "undefined" && jest && jest.mock) {
     jest.mock("@tanstack/react-router", () => ({
       Link: ({ children, ...props }: any) =>
-        React.createElement("a", { href: props.to ?? props.href ?? "#", ...props }, children),
+        React.createElement(
+          "a",
+          { href: props.to ?? props.href ?? "#", ...props },
+          children,
+        ),
       Outlet: () => null,
       useNavigate: () => jest.fn(),
       useLinkProps: () => ({}),

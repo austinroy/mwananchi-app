@@ -96,6 +96,9 @@ db.exec(
 ensureColumn("briefs", "ai_error", "TEXT");
 ensureColumn("chat_messages", "ai_error", "TEXT");
 ensureColumn("civic_actions", "ai_error", "TEXT");
+db.prepare("UPDATE briefs SET visibility = 'public' WHERE id = ?").run(
+  "brief-sample-budget",
+);
 seedSampleBrief();
 
 createServer(async (req, res) => {
@@ -521,11 +524,15 @@ function getDecryptedUserAiKey(userId, providerValue) {
 }
 
 function encryptApiKey(apiKey) {
+  return encryptSecret(apiKey);
+}
+
+function encryptSecret(value) {
   const key = getApiKeyEncryptionKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const encrypted = Buffer.concat([
-    cipher.update(apiKey, "utf8"),
+    cipher.update(value, "utf8"),
     cipher.final(),
   ]);
 
@@ -537,6 +544,10 @@ function encryptApiKey(apiKey) {
 }
 
 function decryptApiKey(row) {
+  return decryptSecret(row);
+}
+
+function decryptSecret(row) {
   const decipher = createDecipheriv(
     "aes-256-gcm",
     getApiKeyEncryptionKey(),
@@ -742,6 +753,10 @@ async function createAction(briefId, input, userId) {
 
 function updateBriefVisibility(briefId, userId, visibility) {
   if (!["private", "unlisted", "public"].includes(visibility)) return null;
+  if (briefId === "brief-sample-budget") {
+    return { ok: true, visibility: "public" };
+  }
+
   const row = db
     .prepare(
       "SELECT * FROM briefs WHERE id = ? AND (user_id = ? OR user_id IS NULL OR id = ?)",
@@ -1633,7 +1648,7 @@ function seedSampleBrief() {
     title: "County Budget Public Notice",
     category: "Budget",
     jurisdiction: "Nairobi County",
-    visibility: "unlisted",
+    visibility: "public",
     sourceText: "Sample county budget public notice.",
     summary:
       "The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.",

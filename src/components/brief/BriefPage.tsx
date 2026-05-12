@@ -114,6 +114,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
     return <main className="page-shell">{t("brief.loading")}</main>;
   }
   const displayBrief = getLocalizedSampleBrief(brief, locale);
+  const isSampleBrief = brief.id === "brief-sample-budget";
 
   return (
     <main className="page-shell pb-6 lg:pb-[32rem]">
@@ -131,7 +132,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
           visibility={brief.visibility}
           isVisibilityPending={visibilityMutation.isPending}
           isDeletePending={deleteMutation.isPending}
-          canDelete={brief.id !== "brief-sample-budget"}
+          isSampleBrief={isSampleBrief}
           onToggleVisibility={(nextVisibility) =>
             visibilityMutation.mutate(nextVisibility)
           }

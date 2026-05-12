@@ -7,7 +7,7 @@ export function BriefHeaderActions({
   visibility,
   isVisibilityPending,
   isDeletePending,
-  canDelete,
+  isSampleBrief,
   onToggleVisibility,
   onCopyShareLink,
   onDelete,
@@ -16,12 +16,14 @@ export function BriefHeaderActions({
   visibility: "private" | "unlisted" | "public";
   isVisibilityPending: boolean;
   isDeletePending: boolean;
-  canDelete: boolean;
+  isSampleBrief: boolean;
   onToggleVisibility: (nextVisibility: "private" | "public") => void;
   onCopyShareLink: () => Promise<void>;
   onDelete: () => void;
 }) {
   const { t } = useI18n();
+  const samplePrivateTooltip = "The example brief cannot be made private.";
+  const sampleDeleteTooltip = "The example brief cannot be deleted.";
 
   return (
     <div className="grid items-center gap-2 sm:flex sm:flex-wrap">
@@ -58,18 +60,23 @@ export function BriefHeaderActions({
               {t("briefActions.makePublic")}
             </button>
           ) : (
-            <button
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-              disabled={isVisibilityPending}
-              onClick={() => {
-                onToggleVisibility("private");
-                const target = document.activeElement?.closest("details");
-                if (target) target.removeAttribute("open");
-              }}
+            <span
+              className="block"
+              title={isSampleBrief ? samplePrivateTooltip : undefined}
             >
-              <EyeOff size={14} />
-              {t("briefActions.makePrivate")}
-            </button>
+              <button
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                disabled={isVisibilityPending || isSampleBrief}
+                onClick={() => {
+                  onToggleVisibility("private");
+                  const target = document.activeElement?.closest("details");
+                  if (target) target.removeAttribute("open");
+                }}
+              >
+                <EyeOff size={14} />
+                {t("briefActions.makePrivate")}
+              </button>
+            </span>
           )}
         </div>
       </details>
@@ -81,17 +88,22 @@ export function BriefHeaderActions({
         <Sparkles size={16} />
         {t("briefActions.generate")}
       </Link>
-      <button
-        className="btn-danger w-full sm:w-auto"
-        type="button"
-        disabled={isDeletePending || !canDelete}
-        onClick={onDelete}
+      <span
+        className="inline-flex w-full sm:w-auto"
+        title={isSampleBrief ? sampleDeleteTooltip : undefined}
       >
-        <Trash2 size={16} />
-        {isDeletePending
-          ? t("briefActions.deleting")
-          : t("briefActions.delete")}
-      </button>
+        <button
+          className="btn-danger w-full sm:w-auto"
+          type="button"
+          disabled={isDeletePending || isSampleBrief}
+          onClick={onDelete}
+        >
+          <Trash2 size={16} />
+          {isDeletePending
+            ? t("briefActions.deleting")
+            : t("briefActions.delete")}
+        </button>
+      </span>
     </div>
   );
 }

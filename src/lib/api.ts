@@ -10,6 +10,14 @@ import type {
   NewBriefInput,
   UpdateVisibilityResult,
 } from "./types";
+import {
+  cacheOfflineBrief,
+  createOfflineBrief,
+  listOfflineBriefs,
+  listOfflineMutations,
+  queueOfflineMutation,
+  removeOfflineMutation,
+} from "./offlineStore";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
 let apiAuthContext: ApiAuthContext = {};
@@ -19,7 +27,14 @@ export function setApiAuthContext(context: ApiAuthContext) {
 }
 
 export async function listApiBriefs() {
-  return apiRequest<CivicBrief[]>("/api/briefs");
+  const apiBriefs = await apiRequest<CivicBrief[]>("/api/briefs");
+  const offlineBriefs = await listOfflineBriefs();
+  if (!apiBriefs) return offlineBriefs;
+  const apiIds = new Set(apiBriefs.map((brief) => brief.id));
+  return [
+    ...offlineBriefs.filter((brief) => !apiIds.has(brief.id)),
+    ...apiBriefs,
+  ];
 }
 
 export async function getApiBrief(briefId: string) {
@@ -34,10 +49,21 @@ export async function createApiBrief(
   input: NewBriefInput,
   ai?: AiModelSelection,
 ) {
-  return apiRequest<CivicBrief>("/api/briefs", {
+  const body = JSON.stringify({ input, ai });
+  const result = await apiRequest<CivicBrief>("/api/briefs", {
     method: "POST",
-    body: JSON.stringify({ input, ai }),
+    body,
   });
+
+  if (result) return result;
+  const offlineBrief = createOfflineBrief(input);
+  await cacheOfflineBrief(offlineBrief);
+  await queueOfflineMutation({
+    path: "/api/briefs",
+    method: "POST",
+    body,
+  });
+  return offlineBrief;
 }
 
 export async function getApiChatMessages(briefId: string) {
@@ -49,10 +75,24 @@ export async function sendApiChatMessage(
   content: string,
   ai?: AiModelSelection,
 ) {
-  return apiRequest<ChatMessage>(`/api/briefs/${briefId}/messages`, {
+  const path = `/api/briefs/${briefId}/messages`;
+  const body = JSON.stringify({ content, ai });
+  const result = await apiRequest<ChatMessage>(path, {
     method: "POST",
-    body: JSON.stringify({ content, ai }),
+    body,
   });
+  if (result) return result;
+
+  await queueOfflineMutation({ path, method: "POST", body });
+  return {
+    id: `offline-message-${crypto.randomUUID()}`,
+    briefId,
+    role: "assistant",
+    content:
+      "Saved offline. Mwananchi App will send your message when the API is reachable.",
+    aiError: "Offline message pending sync.",
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export async function clearApiChatMessages(briefId: string) {
@@ -65,10 +105,24 @@ export async function generateApiAction(
   briefId: string,
   input: CivicActionInput,
 ) {
-  return apiRequest<CivicAction>(`/api/briefs/${briefId}/actions`, {
+  const path = `/api/briefs/${briefId}/actions`;
+  const body = JSON.stringify(input);
+  const result = await apiRequest<CivicAction>(path, {
     method: "POST",
-    body: JSON.stringify(input),
+    body,
   });
+  if (result) return result;
+
+  await queueOfflineMutation({ path, method: "POST", body });
+  return {
+    ...input,
+    id: `offline-action-${crypto.randomUUID()}`,
+    briefId,
+    content:
+      "Saved offline. Mwananchi App will generate this civic action when the API is reachable.",
+    aiError: "Offline action pending sync.",
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export async function listApiActions(briefId: string) {
@@ -88,19 +142,49 @@ export async function updateApiBriefVisibility(
   briefId: string,
   visibility: "private" | "unlisted" | "public",
 ) {
-  return apiRequest<UpdateVisibilityResult>(
-    `/api/briefs/${briefId}/visibility`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ visibility }),
-    },
-  );
+  const path = `/api/briefs/${briefId}/visibility`;
+  const body = JSON.stringify({ visibility });
+  const result = await apiRequest<UpdateVisibilityResult>(path, {
+    method: "PUT",
+    body,
+  });
+  if (result) return result;
+
+  await queueOfflineMutation({ path, method: "PUT", body });
+  return { ok: true, visibility };
 }
 
 export async function deleteApiBrief(briefId: string) {
-  return apiRequestStrict<{ ok: boolean }>(`/api/briefs/${briefId}`, {
-    method: "DELETE",
-  });
+  const path = `/api/briefs/${briefId}`;
+  try {
+    return await apiRequestStrict<{ ok: boolean }>(path, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (!isNetworkError(error)) throw error;
+    await queueOfflineMutation({ path, method: "DELETE" });
+    return { ok: true };
+  }
+}
+
+export async function syncOfflineChanges() {
+  if (!navigator.onLine) return { synced: 0 };
+  const queued = await listOfflineMutations();
+  let synced = 0;
+
+  for (const mutation of queued) {
+    const result = await apiRequestWithStatus(mutation.path, {
+      method: mutation.method,
+      body: mutation.body,
+    });
+    if (result.status === 0) break;
+    if (result.status >= 200 && result.status < 300) {
+      await removeOfflineMutation(mutation.id);
+      synced += 1;
+    }
+  }
+
+  return { synced };
 }
 
 export async function listAiApiKeyStatuses() {
@@ -237,24 +321,37 @@ async function apiRequestWithStatus<T>(path: string, init?: RequestInit) {
 }
 
 async function apiRequestStrict<T>(path: string, init?: RequestInit) {
-  const token = await apiAuthContext.getToken?.();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      ...(apiAuthContext.userId
-        ? { "x-mwananchi-user-id": apiAuthContext.userId }
-        : {}),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-  });
+  let response: Response;
+  try {
+    const token = await apiAuthContext.getToken?.();
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        ...(apiAuthContext.userId
+          ? { "x-mwananchi-user-id": apiAuthContext.userId }
+          : {}),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...init?.headers,
+      },
+    });
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "Network request failed",
+    );
+  }
 
   if (!response.ok) {
     const message = await readApiError(response);
     throw new Error(message || `API request failed with ${response.status}`);
   }
   return (await response.json()) as T;
+}
+
+function isNetworkError(error: unknown) {
+  return (
+    error instanceof Error && /network|fetch|failed|load/i.test(error.message)
+  );
 }
 
 async function readApiError(response: Response) {
