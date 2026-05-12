@@ -2,6 +2,7 @@ import { useClerk } from "@clerk/clerk-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { LogOut, UserCog } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import {
@@ -459,9 +460,9 @@ function LmStudioModal({
       ),
   });
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4">
-      <section className="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl sm:p-6">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 p-4 py-8 backdrop-blur-sm sm:items-center">
+      <section className="max-h-[calc(100svh-4rem)] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-5 shadow-xl sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-civic-700">
@@ -553,6 +554,7 @@ function LmStudioModal({
           </button>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
