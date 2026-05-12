@@ -11,23 +11,16 @@ import {
   listActions,
 } from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
+import { actionTypes, actionTones } from "../../lib/civicOptions";
 import type { CivicAction, CivicActionInput } from "../../lib/types";
 import { useI18n } from "../../lib/i18n";
 
-const actionTypes: CivicActionInput["actionType"][] = [
-  "email",
-  "petition",
-  "public_comment",
-  "whatsapp_summary",
-  "talking_points",
-];
-
-const actionTones: CivicActionInput["tone"][] = [
-  "Respectful",
-  "Firm",
-  "Youth-friendly",
-  "Professional",
-];
+type CivicActionFormValues = {
+  actionType: CivicActionInput["actionType"] | "";
+  tone: CivicActionInput["tone"] | "";
+  audience: string;
+  extraContext: string;
+};
 
 export function BriefActionPage({ briefId }: { briefId: string }) {
   const { locale, t } = useI18n();
@@ -63,16 +56,21 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
   const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
   const form = useForm({
     defaultValues: {
-      actionType: "email" as CivicActionInput["actionType"],
-      tone: "Respectful" as CivicActionInput["tone"],
-      audience: "County official",
+      actionType: "",
+      tone: "",
+      audience: "",
       extraContext: "",
-    },
-    onSubmit: ({ value }) =>
+    } as CivicActionFormValues,
+    onSubmit: ({ value }) => {
+      if (!value.actionType || !value.tone || !value.audience.trim()) return;
       mutation.mutate({
-        ...value,
+        actionType: value.actionType,
+        tone: value.tone,
+        audience: value.audience,
+        extraContext: value.extraContext,
         ai: { ...aiDefaults, language: locale },
-      }),
+      });
+    },
   });
 
   return (
@@ -119,13 +117,16 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(
-                      event.target.value as CivicActionInput["actionType"],
+                      event.target.value as CivicActionInput["actionType"] | "",
                     )
                   }
                 >
+                  <option value="" disabled>
+                    Select an action type
+                  </option>
                   {actionTypes.map((action) => (
-                    <option key={action} value={action}>
-                      {action}
+                    <option key={action.value} value={action.value}>
+                      {action.label}
                     </option>
                   ))}
                 </select>
@@ -143,10 +144,13 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(
-                      event.target.value as CivicActionInput["tone"],
+                      event.target.value as CivicActionInput["tone"] | "",
                     )
                   }
                 >
+                  <option value="" disabled>
+                    Select a tone
+                  </option>
                   {actionTones.map((tone) => (
                     <option key={tone} value={tone}>
                       {tone}
@@ -164,6 +168,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                 </span>
                 <input
                   className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
+                  placeholder="e.g. County executive, MCA, school board"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -178,6 +183,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                 </span>
                 <textarea
                   className="mt-2 min-h-28 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
+                  placeholder="Add any deadline, audience detail, or point you want emphasized."
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />

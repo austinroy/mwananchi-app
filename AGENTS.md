@@ -260,6 +260,7 @@ npm install
 - Prefer incremental, working slices over large speculative rewrites.
 - Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
 - The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
+- Create-brief and civic-action forms start blank with placeholder guidance instead of preselected defaults, so users make explicit choices.
 - The route/component organization pass moved auth, dashboard, and brief workflows out of `src/router.tsx`; keep future route files thin and prefer shared component modules for page logic.
 - Continue splitting page-level components into smaller modules where a file still holds multiple independent UI responsibilities.
 - When a code change affects user-facing behavior, routing, auth, layout, or setup flow, update `AGENTS.md` and `README.md` in the same commit unless the user explicitly says not to.
