@@ -1,12 +1,10 @@
 import type { CivicBrief } from "../types";
-import { webcrypto } from "node:crypto";
 import {
   cacheOfflineBrief,
   listOfflineBriefs,
   queueOfflineMutation,
   listOfflineMutations,
   removeOfflineMutation,
-  setOfflineEncryptionContext,
 } from "../offlineStore";
 
 const stores = new Map<string, Map<string, unknown>>();
@@ -39,6 +37,10 @@ class MockTransaction {
 
 class MockDatabase {
   constructor(private readonly records: Map<string, unknown>) {}
+
+  objectStoreNames = {
+    contains: () => stores.has("mwananchi-offline"),
+  } as unknown as DOMStringList;
 
   createObjectStore() {
     return new MockObjectStore(this.records);
@@ -97,41 +99,14 @@ describe("offlineStore", () => {
       configurable: true,
       value: { open: jest.fn(openDb) },
     });
-    Object.defineProperty(globalThis, "crypto", {
-      configurable: true,
-      value: webcrypto,
-    });
-    setOfflineEncryptionContext({});
   });
 
-  it("encrypts offline briefs with the server-issued user key", async () => {
-    setOfflineEncryptionContext({
-      userId: "user_123",
-      isClerkEnabled: true,
-      getServerKey: async () => "stable-server-wrapping-key",
-      getToken: async () => "session-token",
-    });
-
+  it("stores and lists offline briefs", async () => {
     await cacheOfflineBrief(brief);
     await expect(listOfflineBriefs()).resolves.toEqual([brief]);
-
-    setOfflineEncryptionContext({
-      userId: "user_123",
-      isClerkEnabled: true,
-      getServerKey: async () => "different-server-wrapping-key",
-      getToken: async () => "session-token",
-    });
-
-    await expect(listOfflineBriefs()).resolves.toEqual([]);
   });
 
-  it("queues and removes encrypted offline mutations", async () => {
-    setOfflineEncryptionContext({
-      userId: "user_123",
-      isClerkEnabled: true,
-      getServerKey: async () => "stable-server-wrapping-key",
-    });
-
+  it("queues and removes offline mutations", async () => {
     const queued = await queueOfflineMutation({
       path: "/api/briefs",
       method: "POST",
@@ -148,6 +123,34 @@ describe("offlineStore", () => {
     ]);
 
     await removeOfflineMutation(queued.id);
+    await expect(listOfflineMutations()).resolves.toEqual([]);
+  });
+
+  it("rejects auth and user records from offline storage", async () => {
+    await expect(
+      queueOfflineMutation({
+        path: "/api/users",
+        method: "POST",
+        body: JSON.stringify({
+          id: "user_123",
+          email: "person@example.com",
+        }),
+      }),
+    ).rejects.toThrow("Auth and user records cannot be stored offline.");
+
+    await expect(
+      queueOfflineMutation({
+        path: "/api/briefs",
+        method: "POST",
+        body: JSON.stringify({
+          input: {
+            title: "Budget",
+            authToken: "secret-session-token",
+          },
+        }),
+      }),
+    ).rejects.toThrow("Auth and user records cannot be stored offline.");
+
     await expect(listOfflineMutations()).resolves.toEqual([]);
   });
 });

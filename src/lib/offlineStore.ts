@@ -1,10 +1,21 @@
 import type { CivicBrief } from "./types";
 
 const dbName = "mwananchi-offline";
-const dbVersion = 1;
-const storeName = "encrypted-records";
-const localKeyName = "mwananchi_offline_key";
-let offlineEncryptionContext: OfflineEncryptionContext = {};
+const dbVersion = 2;
+const storeName = "records";
+const blockedMutationPathPattern = /^\/api\/(?:users|auth|sessions)(?:\/|$)/;
+const blockedMutationBodyKeys = [
+  "authorization",
+  "credential",
+  "credentials",
+  "email",
+  "name",
+  "password",
+  "session",
+  "token",
+  "user",
+  "userId",
+];
 
 export type OfflineMutation = {
   id: string;
@@ -14,47 +25,36 @@ export type OfflineMutation = {
   createdAt: string;
 };
 
-type OfflineRecord = {
+type OfflineRecord<T = unknown> = {
   id: string;
-  iv: string;
-  data: string;
-  keyScope?: string;
+  value: T;
 };
-
-type OfflineEncryptionContext = {
-  userId?: string;
-  isClerkEnabled?: boolean;
-  getToken?: () => Promise<string | null>;
-  getServerKey?: () => Promise<string | null>;
-};
-
-export function setOfflineEncryptionContext(context: OfflineEncryptionContext) {
-  offlineEncryptionContext = context;
-}
 
 export async function cacheOfflineBrief(brief: CivicBrief) {
-  await putEncryptedRecord(`brief:${brief.id}`, brief);
+  await putRecord(`brief:${brief.id}`, brief);
 }
 
 export async function listOfflineBriefs() {
-  const records = await listEncryptedRecords<CivicBrief>("brief:");
+  const records = await listRecords<CivicBrief>("brief:");
   return records.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function queueOfflineMutation(
   mutation: Omit<OfflineMutation, "id" | "createdAt">,
 ) {
+  assertSyncableMutation(mutation);
+
   const queued: OfflineMutation = {
     ...mutation,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   };
-  await putEncryptedRecord(`mutation:${queued.id}`, queued);
+  await putRecord(`mutation:${queued.id}`, queued);
   return queued;
 }
 
 export async function listOfflineMutations() {
-  return listEncryptedRecords<OfflineMutation>("mutation:");
+  return listRecords<OfflineMutation>("mutation:");
 }
 
 export async function removeOfflineMutation(id: string) {
@@ -91,147 +91,76 @@ export function createOfflineBrief(input: {
   };
 }
 
-async function putEncryptedRecord(id: string, value: unknown) {
+function assertSyncableMutation(
+  mutation: Omit<OfflineMutation, "id" | "createdAt">,
+) {
+  if (blockedMutationPathPattern.test(mutation.path)) {
+    throw new Error("Auth and user records cannot be stored offline.");
+  }
+
+  if (!mutation.body) return;
+
+  try {
+    const body = JSON.parse(mutation.body) as unknown;
+    if (containsBlockedBodyKey(body)) {
+      throw new Error("Auth and user records cannot be stored offline.");
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("stored offline")) {
+      throw error;
+    }
+  }
+}
+
+function containsBlockedBodyKey(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+
+  if (Array.isArray(value)) {
+    return value.some((item) => containsBlockedBodyKey(item));
+  }
+
+  return Object.entries(value).some(([key, item]) => {
+    const normalizedKey = key.replace(/[-_]/g, "").toLowerCase();
+    const isBlockedKey = blockedMutationBodyKeys.some(
+      (blockedKey) =>
+        normalizedKey === blockedKey.toLowerCase() ||
+        normalizedKey.includes(blockedKey.toLowerCase()),
+    );
+    return isBlockedKey || containsBlockedBodyKey(item);
+  });
+}
+
+async function putRecord(id: string, value: unknown) {
   const db = await openOfflineDb();
-  const record = await encryptRecord(id, value);
   await requestToPromise(
-    db.transaction(storeName, "readwrite").objectStore(storeName).put(record),
+    db
+      .transaction(storeName, "readwrite")
+      .objectStore(storeName)
+      .put({ id, value }),
   );
   db.close();
 }
 
-async function listEncryptedRecords<T>(prefix: string) {
+async function listRecords<T>(prefix: string) {
   const db = await openOfflineDb();
-  const records = await requestToPromise<OfflineRecord[]>(
+  const records = await requestToPromise<OfflineRecord<T>[]>(
     db.transaction(storeName, "readonly").objectStore(storeName).getAll(),
   );
   db.close();
 
-  const values = await Promise.all(
-    records
-      .filter((record) => record.id.startsWith(prefix))
-      .map((record) => decryptRecord<T>(record)),
-  );
-  return values.filter(Boolean) as T[];
-}
-
-async function encryptRecord(
-  id: string,
-  value: unknown,
-): Promise<OfflineRecord> {
-  const keyMaterial = await getPrimaryKeyMaterial();
-  const key = await importEncryptionKey(keyMaterial.value);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(JSON.stringify(value));
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    encoded,
-  );
-
-  return {
-    id,
-    iv: toBase64(iv),
-    data: toBase64(new Uint8Array(encrypted)),
-    keyScope: keyMaterial.scope,
-  };
-}
-
-async function decryptRecord<T>(record: OfflineRecord): Promise<T | null> {
-  for (const keyMaterial of await getCandidateKeyMaterials(record.keyScope)) {
-    try {
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: fromBase64(record.iv) },
-        await importEncryptionKey(keyMaterial.value),
-        fromBase64(record.data),
-      );
-      return JSON.parse(new TextDecoder().decode(decrypted)) as T;
-    } catch {
-      // Try the next candidate. This supports legacy local-key records.
-    }
-  }
-
-  return null;
-}
-
-async function importEncryptionKey(rawKey: string) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(rawKey),
-  );
-  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [
-    "encrypt",
-    "decrypt",
-  ]);
-}
-
-async function getPrimaryKeyMaterial() {
-  if (offlineEncryptionContext.isClerkEnabled) {
-    const serverKey = await offlineEncryptionContext.getServerKey?.();
-    if (serverKey && offlineEncryptionContext.userId) {
-      return {
-        scope: `server-user:${offlineEncryptionContext.userId}`,
-        value: `${offlineEncryptionContext.userId}:${serverKey}`,
-      };
-    }
-
-    const token = await offlineEncryptionContext.getToken?.();
-    if (token && offlineEncryptionContext.userId) {
-      return {
-        scope: `clerk-session:${offlineEncryptionContext.userId}`,
-        value: `${offlineEncryptionContext.userId}:${token}`,
-      };
-    }
-  }
-
-  if (offlineEncryptionContext.userId) {
-    return {
-      scope: `local-user:${offlineEncryptionContext.userId}`,
-      value: `${offlineEncryptionContext.userId}:${getOrCreateLocalKey()}`,
-    };
-  }
-
-  return {
-    scope: "guest-local",
-    value: getOrCreateLocalKey(),
-  };
-}
-
-async function getCandidateKeyMaterials(recordScope?: string) {
-  const primary = await getPrimaryKeyMaterial();
-  const candidates = [primary];
-  const legacyLocal = { scope: "legacy-local", value: getOrCreateLocalKey() };
-  const token = await offlineEncryptionContext.getToken?.();
-
-  if (token && offlineEncryptionContext.userId) {
-    candidates.push({
-      scope: `clerk-session:${offlineEncryptionContext.userId}`,
-      value: `${offlineEncryptionContext.userId}:${token}`,
-    });
-  }
-
-  if (recordScope !== primary.scope) {
-    candidates.push(legacyLocal);
-  }
-
-  return candidates;
-}
-
-function getOrCreateLocalKey() {
-  const existing = localStorage.getItem(localKeyName);
-  if (existing) return existing;
-
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  const value = toBase64(bytes);
-  localStorage.setItem(localKeyName, value);
-  return value;
+  return records
+    .filter((record) => record.id.startsWith(prefix))
+    .map((record) => record.value)
+    .filter(Boolean);
 }
 
 function openOfflineDb() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(dbName, dbVersion);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore(storeName, { keyPath: "id" });
+      if (!request.result.objectStoreNames.contains(storeName)) {
+        request.result.createObjectStore(storeName, { keyPath: "id" });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -243,12 +172,4 @@ function requestToPromise<T>(request: IDBRequest<T>) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
-
-function toBase64(bytes: Uint8Array) {
-  return btoa(String.fromCharCode(...bytes));
-}
-
-function fromBase64(value: string) {
-  return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
 }

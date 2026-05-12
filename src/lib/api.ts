@@ -26,11 +26,6 @@ export function setApiAuthContext(context: ApiAuthContext) {
   apiAuthContext = context;
 }
 
-export async function getApiOfflineEncryptionKey() {
-  const result = await apiRequest<{ key: string }>("/api/users/me/offline-key");
-  return result?.key ?? null;
-}
-
 export async function listApiBriefs() {
   const apiBriefs = await apiRequest<CivicBrief[]>("/api/briefs");
   const offlineBriefs = await listOfflineBriefs();

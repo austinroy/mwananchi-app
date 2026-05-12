@@ -87,15 +87,6 @@ db.exec(`
     base_url TEXT,
     updated_at TEXT NOT NULL
   );
-
-  CREATE TABLE IF NOT EXISTS user_offline_keys (
-    user_id TEXT PRIMARY KEY,
-    encrypted_key TEXT NOT NULL,
-    iv TEXT NOT NULL,
-    auth_tag TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  );
 `);
 
 ensureColumn("briefs", "visibility", "TEXT NOT NULL DEFAULT 'private'");
@@ -105,6 +96,7 @@ db.exec(
 ensureColumn("briefs", "ai_error", "TEXT");
 ensureColumn("chat_messages", "ai_error", "TEXT");
 ensureColumn("civic_actions", "ai_error", "TEXT");
+db.exec("DROP TABLE IF EXISTS user_offline_keys");
 seedSampleBrief();
 
 createServer(async (req, res) => {
@@ -146,13 +138,6 @@ createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/users") {
       const body = await readJson(req);
       sendJson(res, upsertUser(body));
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/users/me/offline-key") {
-      const userId = await getRequiredRequestUserId(req, res);
-      if (!userId) return;
-      sendJson(res, getUserOfflineKey(userId));
       return;
     }
 
@@ -514,43 +499,6 @@ function upsertUserAiDefaults(userId, input) {
 
   return {
     ...selection,
-    updatedAt: now,
-  };
-}
-
-function getUserOfflineKey(userId) {
-  const row = db
-    .prepare(
-      "SELECT encrypted_key, iv, auth_tag, updated_at FROM user_offline_keys WHERE user_id = ?",
-    )
-    .get(userId);
-
-  if (row) {
-    return {
-      key: decryptSecret(row),
-      updatedAt: row.updated_at,
-    };
-  }
-
-  const rawKey = randomBytes(32).toString("base64");
-  const encrypted = encryptSecret(rawKey);
-  const now = new Date().toISOString();
-  db.prepare(
-    `
-    INSERT INTO user_offline_keys (user_id, encrypted_key, iv, auth_tag, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `,
-  ).run(
-    userId,
-    encrypted.encryptedKey,
-    encrypted.iv,
-    encrypted.authTag,
-    now,
-    now,
-  );
-
-  return {
-    key: rawKey,
     updatedAt: now,
   };
 }

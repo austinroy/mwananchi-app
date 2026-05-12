@@ -134,7 +134,7 @@ CUSTOM_AI_BASE_URL=
 
 Users can set a default provider and model on the account page. Signed-in user defaults are stored by the API and browser `localStorage` remains the guest/offline fallback. Chat and action generation also include per-request model controls so users can switch providers for a single task.
 
-Offline work is queued in the browser when the API is unreachable. Brief creation, chat messages, action drafts, visibility changes, and deletes are saved to an encrypted IndexedDB-backed local queue and retried when the browser comes back online. The API remains the primary source of truth; offline storage is only a temporary client-side sync layer. When Clerk is enabled, the browser requests a stable per-user offline wrapping key from the authenticated API and derives the local encryption key from that value. The wrapping key is stored encrypted server-side with `API_KEY_ENCRYPTION_SECRET`. Local development and guest sessions use a browser-local fallback key.
+Offline work is queued in the browser when the API is unreachable. Brief creation, chat messages, action drafts, visibility changes, and deletes are saved to an IndexedDB-backed local queue and retried when the browser comes back online. The API remains the primary source of truth; offline storage is only a temporary client-side sync layer. Auth, session, credential, and user profile records are intentionally blocked from this offline queue.
 
 Model lists are loaded from configured providers. Hosted providers use the Mwananchi API because encrypted user keys stay server-side. LM Studio model discovery first tries the browser against the local LM Studio server, then falls back to the Mwananchi API proxy if the browser hits CORS restrictions.
 
