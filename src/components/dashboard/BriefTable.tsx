@@ -97,6 +97,7 @@ export function BriefTable({
         header: "",
         cell: (info) => {
           const brief = info.row.original;
+          const isSampleBrief = brief.id === "brief-sample-budget";
           return (
             <div className="flex justify-end pr-2">
               <details className="dropdown relative inline-block">
@@ -140,22 +141,31 @@ export function BriefTable({
                       {t("briefActions.makePublic")}
                     </button>
                   ) : (
-                    <button
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                      disabled={visibilityMutation.isPending}
-                      onClick={() => {
-                        visibilityMutation.mutate({
-                          briefId: brief.id,
-                          visibility: "private",
-                        });
-                        const target =
-                          document.activeElement?.closest("details");
-                        if (target) target.removeAttribute("open");
-                      }}
+                    <span
+                      className="block"
+                      title={
+                        isSampleBrief
+                          ? "The example brief cannot be made private."
+                          : undefined
+                      }
                     >
-                      <EyeOff size={14} />
-                      {t("briefActions.makePrivate")}
-                    </button>
+                      <button
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        disabled={visibilityMutation.isPending || isSampleBrief}
+                        onClick={() => {
+                          visibilityMutation.mutate({
+                            briefId: brief.id,
+                            visibility: "private",
+                          });
+                          const target =
+                            document.activeElement?.closest("details");
+                          if (target) target.removeAttribute("open");
+                        }}
+                      >
+                        <EyeOff size={14} />
+                        {t("briefActions.makePrivate")}
+                      </button>
+                    </span>
                   )}
                 </div>
               </details>

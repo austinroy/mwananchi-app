@@ -160,7 +160,7 @@ The brief form now also validates required fields before submission so empty tit
 
 In the brief chat composer, Enter sends a message and Cmd/Ctrl+Enter inserts a new line.
 
-The landing page includes an explicitly labeled example brief so new users can open the sample workflow, ask chat questions, and generate civic action drafts before they create their own brief. Logged-out users also keep a local sample fallback if the API is unavailable during testing.
+The landing page includes an explicitly labeled example brief so new users can open the sample workflow, ask chat questions, and generate civic action drafts before they create their own brief. Logged-out users also keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
 
 ## Language Support
 

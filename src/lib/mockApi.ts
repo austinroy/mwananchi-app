@@ -23,7 +23,7 @@ export const seedBrief: import("./types").CivicBrief = {
   title: "County Budget Public Notice",
   category: "Budget",
   jurisdiction: "Nairobi County",
-  visibility: "unlisted",
+  visibility: "public",
   summary:
     "The notice invites residents to comment on proposed budget priorities. The clearest public interest issues are service delivery, ward-level allocation, and whether spending plans are easy for citizens to track.",
   keyPoints: [

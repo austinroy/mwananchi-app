@@ -99,7 +99,7 @@ Auth status:
 - The app uses the installed `i18n` package through `src/lib/i18n.tsx`, currently covering English, Kiswahili, Arabic, French, and Portuguese with a persisted navigation menu selector. The selected locale is sent with AI brief/chat/action generation requests so generated content follows the UI language.
 - The brief chat panel stays collapsed behind a persistent bottom-right button when not in use. The chat window itself retracts out of view, Enter sends a message, and Cmd/Ctrl+Enter inserts a new line in the composer.
 - Private briefs now return an authentication-required response when a non-owner tries to load them. The brief page shows a sign-in prompt for that state instead of a generic not-found error.
-- The landing page now labels the sample brief as an example and links directly to the interactive sample brief so users can explore chat and action generation before creating their own. Logged-out users keep a local sample fallback if the API is unavailable during testing.
+- The landing page now labels the sample brief as an example and links directly to the interactive sample brief so users can explore chat and action generation before creating their own. Logged-out users keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
 
 Recent updates (feature/additional-language-support):
 
