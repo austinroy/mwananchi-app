@@ -4,6 +4,7 @@ const dbName = "mwananchi-offline";
 const dbVersion = 1;
 const storeName = "encrypted-records";
 const localKeyName = "mwananchi_offline_key";
+let offlineEncryptionContext: OfflineEncryptionContext = {};
 
 export type OfflineMutation = {
   id: string;
@@ -17,7 +18,18 @@ type OfflineRecord = {
   id: string;
   iv: string;
   data: string;
+  keyScope?: string;
 };
+
+type OfflineEncryptionContext = {
+  userId?: string;
+  isClerkEnabled?: boolean;
+  getToken?: () => Promise<string | null>;
+};
+
+export function setOfflineEncryptionContext(context: OfflineEncryptionContext) {
+  offlineEncryptionContext = context;
+}
 
 export async function cacheOfflineBrief(brief: CivicBrief) {
   await putEncryptedRecord(`brief:${brief.id}`, brief);
@@ -106,7 +118,8 @@ async function encryptRecord(
   id: string,
   value: unknown,
 ): Promise<OfflineRecord> {
-  const key = await getEncryptionKey();
+  const keyMaterial = await getPrimaryKeyMaterial();
+  const key = await importEncryptionKey(keyMaterial.value);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encoded = new TextEncoder().encode(JSON.stringify(value));
   const encrypted = await crypto.subtle.encrypt(
@@ -119,24 +132,28 @@ async function encryptRecord(
     id,
     iv: toBase64(iv),
     data: toBase64(new Uint8Array(encrypted)),
+    keyScope: keyMaterial.scope,
   };
 }
 
 async function decryptRecord<T>(record: OfflineRecord): Promise<T | null> {
-  try {
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: fromBase64(record.iv) },
-      await getEncryptionKey(),
-      fromBase64(record.data),
-    );
-    return JSON.parse(new TextDecoder().decode(decrypted)) as T;
-  } catch {
-    return null;
+  for (const keyMaterial of await getCandidateKeyMaterials(record.keyScope)) {
+    try {
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: fromBase64(record.iv) },
+        await importEncryptionKey(keyMaterial.value),
+        fromBase64(record.data),
+      );
+      return JSON.parse(new TextDecoder().decode(decrypted)) as T;
+    } catch {
+      // Try the next candidate. This supports legacy local-key records.
+    }
   }
+
+  return null;
 }
 
-async function getEncryptionKey() {
-  const rawKey = getOrCreateLocalKey();
+async function importEncryptionKey(rawKey: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(rawKey),
@@ -145,6 +162,45 @@ async function getEncryptionKey() {
     "encrypt",
     "decrypt",
   ]);
+}
+
+async function getPrimaryKeyMaterial() {
+  if (offlineEncryptionContext.isClerkEnabled) {
+    const token = await offlineEncryptionContext.getToken?.();
+    if (token && offlineEncryptionContext.userId) {
+      return {
+        scope: `clerk:${offlineEncryptionContext.userId}`,
+        value: `${offlineEncryptionContext.userId}:${token}`,
+      };
+    }
+  }
+
+  if (offlineEncryptionContext.userId) {
+    return {
+      scope: `local-user:${offlineEncryptionContext.userId}`,
+      value: `${offlineEncryptionContext.userId}:${getOrCreateLocalKey()}`,
+    };
+  }
+
+  return {
+    scope: "guest-local",
+    value: getOrCreateLocalKey(),
+  };
+}
+
+async function getCandidateKeyMaterials(recordScope?: string) {
+  const primary = await getPrimaryKeyMaterial();
+  const candidates = [primary];
+  const legacyLocal = {
+    scope: "legacy-local",
+    value: getOrCreateLocalKey(),
+  };
+
+  if (recordScope !== primary.scope) {
+    candidates.push(legacyLocal);
+  }
+
+  return candidates;
 }
 
 function getOrCreateLocalKey() {

@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { setApiAuthContext } from "./api";
+import { setOfflineEncryptionContext } from "./offlineStore";
 
 export type AuthUser = {
   id: string;
@@ -61,6 +62,11 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
       userId: user?.id,
       getToken,
     });
+    setOfflineEncryptionContext({
+      userId: user?.id,
+      isClerkEnabled: true,
+      getToken,
+    });
   }, [getToken, user?.id]);
 
   const value = useMemo<AuthContextValue>(
@@ -96,6 +102,11 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setApiAuthContext({
       userId: user?.id,
+      getToken: async () => null,
+    });
+    setOfflineEncryptionContext({
+      userId: user?.id,
+      isClerkEnabled: false,
       getToken: async () => null,
     });
   }, [user?.id]);
