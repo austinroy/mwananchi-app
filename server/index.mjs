@@ -96,7 +96,6 @@ db.exec(
 ensureColumn("briefs", "ai_error", "TEXT");
 ensureColumn("chat_messages", "ai_error", "TEXT");
 ensureColumn("civic_actions", "ai_error", "TEXT");
-db.exec("DROP TABLE IF EXISTS user_offline_keys");
 seedSampleBrief();
 
 createServer(async (req, res) => {
