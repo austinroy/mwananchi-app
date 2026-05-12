@@ -18,8 +18,9 @@ import {
   queueOfflineMutation,
   removeOfflineMutation,
 } from "./offlineStore";
+import { normalizeApiBaseUrl } from "./apiBaseUrl";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
+const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 let apiAuthContext: ApiAuthContext = {};
 
 export function setApiAuthContext(context: ApiAuthContext) {

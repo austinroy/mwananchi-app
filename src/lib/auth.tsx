@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { setApiAuthContext } from "./api";
+import { normalizeApiBaseUrl } from "./apiBaseUrl";
 
 export type AuthUser = {
   id: string;
@@ -168,7 +169,7 @@ async function syncUser(user: AuthUser) {
   }
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
+const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 function buildUserFromEmail(email: string): AuthUser {
   const normalizedEmail = email.trim().toLowerCase();

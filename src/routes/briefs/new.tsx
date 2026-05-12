@@ -125,9 +125,7 @@ export function NewBriefPage() {
                   className="mt-2 w-full rounded-md border border-white/50 bg-white/55 px-3 py-2 outline-none backdrop-blur-xl focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
                   value={field.state.value}
                   onChange={(event) =>
-                    field.handleChange(
-                      event.target.value as BriefCategory | "",
-                    )
+                    field.handleChange(event.target.value as BriefCategory | "")
                   }
                 >
                   <option value="" disabled>

@@ -98,7 +98,7 @@ The API listens on `http://localhost:8787` and stores local data in:
 data/mwananchi.sqlite
 ```
 
-The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`.
+The frontend uses `VITE_API_BASE_URL` when provided, otherwise it defaults to `http://localhost:8787`. Include the protocol in deployed values, for example `https://api.example.com`; host-only values are normalized to HTTPS before requests are sent.
 
 If the API server is not running, API actions will fail as the browser mock/localStorage fallbacks have been removed.
 
