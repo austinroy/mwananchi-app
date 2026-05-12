@@ -44,12 +44,12 @@ export function LoginPage() {
       footer={
         <span
           dangerouslySetInnerHTML={{
-              __html: t("auth.footer.newHere").replace(
-                "{link}",
-                `<a href="/register" class="font-semibold text-civic-700">${t(
-                  "auth.button.createAccount",
-                )}</a>`,
-              ),
+            __html: t("auth.footer.newHere").replace(
+              "{link}",
+              `<a href="/register" class="font-semibold text-civic-700">${t(
+                "auth.button.createAccount",
+              )}</a>`,
+            ),
           }}
         />
       }
@@ -174,12 +174,12 @@ export function RegisterPage() {
       footer={
         <span
           dangerouslySetInnerHTML={{
-              __html: t("auth.footer.haveAccount").replace(
-                "{link}",
-                `<a href="/login" class="font-semibold text-civic-700">${t(
-                  "auth.button.signin",
-                )}</a>`,
-              ),
+            __html: t("auth.footer.haveAccount").replace(
+              "{link}",
+              `<a href="/login" class="font-semibold text-civic-700">${t(
+                "auth.button.signin",
+              )}</a>`,
+            ),
           }}
         />
       }
