@@ -119,7 +119,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
 
   return (
     <main className="page-shell pb-6 lg:pb-[32rem]">
-      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="mb-6 min-w-0">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">
             {displayBrief.category} · {displayBrief.jurisdiction}
@@ -128,6 +128,14 @@ export function BriefPage({ briefId }: { briefId: string }) {
             {displayBrief.title}
           </h1>
         </div>
+      </div>
+      {deleteStatus ? (
+        <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          {deleteStatus}
+        </p>
+      ) : null}
+      <BriefTabs briefId={briefId} activeTab="brief" />
+      <div className="mb-5">
         <BriefHeaderActions
           briefId={briefId}
           visibility={brief.visibility}
@@ -153,12 +161,6 @@ export function BriefPage({ briefId }: { briefId: string }) {
           }}
         />
       </div>
-      {deleteStatus ? (
-        <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
-          {deleteStatus}
-        </p>
-      ) : null}
-      <BriefTabs briefId={briefId} activeTab="brief" />
       <BriefErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <BriefSections
