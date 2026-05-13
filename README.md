@@ -41,6 +41,7 @@ Mwananchi App is licensed under the Apache License, Version 2.0. See [LICENSE](.
 - Landing page example brief that opens the interactive sample workflow
 - English and Kiswahili UI language support with a persisted language selector
 - Neatlab-inspired green glass visual theme with mint gradients, translucent blurred surfaces, deep emerald controls, muted amber accents, and a Plus Jakarta Sans-first font stack
+- Loading spinners, visibility/example status chips, focused empty states, and toast feedback for key brief/action workflows
 
 ## Auth Status
 
@@ -164,6 +165,8 @@ The brief form now also validates required fields before submission so empty tit
 In the brief chat composer, Enter sends a message and Cmd/Ctrl+Enter inserts a new line.
 
 The landing page includes an explicitly labeled example brief so new users can open the sample workflow, ask chat questions, and generate civic action drafts before they create their own brief. Logged-out users also keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
+
+Dashboard and brief screens now use status chips for visibility/example state, spinner feedback during loading and pending actions, and clearer empty-state copy for first-run workflows.
 
 ## Language Support
 

@@ -104,6 +104,9 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "action.draft": "Draft action",
     "action.preview": "Draft preview",
     "action.empty": "Your civic action draft will appear here.",
+    "action.emptyCopy":
+      "Pick a format, tone, and audience to generate a focused civic response.",
+    "action.requiredFields": "Choose an action type, tone, and audience first.",
     "action.generated": "Generated drafts",
     "action.copyDraft": "Copy draft",
     "action.copied": "Draft copied.",
@@ -140,6 +143,8 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "dashboard.search": "Search briefs...",
     "dashboard.loading": "Loading briefs...",
     "dashboard.empty": "No briefs found.",
+    "dashboard.emptyCopy":
+      "Create a brief to start explaining documents, asking questions, and drafting civic actions.",
     "dashboard.titleColumn": "Title",
     "dashboard.categoryColumn": "Category",
     "dashboard.jurisdictionColumn": "Jurisdiction",
@@ -350,6 +355,9 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "action.draft": "Andika hatua",
     "action.preview": "Mwonekano wa rasimu",
     "action.empty": "Rasimu ya hatua yako itaonekana hapa.",
+    "action.emptyCopy":
+      "Chagua muundo, toni, na hadhira ili kuunda jibu la kiraia lenye mwelekeo.",
+    "action.requiredFields": "Chagua aina ya hatua, toni, na hadhira kwanza.",
     "action.generated": "Rasimu zilizotengenezwa",
     "action.copyDraft": "Nakili rasimu",
     "action.copied": "Rasimu imenakiliwa.",
@@ -386,6 +394,8 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "dashboard.search": "Tafuta mihtasari...",
     "dashboard.loading": "Inapakia mihtasari...",
     "dashboard.empty": "Hakuna mihtasari iliyopatikana.",
+    "dashboard.emptyCopy":
+      "Unda muhtasari ili kuanza kueleza nyaraka, kuuliza maswali, na kuandika hatua za kiraia.",
     "dashboard.titleColumn": "Kichwa",
     "dashboard.categoryColumn": "Kategoria",
     "dashboard.jurisdictionColumn": "Eneo",
@@ -601,6 +611,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "action.draft": "صياغة إجراء",
     "action.preview": "معاينة المسودة",
     "action.empty": "ستظهر مسودة الإجراء المدني هنا.",
+    "action.emptyCopy": "اختر الصيغة والنبرة والجمهور لإنشاء رد مدني مركز.",
+    "action.requiredFields": "اختر نوع الإجراء والنبرة والجمهور أولاً.",
     "action.generated": "المسودات المنشأة",
     "action.copyDraft": "نسخ المسودة",
     "action.copied": "تم نسخ المسودة.",
@@ -636,6 +648,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "dashboard.search": "البحث في الملخصات...",
     "dashboard.loading": "جارٍ تحميل الملخصات...",
     "dashboard.empty": "لم يتم العثور على ملخصات.",
+    "dashboard.emptyCopy":
+      "أنشئ ملخصًا للبدء في شرح الوثائق وطرح الأسئلة وصياغة إجراءات مدنية.",
     "dashboard.titleColumn": "العنوان",
     "dashboard.categoryColumn": "الفئة",
     "dashboard.jurisdictionColumn": "الاختصاص",
@@ -773,6 +787,10 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "action.draft": "Rédiger l’action",
     "action.preview": "Aperçu du brouillon",
     "action.empty": "Votre brouillon d’action civique apparaîtra ici.",
+    "action.emptyCopy":
+      "Choisissez un format, un ton et un public pour générer une réponse civique ciblée.",
+    "action.requiredFields":
+      "Choisissez d’abord un type d’action, un ton et un public.",
     "action.generated": "Brouillons générés",
     "action.copyDraft": "Copier le brouillon",
     "action.copied": "Brouillon copié.",
@@ -809,6 +827,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "dashboard.search": "Rechercher des résumés...",
     "dashboard.loading": "Chargement des résumés...",
     "dashboard.empty": "Aucun résumé trouvé.",
+    "dashboard.emptyCopy":
+      "Créez un résumé pour expliquer des documents, poser des questions et rédiger des actions civiques.",
     "dashboard.titleColumn": "Titre",
     "dashboard.categoryColumn": "Catégorie",
     "dashboard.jurisdictionColumn": "Juridiction",
@@ -912,6 +932,9 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "action.draft": "Redigir ação",
     "action.preview": "Prévia do rascunho",
     "action.empty": "Seu rascunho de ação cívica aparecerá aqui.",
+    "action.emptyCopy":
+      "Escolha um formato, tom e público para gerar uma resposta cívica focada.",
+    "action.requiredFields": "Escolha primeiro o tipo de ação, tom e público.",
     "action.generated": "Rascunhos gerados",
     "action.copyDraft": "Copiar rascunho",
     "action.copied": "Rascunho copiado.",
@@ -931,6 +954,8 @@ const extendedDictionaries: Record<Locale, Record<string, string>> = {
     "dashboard.search": "Pesquisar resumos...",
     "dashboard.loading": "Carregando resumos...",
     "dashboard.empty": "Nenhum resumo encontrado.",
+    "dashboard.emptyCopy":
+      "Crie um resumo para explicar documentos, fazer perguntas e redigir ações cívicas.",
     "newBrief.title": "Criar resumo cívico",
     "newBrief.copy":
       "Cole uma política, projeto de lei, aviso público ou documento cívico.",
