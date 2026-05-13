@@ -12,6 +12,7 @@ import { RegisterPage } from "./routes/register";
 import { AccountPage } from "./routes/account";
 import { BriefRoutePage } from "./routes/briefs/$briefId";
 import { BriefActionsRoutePage } from "./routes/briefs/$briefId.actions";
+import { BriefGeneratedActionsRoutePage } from "./routes/briefs/$briefId.actions.generated";
 import { SharedBriefRoutePage } from "./routes/briefs/$briefId.share";
 
 const rootRoute = createRootRoute({
@@ -48,6 +49,12 @@ const actionsRoute = createRoute({
   component: BriefActionsRoutePage,
 });
 
+const generatedActionsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/briefs/$briefId/actions/generated",
+  component: BriefGeneratedActionsRoutePage,
+});
+
 const sharedBriefRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/share/$briefId",
@@ -78,6 +85,7 @@ const routeTree = rootRoute.addChildren([
   newBriefRoute,
   briefRoute,
   actionsRoute,
+  generatedActionsRoute,
   sharedBriefRoute,
   loginRoute,
   registerRoute,
