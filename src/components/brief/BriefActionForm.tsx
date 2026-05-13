@@ -1,6 +1,5 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { Copy, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { FormattedAiText } from "../FormattedAiText";
@@ -14,6 +13,8 @@ import { readAiDefaults } from "../../lib/aiSettings";
 import { actionTypes, actionTones } from "../../lib/civicOptions";
 import type { CivicAction, CivicActionInput } from "../../lib/types";
 import { useI18n } from "../../lib/i18n";
+import { BriefTabs } from "./BriefTabs";
+import { BriefChatPanel } from "./BriefChatPanel";
 
 type CivicActionFormValues = {
   actionType: CivicActionInput["actionType"] | "";
@@ -53,7 +54,6 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
     },
   });
   const aiDefaults = readAiDefaults();
-  const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
   const form = useForm({
     defaultValues: {
       actionType: "",
@@ -62,7 +62,11 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
       extraContext: "",
     } as CivicActionFormValues,
     onSubmit: ({ value }) => {
-      if (!value.actionType || !value.tone || !value.audience.trim()) return;
+      if (!value.actionType || !value.tone || !value.audience.trim()) {
+        toast.error("Choose an action type, tone, and audience first.");
+        return;
+      }
+
       mutation.mutate({
         actionType: value.actionType,
         tone: value.tone,
@@ -74,17 +78,21 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
   });
 
   return (
-    <main className="page-shell max-w-5xl">
-      <Link
-        to="/briefs/$briefId"
-        params={{ briefId }}
-        className="text-sm font-semibold text-civic-700"
-      >
-        {t("action.back")}
-      </Link>
-      <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
-        {t("action.title")}
-      </h1>
+    <main className="page-shell max-w-5xl pb-6 lg:pb-[32rem]">
+      <div className="mb-5 min-w-0">
+        <p className="text-sm font-semibold text-civic-700">
+          {brief
+            ? `${brief.category} · ${brief.jurisdiction}`
+            : t("action.briefFallback")}
+        </p>
+        <h1 className="text-3xl font-bold sm:text-4xl">
+          {brief?.title ?? t("action.briefFallback")}
+        </h1>
+      </div>
+      <div className="mt-5">
+        <BriefTabs briefId={briefId} activeTab="actions" />
+      </div>
+      <h2 className="text-2xl font-bold text-ink">{t("action.title")}</h2>
       <p className="mt-2 text-slate-600">
         {t("action.subtitle", {
           title: brief?.title ?? t("action.briefFallback"),
@@ -192,7 +200,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           </form.Field>
           <button
             className="btn-primary mt-5 w-full"
-            disabled={mutation.isPending || !isAiReady}
+            disabled={mutation.isPending}
             type="submit"
           >
             <Sparkles size={16} />
@@ -266,6 +274,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           ) : null}
         </section>
       </div>
+      <BriefChatPanel briefId={briefId} />
     </main>
   );
 }

@@ -12,6 +12,7 @@ import {
 import { BriefChatPanel } from "./BriefChatPanel";
 import { BriefErrorNotice, BriefSections } from "./BriefSections";
 import { BriefHeaderActions } from "./BriefHeaderActions";
+import { BriefTabs } from "./BriefTabs";
 import { FileText } from "lucide-react";
 import { useI18n } from "../../lib/i18n";
 import type { CivicBrief } from "../../lib/types";
@@ -157,6 +158,7 @@ export function BriefPage({ briefId }: { briefId: string }) {
           {deleteStatus}
         </p>
       ) : null}
+      <BriefTabs briefId={briefId} activeTab="brief" />
       <BriefErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <BriefSections
