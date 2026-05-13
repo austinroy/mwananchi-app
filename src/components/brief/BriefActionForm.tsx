@@ -53,7 +53,6 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
     },
   });
   const aiDefaults = readAiDefaults();
-  const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
   const form = useForm({
     defaultValues: {
       actionType: "",
@@ -62,7 +61,11 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
       extraContext: "",
     } as CivicActionFormValues,
     onSubmit: ({ value }) => {
-      if (!value.actionType || !value.tone || !value.audience.trim()) return;
+      if (!value.actionType || !value.tone || !value.audience.trim()) {
+        toast.error("Choose an action type, tone, and audience first.");
+        return;
+      }
+
       mutation.mutate({
         actionType: value.actionType,
         tone: value.tone,
@@ -192,7 +195,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           </form.Field>
           <button
             className="btn-primary mt-5 w-full"
-            disabled={mutation.isPending || !isAiReady}
+            disabled={mutation.isPending}
             type="submit"
           >
             <Sparkles size={16} />
