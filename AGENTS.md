@@ -103,6 +103,7 @@ Auth status:
 - Private briefs now return an authentication-required response when a non-owner tries to load them. The brief page shows a sign-in prompt for that state instead of a generic not-found error.
 - The landing page now labels the sample brief as an example and links directly to the interactive sample brief so users can explore chat and action generation before creating their own. Logged-out users keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
 - Loading and pending states use the shared `Spinner` UI, while dashboard/detail screens include visibility/example status chips and more specific empty-state copy.
+- Civic action draft creation should only use the offline queue for true network failures. Do not mask backend API errors as successful local drafts; show a toast so users know the draft was not persisted.
 
 Recent updates (feature/additional-language-support):
 

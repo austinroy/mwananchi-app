@@ -108,11 +108,18 @@ export async function generateApiAction(
 ) {
   const path = `/api/briefs/${briefId}/actions`;
   const body = JSON.stringify(input);
-  const result = await apiRequest<CivicAction>(path, {
+  const result = await apiRequestWithStatus<CivicAction>(path, {
     method: "POST",
     body,
   });
-  if (result) return result;
+  if (result.status >= 200 && result.status < 300 && result.data) {
+    return result.data;
+  }
+  if (result.status !== 0) {
+    throw new Error(
+      `Could not save action draft. API returned ${result.status}.`,
+    );
+  }
 
   await queueOfflineMutation({ path, method: "POST", body });
   return {

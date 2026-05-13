@@ -166,7 +166,7 @@ In the brief chat composer, Enter sends a message and Cmd/Ctrl+Enter inserts a n
 
 The landing page includes an explicitly labeled example brief so new users can open the sample workflow, ask chat questions, and generate civic action drafts before they create their own brief. Logged-out users also keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
 
-Dashboard and brief screens now use status chips for visibility/example state, spinner feedback during loading and pending actions, and clearer empty-state copy for first-run workflows.
+Dashboard and brief screens now use status chips for visibility/example state, spinner feedback during loading and pending actions, and clearer empty-state copy for first-run workflows. Civic action drafts only fall back to the offline queue on true network failure; backend API errors are shown to the user so failed saves are not mistaken for persisted drafts.
 
 ## Language Support
 

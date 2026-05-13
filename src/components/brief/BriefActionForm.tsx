@@ -41,8 +41,24 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
   });
   const mutation = useMutation({
     mutationFn: (input: CivicActionInput) => generateAction(briefId, input),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["brief-actions", briefId] }),
+    onSuccess: async (savedAction) => {
+      queryClient.setQueryData<CivicAction[]>(
+        ["brief-actions", briefId],
+        (current = []) => [
+          savedAction,
+          ...current.filter((action) => action.id !== savedAction.id),
+        ],
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ["brief-actions", briefId],
+      });
+      toast.success(t("action.saved"));
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : t("action.saveError"),
+      );
+    },
   });
 
   const visibilityMutation = useMutation({
