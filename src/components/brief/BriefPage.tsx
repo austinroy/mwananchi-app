@@ -133,9 +133,16 @@ export function BriefPage({ briefId }: { briefId: string }) {
           <p className="text-sm font-semibold text-civic-700">
             {displayBrief.category} · {displayBrief.jurisdiction}
           </p>
-          <h1 className="text-3xl font-bold sm:text-4xl">
-            {displayBrief.title}
-          </h1>
+          <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <h1 className="text-3xl font-bold sm:text-4xl">
+              {displayBrief.title}
+            </h1>
+            <BriefStatusChips
+              visibility={brief.visibility}
+              isSampleBrief={isSampleBrief}
+              exampleLabel={t("landing.exampleLabel")}
+            />
+          </div>
         </div>
       </div>
       {deleteStatus ? (
@@ -188,6 +195,38 @@ export function BriefPage({ briefId }: { briefId: string }) {
         <BriefChatPanel briefId={briefId} />
       </div>
     </main>
+  );
+}
+
+function BriefStatusChips({
+  visibility,
+  isSampleBrief,
+  exampleLabel,
+}: {
+  visibility: CivicBrief["visibility"];
+  isSampleBrief: boolean;
+  exampleLabel: string;
+}) {
+  const visibilityLabel =
+    visibility.charAt(0).toUpperCase() + visibility.slice(1);
+  const visibilityStyle =
+    visibility === "private"
+      ? "bg-slate-100 text-slate-700"
+      : "bg-civic-100 text-civic-800";
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <span
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${visibilityStyle}`}
+      >
+        {visibilityLabel}
+      </span>
+      {isSampleBrief ? (
+        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+          {exampleLabel}
+        </span>
+      ) : null}
+    </div>
   );
 }
 

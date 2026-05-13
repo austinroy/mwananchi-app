@@ -170,14 +170,12 @@ export function AppShell() {
                       label={t("nav.account")}
                       onSelect={closeMenu}
                     />
-                    <Link
+                    <MenuLink
                       to="/briefs/new"
-                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-civic-800 transition hover:bg-civic-50"
-                      onClick={closeMenu}
-                    >
-                      <FileText size={16} />
-                      {t("nav.newBrief")}
-                    </Link>
+                      icon={<FileText size={16} />}
+                      label={t("nav.newBrief")}
+                      onSelect={closeMenu}
+                    />
                     <button
                       className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
                       type="button"
@@ -246,7 +244,7 @@ function MenuLink({
   label,
   onSelect,
 }: {
-  to: "/dashboard" | "/account";
+  to: "/dashboard" | "/briefs/new" | "/account";
   icon: React.ReactNode;
   label: string;
   onSelect: () => void;
@@ -254,7 +252,7 @@ function MenuLink({
   return (
     <Link
       to={to}
-      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50"
+      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-civic-50 hover:text-civic-900 [&.active]:bg-civic-700 [&.active]:text-white"
       onClick={onSelect}
     >
       {icon}

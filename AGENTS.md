@@ -102,6 +102,7 @@ Auth status:
 - The brief chat panel stays collapsed behind a persistent bottom-right button when not in use. The chat window itself retracts out of view, Enter sends a message, and Cmd/Ctrl+Enter inserts a new line in the composer.
 - Private briefs now return an authentication-required response when a non-owner tries to load them. The brief page shows a sign-in prompt for that state instead of a generic not-found error.
 - The landing page now labels the sample brief as an example and links directly to the interactive sample brief so users can explore chat and action generation before creating their own. Logged-out users keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
+- Loading and pending states use the shared `Spinner` UI, while dashboard/detail screens include visibility/example status chips and more specific empty-state copy.
 
 Recent updates (feature/additional-language-support):
 
@@ -264,6 +265,7 @@ npm install
 - Users can now delete their briefs; this cascades to delete associated chat messages and civic actions from the API.
 - The new brief page now uses shared validation helpers from `src/lib/validation.ts` for title, category, jurisdiction, and document text.
 - Create-brief and civic-action forms start blank with placeholder guidance instead of preselected defaults, so users make explicit choices.
+- Keep UI feedback consistent: use shared spinners for async states, Sonner toasts for validation/action feedback, and concise status chips for brief visibility/example state.
 - The route/component organization pass moved auth, dashboard, and brief workflows out of `src/router.tsx`; keep future route files thin and prefer shared component modules for page logic.
 - Continue splitting page-level components into smaller modules where a file still holds multiple independent UI responsibilities.
 - When a code change affects user-facing behavior, routing, auth, layout, or setup flow, update `AGENTS.md` and `README.md` in the same commit unless the user explicitly says not to.

@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { EyeOff, Globe, Link2, MoreVertical } from "lucide-react";
+import { EyeOff, FileText, Globe, Link2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo } from "react";
 import type { CivicBrief } from "../../lib/types";
@@ -76,16 +76,24 @@ export function BriefTable({
         header: t("dashboard.visibilityColumn"),
         cell: (info) => {
           const val = info.getValue() || "private";
+          const isSampleBrief = info.row.original.id === "brief-sample-budget";
           const style =
             val === "private"
               ? "bg-slate-100 text-slate-700"
               : "bg-civic-100 text-civic-800";
           return (
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${style}`}
-            >
-              {val.charAt(0).toUpperCase() + val.slice(1)}
-            </span>
+            <div className="flex flex-wrap gap-1.5">
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${style}`}
+              >
+                {val.charAt(0).toUpperCase() + val.slice(1)}
+              </span>
+              {isSampleBrief ? (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                  {t("landing.exampleLabel")}
+                </span>
+              ) : null}
+            </div>
           );
         },
       }),
@@ -258,7 +266,23 @@ export function BriefTable({
                   colSpan={briefColumns.length}
                   className="p-5 text-center text-slate-600"
                 >
-                  {t("dashboard.empty")}
+                  <div className="mx-auto flex max-w-sm flex-col items-center gap-3 py-6">
+                    <span className="grid size-10 place-items-center rounded-md bg-civic-50 text-civic-700">
+                      <FileText size={18} />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-ink">
+                        {t("dashboard.empty")}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {t("dashboard.emptyCopy")}
+                      </p>
+                    </div>
+                    <Link to="/briefs/new" className="btn-secondary">
+                      <FileText size={16} />
+                      {t("nav.newBrief")}
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ) : (

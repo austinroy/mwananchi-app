@@ -17,7 +17,6 @@ import { BriefTabs } from "./BriefTabs";
 import { BriefChatPanel } from "./BriefChatPanel";
 import { Spinner } from "../ui/Spinner";
 
-
 type CivicActionFormValues = {
   actionType: CivicActionInput["actionType"] | "";
   tone: CivicActionInput["tone"] | "";
@@ -65,7 +64,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
     } as CivicActionFormValues,
     onSubmit: ({ value }) => {
       if (!value.actionType || !value.tone || !value.audience.trim()) {
-        toast.error("Choose an action type, tone, and audience first.");
+        toast.error(t("action.requiredFields"));
         return;
       }
 
@@ -220,9 +219,10 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
               <FormattedAiText content={mutation.data.content} />
             </div>
           ) : (
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              {t("action.empty")}
-            </p>
+            <div className="mt-4 rounded-md border border-dashed border-civic-200 bg-civic-50/55 p-4 text-sm leading-6 text-slate-700">
+              <p className="font-semibold text-ink">{t("action.empty")}</p>
+              <p className="mt-1 text-slate-600">{t("action.emptyCopy")}</p>
+            </div>
           )}
           {actions.length ? (
             <div className="mt-6 border-t border-civic-100 pt-4">
