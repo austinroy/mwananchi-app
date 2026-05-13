@@ -16,7 +16,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
   const queryClient = useQueryClient();
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [clearError, setClearError] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const aiDefaults = readAiDefaults();
   const isAiReady = Boolean(aiDefaults.provider && aiDefaults.model);
   const { data = [] } = useQuery({
@@ -57,7 +57,7 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        setIsCollapsed(false);
+        setIsCollapsed(true);
       }
     };
 
