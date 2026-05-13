@@ -15,6 +15,8 @@ import type { CivicAction, CivicActionInput } from "../../lib/types";
 import { useI18n } from "../../lib/i18n";
 import { BriefTabs } from "./BriefTabs";
 import { BriefChatPanel } from "./BriefChatPanel";
+import { Spinner } from "../ui/Spinner";
+
 
 type CivicActionFormValues = {
   actionType: CivicActionInput["actionType"] | "";
@@ -203,7 +205,11 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
             disabled={mutation.isPending}
             type="submit"
           >
-            <Sparkles size={16} />
+            {mutation.isPending ? (
+              <Spinner className="size-4" label={t("action.drafting")} />
+            ) : (
+              <Sparkles size={16} />
+            )}
             {mutation.isPending ? t("action.drafting") : t("action.draft")}
           </button>
         </form>
@@ -257,7 +263,14 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
                             }
                           }}
                         >
-                          <Trash2 size={14} />
+                          {deleteMutation.isPending ? (
+                            <Spinner
+                              className="size-3"
+                              label={t("action.deletingDraft")}
+                            />
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
                           {deleteMutation.isPending
                             ? t("action.deletingDraft")
                             : t("action.deleteDraft")}

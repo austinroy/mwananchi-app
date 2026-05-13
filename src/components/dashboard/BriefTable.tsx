@@ -15,6 +15,7 @@ import type { CivicBrief } from "../../lib/types";
 import { updateBriefVisibility } from "../../lib/mockApi";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../lib/i18n";
+import { LoadingState, Spinner } from "../ui/Spinner";
 
 const columnHelper = createColumnHelper<CivicBrief>();
 
@@ -137,7 +138,14 @@ export function BriefTable({
                         if (target) target.removeAttribute("open");
                       }}
                     >
-                      <Globe size={14} />
+                      {visibilityMutation.isPending ? (
+                        <Spinner
+                          className="size-3"
+                          label="Updating visibility"
+                        />
+                      ) : (
+                        <Globe size={14} />
+                      )}
                       {t("briefActions.makePublic")}
                     </button>
                   ) : (
@@ -162,7 +170,14 @@ export function BriefTable({
                           if (target) target.removeAttribute("open");
                         }}
                       >
-                        <EyeOff size={14} />
+                        {visibilityMutation.isPending ? (
+                          <Spinner
+                            className="size-3"
+                            label="Updating visibility"
+                          />
+                        ) : (
+                          <EyeOff size={14} />
+                        )}
                         {t("briefActions.makePrivate")}
                       </button>
                     </span>
@@ -234,7 +249,7 @@ export function BriefTable({
                   colSpan={briefColumns.length}
                   className="p-5 text-center text-slate-600"
                 >
-                  {t("dashboard.loading")}
+                  <LoadingState label={t("dashboard.loading")} />
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (

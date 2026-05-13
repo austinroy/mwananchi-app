@@ -16,6 +16,7 @@ import { BriefTabs } from "./BriefTabs";
 import { FileText } from "lucide-react";
 import { useI18n } from "../../lib/i18n";
 import type { CivicBrief } from "../../lib/types";
+import { LoadingState } from "../ui/Spinner";
 
 export function BriefPage({ briefId }: { briefId: string }) {
   const { locale, t } = useI18n();
@@ -76,7 +77,11 @@ export function BriefPage({ briefId }: { briefId: string }) {
   });
 
   if (isLoading) {
-    return <main className="page-shell">{t("brief.loading")}</main>;
+    return (
+      <main className="page-shell">
+        <LoadingState label={t("brief.loading")} />
+      </main>
+    );
   }
 
   if (error instanceof Error) {
@@ -112,14 +117,18 @@ export function BriefPage({ briefId }: { briefId: string }) {
   }
 
   if (!brief) {
-    return <main className="page-shell">{t("brief.loading")}</main>;
+    return (
+      <main className="page-shell">
+        <LoadingState label={t("brief.loading")} />
+      </main>
+    );
   }
   const displayBrief = getLocalizedSampleBrief(brief, locale);
   const isSampleBrief = brief.id === "brief-sample-budget";
 
   return (
     <main className="page-shell pb-6 lg:pb-[32rem]">
-      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="mb-6 min-w-0">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-civic-700">
             {displayBrief.category} · {displayBrief.jurisdiction}
@@ -128,6 +137,14 @@ export function BriefPage({ briefId }: { briefId: string }) {
             {displayBrief.title}
           </h1>
         </div>
+      </div>
+      {deleteStatus ? (
+        <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          {deleteStatus}
+        </p>
+      ) : null}
+      <BriefTabs briefId={briefId} activeTab="brief" />
+      <div className="mb-5">
         <BriefHeaderActions
           briefId={briefId}
           visibility={brief.visibility}
@@ -153,12 +170,6 @@ export function BriefPage({ briefId }: { briefId: string }) {
           }}
         />
       </div>
-      {deleteStatus ? (
-        <p className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
-          {deleteStatus}
-        </p>
-      ) : null}
-      <BriefTabs briefId={briefId} activeTab="brief" />
       <BriefErrorNotice message={brief.aiError} className="mb-5" />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <BriefSections
@@ -188,7 +199,11 @@ export function SharedBriefPage({ briefId }: { briefId: string }) {
   });
 
   if (isLoading)
-    return <main className="page-shell">{t("brief.sharedLoading")}</main>;
+    return (
+      <main className="page-shell">
+        <LoadingState label={t("brief.sharedLoading")} />
+      </main>
+    );
   if (!brief)
     return <main className="page-shell">{t("brief.sharedNotFound")}</main>;
   const displayBrief = getLocalizedSampleBrief(brief, locale);

@@ -16,6 +16,7 @@ import {
   validateJurisdiction,
 } from "../../lib/validation";
 import { useI18n } from "../../lib/i18n";
+import { Spinner } from "../../components/ui/Spinner";
 
 export function NewBriefPage() {
   const { locale, t } = useI18n();
@@ -225,7 +226,11 @@ export function NewBriefPage() {
             disabled={mutation.isPending || !isAiReady}
             type="submit"
           >
-            <Sparkles size={16} />
+            {mutation.isPending ? (
+              <Spinner className="size-4" label={t("newBrief.generating")} />
+            ) : (
+              <Sparkles size={16} />
+            )}
             {mutation.isPending
               ? t("newBrief.generating")
               : t("newBrief.generate")}

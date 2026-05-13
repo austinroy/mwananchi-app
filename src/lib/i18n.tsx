@@ -82,7 +82,7 @@ const dictionaries: Record<"en" | "sw", Record<string, string>> = {
     "brief.sharedLabel": "Shared brief",
     "brief.aiError": "AI provider error detected",
     "brief.aiNotice": "AI provider notice",
-    "briefActions.menu": "Share & Actions",
+    "briefActions.menu": "Share and Privacy",
     "briefActions.copyLink": "Copy link",
     "briefActions.makePublic": "Make Public",
     "briefActions.makePrivate": "Make Private",
