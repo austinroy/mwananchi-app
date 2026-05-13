@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { EyeOff, Globe, Link2, Share, Sparkles, Trash2 } from "lucide-react";
 import { useI18n } from "../../lib/i18n";
+import { Spinner } from "../ui/Spinner";
 
 export function BriefHeaderActions({
   briefId,
@@ -56,7 +57,11 @@ export function BriefHeaderActions({
                 if (target) target.removeAttribute("open");
               }}
             >
-              <Globe size={14} />
+              {isVisibilityPending ? (
+                <Spinner className="size-3" label="Updating visibility" />
+              ) : (
+                <Globe size={14} />
+              )}
               {t("briefActions.makePublic")}
             </button>
           ) : (
@@ -73,7 +78,11 @@ export function BriefHeaderActions({
                   if (target) target.removeAttribute("open");
                 }}
               >
-                <EyeOff size={14} />
+                {isVisibilityPending ? (
+                  <Spinner className="size-3" label="Updating visibility" />
+                ) : (
+                  <EyeOff size={14} />
+                )}
                 {t("briefActions.makePrivate")}
               </button>
             </span>
@@ -98,7 +107,11 @@ export function BriefHeaderActions({
           disabled={isDeletePending || isSampleBrief}
           onClick={onDelete}
         >
-          <Trash2 size={16} />
+          {isDeletePending ? (
+            <Spinner className="size-4" label={t("briefActions.deleting")} />
+          ) : (
+            <Trash2 size={16} />
+          )}
           {isDeletePending
             ? t("briefActions.deleting")
             : t("briefActions.delete")}

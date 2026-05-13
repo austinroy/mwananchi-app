@@ -10,6 +10,7 @@ import {
 } from "../../lib/mockApi";
 import { readAiDefaults } from "../../lib/aiSettings";
 import { useI18n } from "../../lib/i18n";
+import { Spinner } from "../ui/Spinner";
 
 export function BriefChatPanel({ briefId }: { briefId: string }) {
   const { locale, t } = useI18n();
@@ -114,6 +115,9 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
                   }
                 }}
               >
+                {clearMutation.isPending ? (
+                  <Spinner className="size-3" label={t("chat.clearing")} />
+                ) : null}
                 {clearMutation.isPending ? t("chat.clearing") : t("chat.clear")}
               </button>
             </div>
@@ -225,6 +229,9 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
                 disabled={mutation.isPending || !isAiReady}
                 type="submit"
               >
+                {mutation.isPending ? (
+                  <Spinner className="size-4" label={t("chat.send")} />
+                ) : null}
                 {t("chat.send")}
               </button>
             </form>

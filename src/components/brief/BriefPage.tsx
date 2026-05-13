@@ -16,6 +16,7 @@ import { BriefTabs } from "./BriefTabs";
 import { FileText } from "lucide-react";
 import { useI18n } from "../../lib/i18n";
 import type { CivicBrief } from "../../lib/types";
+import { LoadingState } from "../ui/Spinner";
 
 export function BriefPage({ briefId }: { briefId: string }) {
   const { locale, t } = useI18n();
@@ -76,7 +77,11 @@ export function BriefPage({ briefId }: { briefId: string }) {
   });
 
   if (isLoading) {
-    return <main className="page-shell">{t("brief.loading")}</main>;
+    return (
+      <main className="page-shell">
+        <LoadingState label={t("brief.loading")} />
+      </main>
+    );
   }
 
   if (error instanceof Error) {
@@ -112,7 +117,11 @@ export function BriefPage({ briefId }: { briefId: string }) {
   }
 
   if (!brief) {
-    return <main className="page-shell">{t("brief.loading")}</main>;
+    return (
+      <main className="page-shell">
+        <LoadingState label={t("brief.loading")} />
+      </main>
+    );
   }
   const displayBrief = getLocalizedSampleBrief(brief, locale);
   const isSampleBrief = brief.id === "brief-sample-budget";
@@ -190,7 +199,11 @@ export function SharedBriefPage({ briefId }: { briefId: string }) {
   });
 
   if (isLoading)
-    return <main className="page-shell">{t("brief.sharedLoading")}</main>;
+    return (
+      <main className="page-shell">
+        <LoadingState label={t("brief.sharedLoading")} />
+      </main>
+    );
   if (!brief)
     return <main className="page-shell">{t("brief.sharedNotFound")}</main>;
   const displayBrief = getLocalizedSampleBrief(brief, locale);

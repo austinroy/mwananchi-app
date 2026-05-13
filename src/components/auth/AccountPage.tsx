@@ -35,6 +35,7 @@ import type {
 } from "../../lib/types";
 import { RequireAuth } from "./AuthShell";
 import { useI18n } from "../../lib/i18n";
+import { Spinner } from "../ui/Spinner";
 
 export function AccountPage() {
   const { t } = useI18n();
@@ -206,6 +207,9 @@ function AiDefaultsForm() {
           );
         }}
       >
+        {saveMutation.isPending ? (
+          <Spinner className="size-4" label={t("account.saving")} />
+        ) : null}
         {saveMutation.isPending
           ? t("account.saving")
           : t("account.saveDefaults")}
@@ -325,7 +329,11 @@ function AiApiKeysForm() {
           disabled={!apiKey.trim() || saveMutation.isPending}
           onClick={() => saveMutation.mutate()}
         >
-          <KeyRound size={16} />
+          {saveMutation.isPending ? (
+            <Spinner className="size-4" label={t("account.saving")} />
+          ) : (
+            <KeyRound size={16} />
+          )}
           {selectedStatus ? t("account.replaceKey") : t("account.saveKey")}
         </button>
         {selectedStatus ? (
@@ -335,11 +343,18 @@ function AiApiKeysForm() {
             disabled={deleteMutation.isPending}
             onClick={() => deleteMutation.mutate(provider)}
           >
-            <Trash2 size={16} />
+            {deleteMutation.isPending ? (
+              <Spinner className="size-4" label={t("account.removeKey")} />
+            ) : (
+              <Trash2 size={16} />
+            )}
             {t("account.removeKey")}
           </button>
         ) : null}
-        <span className="text-sm text-slate-600">
+        <span className="inline-flex items-center gap-2 text-sm text-slate-600">
+          {isLoading ? (
+            <Spinner className="size-4" label={t("account.checkingKeys")} />
+          ) : null}
           {isLoading
             ? t("account.checkingKeys")
             : selectedStatus
@@ -503,6 +518,9 @@ function LmStudioModal({
           disabled={modelMutation.isPending}
           onClick={() => modelMutation.mutate()}
         >
+          {modelMutation.isPending ? (
+            <Spinner className="size-4" label={t("account.loadingModels")} />
+          ) : null}
           {modelMutation.isPending
             ? t("account.loadingModels")
             : t("account.loadModels")}
