@@ -14,6 +14,7 @@ import { actionTypes, actionTones } from "../../lib/civicOptions";
 import type { CivicAction, CivicActionInput } from "../../lib/types";
 import { useI18n } from "../../lib/i18n";
 import { BriefTabs } from "./BriefTabs";
+import { BriefChatPanel } from "./BriefChatPanel";
 
 type CivicActionFormValues = {
   actionType: CivicActionInput["actionType"] | "";
@@ -77,7 +78,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
   });
 
   return (
-    <main className="page-shell max-w-5xl">
+    <main className="page-shell max-w-5xl pb-6 lg:pb-[32rem]">
       <div className="mb-5 min-w-0">
         <p className="text-sm font-semibold text-civic-700">
           {brief
@@ -273,6 +274,7 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
           ) : null}
         </section>
       </div>
+      <BriefChatPanel briefId={briefId} />
     </main>
   );
 }

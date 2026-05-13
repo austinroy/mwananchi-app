@@ -80,30 +80,31 @@ export function BriefChatPanel({ briefId }: { briefId: string }) {
       ) : null}
       <aside
         className={[
-          "surface fixed right-0 top-0 z-40 flex h-[100svh] w-[min(92vw,420px)] flex-col overflow-hidden border-l border-white/45 bg-white/60 shadow-[-12px_0_32px_rgba(7,58,40,0.16)] transition-transform duration-300",
+          "surface fixed bottom-0 right-0 top-[5.75rem] z-40 flex max-h-[calc(100dvh-5.75rem)] w-[min(92vw,420px)] flex-col overflow-hidden border-l border-white/45 bg-white/60 shadow-[-12px_0_32px_rgba(7,58,40,0.16)] transition-transform duration-300",
           "lg:top-auto lg:right-6 lg:bottom-6 lg:h-[min(78vh,720px)] lg:w-[460px] lg:rounded-lg lg:border lg:border-b-0 lg:shadow-[0_-12px_32px_rgba(7,58,40,0.16)]",
           isCollapsed
             ? "translate-x-full lg:translate-x-0 lg:translate-y-full lg:opacity-0 lg:pointer-events-none"
             : "translate-x-0 lg:translate-y-0",
         ].join(" ")}
       >
-        <div className="border-b border-civic-100 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 font-bold">
+        <div className="sticky top-0 z-10 shrink-0 border-b border-civic-100 bg-white/75 p-3 backdrop-blur-xl sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="flex min-w-0 items-center gap-2 truncate font-bold">
               <MessageSquare size={18} />
-              {t("chat.title")}
+              <span className="truncate">{t("chat.title")}</span>
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <button
-                className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
+                className="btn-secondary min-h-9 px-2 py-1.5 text-xs sm:px-3"
                 type="button"
                 aria-label={isCollapsed ? t("chat.expand") : t("chat.collapse")}
+                title={isCollapsed ? t("chat.expand") : t("chat.collapse")}
                 onClick={() => setIsCollapsed((value) => !value)}
               >
                 {isCollapsed ? <ChevronUp size={16} /> : <X size={16} />}
               </button>
               <button
-                className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
+                className="btn-secondary min-h-9 px-2 py-1.5 text-xs sm:px-3"
                 type="button"
                 disabled={!data.length || clearMutation.isPending}
                 onClick={() => {
