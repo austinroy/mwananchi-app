@@ -16,6 +16,7 @@ import { useI18n } from "../../lib/i18n";
 import { BriefTabs } from "./BriefTabs";
 import { BriefChatPanel } from "./BriefChatPanel";
 
+
 type CivicActionFormValues = {
   actionType: CivicActionInput["actionType"] | "";
   tone: CivicActionInput["tone"] | "";
