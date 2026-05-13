@@ -139,6 +139,8 @@ Users can set a default provider and model on the account page. Signed-in user d
 
 Offline work is queued in the browser when the API is unreachable. Brief creation, chat messages, action drafts, visibility changes, and deletes are saved to an IndexedDB-backed local queue and retried when the browser comes back online. The API remains the primary source of truth; offline storage is only a temporary client-side sync layer. Auth, session, credential, and user profile records are intentionally blocked from this offline queue.
 
+Queued offline changes retry when the app starts online, when the browser reconnects, when auth headers become available, and when the user returns focus to the app. Successfully synced offline brief placeholders are removed from the local cache after the API accepts the queued create request.
+
 Model lists are loaded from configured providers. Hosted providers use the Mwananchi API because encrypted user keys stay server-side. LM Studio model discovery first tries the browser against the local LM Studio server, then falls back to the Mwananchi API proxy if the browser hits CORS restrictions.
 
 For LM Studio, start the local server in LM Studio and use the account page's local model setup modal to set the base URL and model name. The browser attempts to load available models directly from LM Studio's `/models` endpoint. If LM Studio blocks the browser with CORS, the app falls back to the Mwananchi API proxy, which must be running on the same machine as LM Studio. LM Studio accepts OpenAI-compatible chat completion requests, so generation requests use `/chat/completions` under the configured base URL. A real API key is usually not required locally; the app sends a placeholder key when no LM Studio key is configured.

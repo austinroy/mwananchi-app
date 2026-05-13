@@ -16,15 +16,20 @@ import {
   listOfflineBriefs,
   listOfflineMutations,
   queueOfflineMutation,
+  removeOfflineBrief,
   removeOfflineMutation,
 } from "./offlineStore";
 import { normalizeApiBaseUrl } from "./apiBaseUrl";
 
 const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
+export const apiAuthContextReadyEvent = "mwananchi:api-auth-context-ready";
 let apiAuthContext: ApiAuthContext = {};
 
 export function setApiAuthContext(context: ApiAuthContext) {
   apiAuthContext = context;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(apiAuthContextReadyEvent));
+  }
 }
 
 export async function listApiBriefs() {
@@ -51,18 +56,25 @@ export async function createApiBrief(
   ai?: AiModelSelection,
 ) {
   const body = JSON.stringify({ input, ai });
-  const result = await apiRequest<CivicBrief>("/api/briefs", {
+  const result = await apiRequestWithStatus<CivicBrief>("/api/briefs", {
     method: "POST",
     body,
   });
 
-  if (result) return result;
+  if (result.status >= 200 && result.status < 300 && result.data) {
+    return result.data;
+  }
+  if (result.status !== 0) {
+    throw new Error(`Could not save brief. API returned ${result.status}.`);
+  }
+
   const offlineBrief = createOfflineBrief(input);
   await cacheOfflineBrief(offlineBrief);
   await queueOfflineMutation({
     path: "/api/briefs",
     method: "POST",
     body,
+    relatedRecordId: `brief:${offlineBrief.id}`,
   });
   return offlineBrief;
 }
@@ -78,11 +90,16 @@ export async function sendApiChatMessage(
 ) {
   const path = `/api/briefs/${briefId}/messages`;
   const body = JSON.stringify({ content, ai });
-  const result = await apiRequest<ChatMessage>(path, {
+  const result = await apiRequestWithStatus<ChatMessage>(path, {
     method: "POST",
     body,
   });
-  if (result) return result;
+  if (result.status >= 200 && result.status < 300 && result.data) {
+    return result.data;
+  }
+  if (result.status !== 0) {
+    throw new Error(`Could not send message. API returned ${result.status}.`);
+  }
 
   await queueOfflineMutation({ path, method: "POST", body });
   return {
@@ -152,11 +169,18 @@ export async function updateApiBriefVisibility(
 ) {
   const path = `/api/briefs/${briefId}/visibility`;
   const body = JSON.stringify({ visibility });
-  const result = await apiRequest<UpdateVisibilityResult>(path, {
+  const result = await apiRequestWithStatus<UpdateVisibilityResult>(path, {
     method: "PUT",
     body,
   });
-  if (result) return result;
+  if (result.status >= 200 && result.status < 300 && result.data) {
+    return result.data;
+  }
+  if (result.status !== 0) {
+    throw new Error(
+      `Could not update brief visibility. API returned ${result.status}.`,
+    );
+  }
 
   await queueOfflineMutation({ path, method: "PUT", body });
   return { ok: true, visibility };
@@ -187,6 +211,11 @@ export async function syncOfflineChanges() {
     });
     if (result.status === 0) break;
     if (result.status >= 200 && result.status < 300) {
+      if (mutation.relatedRecordId?.startsWith("brief:")) {
+        await removeOfflineBrief(
+          mutation.relatedRecordId.slice("brief:".length),
+        );
+      }
       await removeOfflineMutation(mutation.id);
       synced += 1;
     }
