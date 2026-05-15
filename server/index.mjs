@@ -1151,7 +1151,7 @@ function getNoTextMessage(selection, isConfigured) {
 }
 
 function getMissingKeyMessage(provider) {
-  return `No ${getProviderLabel(provider)} API key is configured for this request. Mwananchi App used the prototype fallback instead.`;
+  return "Set up an AI provider in Account before generating AI-powered briefs, chat replies, or action drafts.";
 }
 
 function getProviderLabel(provider) {
