@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { FormattedAiText } from "../FormattedAiText";
-import { generateAction, getBrief, listActions } from "../../lib/mockApi";
+import { generateAction, getBrief } from "../../lib/mockApi";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../../lib/auth";
@@ -34,10 +34,6 @@ export function BriefActionPage({ briefId }: { briefId: string }) {
   const { data: brief } = useQuery({
     queryKey: ["brief", briefId],
     queryFn: () => getBrief(briefId),
-  });
-  const { data: actions = [] } = useQuery({
-    queryKey: ["brief-actions", briefId],
-    queryFn: () => listActions(briefId),
   });
   const mutation = useMutation({
     mutationFn: (input: CivicActionInput) => generateAction(briefId, input),
