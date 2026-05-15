@@ -25,13 +25,13 @@ export function BriefErrorNotice({
   message,
   className = "",
 }: {
-  message?: string;
+  message?: unknown;
   className?: string;
 }) {
   const { t } = useI18n();
 
   if (!message) return null;
-  const messageText = typeof message === "string" ? message : String(message);
+  const messageText = formatNoticeMessage(message);
   const isConfiguredFailure = messageText.startsWith("Configured ");
 
   return (
@@ -44,4 +44,42 @@ export function BriefErrorNotice({
       <p className="mt-1">{messageText}</p>
     </div>
   );
+}
+
+function formatNoticeMessage(message: unknown) {
+  if (typeof message === "string") {
+    return message === "[object Object]"
+      ? "The AI provider returned a notice that could not be displayed."
+      : message;
+  }
+
+  if (message instanceof Error) return message.message;
+
+  if (message && typeof message === "object") {
+    const payload = message as Record<string, unknown>;
+    const text = extractNoticeText(
+      payload.message ?? payload.error ?? payload.detail ?? payload.description,
+    );
+    if (text) return text;
+
+    try {
+      return JSON.stringify(payload);
+    } catch {
+      return "The AI provider returned a notice that could not be displayed.";
+    }
+  }
+
+  return String(message);
+}
+
+function extractNoticeText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value instanceof Error) return value.message;
+  if (value && typeof value === "object") {
+    const payload = value as Record<string, unknown>;
+    return extractNoticeText(
+      payload.message ?? payload.error ?? payload.detail ?? payload.description,
+    );
+  }
+  return "";
 }
