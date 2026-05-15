@@ -4,7 +4,7 @@ import { getBrief, listActions, deleteAction } from "../../lib/mockApi";
 import { FormattedAiText } from "../../components/FormattedAiText";
 import { useI18n } from "../../lib/i18n";
 import { Link } from "@tanstack/react-router";
-import { Copy, FileText, Trash2, Sparkles } from "lucide-react";
+import { Copy, Trash2, Sparkles } from "lucide-react";
 import { BriefTabs } from "../../components/brief/BriefTabs";
 import { toast } from "sonner";
 import { Spinner } from "../../components/ui/Spinner";
