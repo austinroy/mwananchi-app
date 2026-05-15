@@ -1123,7 +1123,7 @@ function getAiErrorMessage(selection, error, isConfigured) {
   const prefix = isConfigured ? `Configured ${providerName}` : providerName;
 
   if (!isConfigured) {
-    return getMissingKeyMessage(selection.provider);
+    return getMissingKeyMessage(selection);
   }
 
   if (status === "401" || status === "403") {
@@ -1146,12 +1146,16 @@ function getAiErrorMessage(selection, error, isConfigured) {
 }
 
 function getNoTextMessage(selection, isConfigured) {
-  if (!isConfigured) return getMissingKeyMessage(selection.provider);
+  if (!isConfigured) return getMissingKeyMessage(selection);
   return `Configured ${getProviderLabel(selection.provider)} returned an empty response. Mwananchi App used the prototype fallback instead.`;
 }
 
-function getMissingKeyMessage(provider) {
-  return "Set up an AI provider in Account before generating AI-powered briefs, chat replies, or action drafts.";
+function getMissingKeyMessage(selection) {
+  if (!selection.hasSelectedProvider) {
+    return "Set up an AI provider in Account before generating AI-powered briefs, chat replies, or action drafts.";
+  }
+
+  return `No ${getProviderLabel(selection.provider)} API key is configured for this request. Mwananchi App used the prototype fallback instead.`;
 }
 
 function getProviderLabel(provider) {
@@ -1293,15 +1297,14 @@ async function listLmStudioModels(baseUrlValue) {
 }
 
 function normalizeAiSelection(ai) {
-  const provider = [
+  const hasSelectedProvider = [
     "openai",
     "openrouter",
     "anthropic",
     "lmstudio",
     "custom",
-  ].includes(ai?.provider)
-    ? ai.provider
-    : "openai";
+  ].includes(ai?.provider);
+  const provider = hasSelectedProvider ? ai.provider : "openai";
   const fallbackModels = {
     openai: "gpt-5.4-mini",
     openrouter: "openai/gpt-5.4-mini",
@@ -1312,6 +1315,7 @@ function normalizeAiSelection(ai) {
 
   return {
     provider,
+    hasSelectedProvider,
     model:
       typeof ai?.model === "string" && ai.model.trim()
         ? ai.model.trim()

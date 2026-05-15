@@ -115,7 +115,7 @@ Private briefs that do not belong to the current user now return an authenticati
 
 The API server can call real AI providers for brief analysis, document-grounded chat, and civic action generation. If no provider key is configured, the app falls back to the existing prototype responses.
 
-When no AI provider is configured, the app asks the user to set one up in Account instead of showing a provider warning.
+When no AI provider is selected, the app asks the user to set one up in Account. If a provider is selected but no key is available, the app keeps the provider-specific missing-key notice.
 
 Supported provider paths:
 
