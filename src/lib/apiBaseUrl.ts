@@ -1,10 +1,10 @@
 const localApiBaseUrl = "http://localhost:8787";
 
 export function normalizeApiBaseUrl(
-  value?: string,
+  value?: string | null,
   hostname = globalThis.location?.hostname,
 ) {
-  const trimmed = value?.trim();
+  const trimmed = typeof value === "string" ? value.trim() : "";
   if (!trimmed) {
     return isLocalHost(hostname) ? localApiBaseUrl : "";
   }

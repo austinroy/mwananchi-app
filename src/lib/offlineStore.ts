@@ -155,7 +155,9 @@ async function listRecords<T>(prefix: string) {
   db.close();
 
   return records
-    .filter((record) => record.id.startsWith(prefix))
+    .filter(
+      (record) => typeof record.id === "string" && record.id.startsWith(prefix),
+    )
     .map((record) => record.value)
     .filter(Boolean);
 }
