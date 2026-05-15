@@ -1,7 +1,9 @@
 import type React from "react";
 
 export function FormattedAiText({ content }: { content: string }) {
-  const blocks = parseAiTextBlocks(content);
+  const blocks = parseAiTextBlocks(
+    typeof content === "string" ? content : String(content ?? ""),
+  );
 
   return (
     <div className="ai-response">

@@ -31,7 +31,8 @@ export function BriefErrorNotice({
   const { t } = useI18n();
 
   if (!message) return null;
-  const isConfiguredFailure = message.startsWith("Configured ");
+  const messageText = typeof message === "string" ? message : String(message);
+  const isConfiguredFailure = messageText.startsWith("Configured ");
 
   return (
     <div
@@ -40,7 +41,7 @@ export function BriefErrorNotice({
       <p className="font-semibold text-civic-900">
         {isConfiguredFailure ? t("brief.aiError") : t("brief.aiNotice")}
       </p>
-      <p className="mt-1">{message}</p>
+      <p className="mt-1">{messageText}</p>
     </div>
   );
 }

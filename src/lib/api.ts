@@ -211,10 +211,12 @@ export async function syncOfflineChanges() {
     });
     if (result.status === 0) break;
     if (result.status >= 200 && result.status < 300) {
-      if (mutation.relatedRecordId?.startsWith("brief:")) {
-        await removeOfflineBrief(
-          mutation.relatedRecordId.slice("brief:".length),
-        );
+      const relatedRecordId =
+        typeof mutation.relatedRecordId === "string"
+          ? mutation.relatedRecordId
+          : "";
+      if (relatedRecordId.startsWith("brief:")) {
+        await removeOfflineBrief(relatedRecordId.slice("brief:".length));
       }
       await removeOfflineMutation(mutation.id);
       synced += 1;
