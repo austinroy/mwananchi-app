@@ -1,5 +1,8 @@
 import { useI18n } from "../../lib/i18n";
 
+const noProviderMessage =
+  "Set up an AI provider in Account before generating AI-powered briefs, chat replies, or action drafts.";
+
 export function BriefSections({
   sections,
 }: {
@@ -48,6 +51,7 @@ export function BriefErrorNotice({
 
 function formatNoticeMessage(message: unknown) {
   if (typeof message === "string") {
+    if (message === '{"type":"null"}') return noProviderMessage;
     return message === "[object Object]"
       ? "The AI provider returned a notice that could not be displayed."
       : message;
@@ -57,6 +61,8 @@ function formatNoticeMessage(message: unknown) {
 
   if (message && typeof message === "object") {
     const payload = message as Record<string, unknown>;
+    if (payload.type === "null") return noProviderMessage;
+
     const text = extractNoticeText(
       payload.message ?? payload.error ?? payload.detail ?? payload.description,
     );
