@@ -95,6 +95,7 @@ Auth status:
 - Real AI integration lives in `server/index.mjs`. OpenAI uses the Responses API, OpenRouter, LM Studio, and custom providers use OpenAI-compatible chat completions, and Anthropic uses the Messages API. Missing provider keys intentionally fall back to prototype responses.
 - User AI defaults are stored server-side for signed-in users through `/api/users/me/ai-defaults`, with browser `localStorage` retained as guest/offline fallback. Chat and action generation support on-the-fly provider/model overrides.
 - Offline work uses a browser-side IndexedDB queue/cache in `src/lib/offlineStore.ts`. The API remains primary storage; offline data is temporary and syncs through `syncOfflineChanges()` in `src/lib/api.ts` when the browser regains network access. Auth, session, credential, and user profile records must stay out of offline storage.
+- Offline sync is scheduled on app startup, browser reconnect, auth context readiness, window focus, and visible-tab transitions. Queued brief creation stores a related offline record id so the local placeholder is removed after a successful backend sync.
 - Logged-in users can store user-owned AI provider keys. The API stores encrypted key material in the `ai_api_keys` SQLite table, using AES-256-GCM with `API_KEY_ENCRYPTION_SECRET`. The browser only receives configured/not-configured status.
 - Hosted provider model lists are fetched through `src/lib/api.ts` and `server/index.mjs` so encrypted keys stay server-side. Do not move hosted-provider model discovery into browser fetches unless the app stops storing encrypted keys.
 - LM Studio setup is intentionally separate from hosted-provider key storage. The account page uses a modal for local base URL/model settings, tries browser-direct model loading from LM Studio's `/models` endpoint, falls back to the Mwananchi API proxy when CORS blocks direct access, and sends those settings with LM Studio generation requests.
@@ -103,6 +104,7 @@ Auth status:
 - Private briefs now return an authentication-required response when a non-owner tries to load them. The brief page shows a sign-in prompt for that state instead of a generic not-found error.
 - The landing page now labels the sample brief as an example and links directly to the interactive sample brief so users can explore chat and action generation before creating their own. Logged-out users keep a local sample fallback if the API is unavailable during testing. The example brief is always public and cannot be deleted or made private.
 - Loading and pending states use the shared `Spinner` UI, while dashboard/detail screens include visibility/example status chips and more specific empty-state copy.
+- Civic action draft creation should only use the offline queue for true network failures. Do not mask backend API errors as successful local drafts; show a toast so users know the draft was not persisted.
 
 Recent updates (feature/additional-language-support):
 

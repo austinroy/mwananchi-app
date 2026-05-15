@@ -4,6 +4,7 @@ import {
   listOfflineBriefs,
   queueOfflineMutation,
   listOfflineMutations,
+  removeOfflineBrief,
   removeOfflineMutation,
 } from "../offlineStore";
 
@@ -111,6 +112,7 @@ describe("offlineStore", () => {
       path: "/api/briefs",
       method: "POST",
       body: '{"ok":true}',
+      relatedRecordId: "brief:brief-offline-test",
     });
 
     await expect(listOfflineMutations()).resolves.toMatchObject([
@@ -119,11 +121,19 @@ describe("offlineStore", () => {
         path: "/api/briefs",
         method: "POST",
         body: '{"ok":true}',
+        relatedRecordId: "brief:brief-offline-test",
       },
     ]);
 
     await removeOfflineMutation(queued.id);
     await expect(listOfflineMutations()).resolves.toEqual([]);
+  });
+
+  it("removes synced offline brief placeholders", async () => {
+    await cacheOfflineBrief(brief);
+    await removeOfflineBrief(brief.id);
+
+    await expect(listOfflineBriefs()).resolves.toEqual([]);
   });
 
   it("rejects auth and user records from offline storage", async () => {

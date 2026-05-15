@@ -22,6 +22,7 @@ export type OfflineMutation = {
   path: string;
   method: "POST" | "PUT" | "DELETE";
   body?: string;
+  relatedRecordId?: string;
   createdAt: string;
 };
 
@@ -58,12 +59,17 @@ export async function listOfflineMutations() {
 }
 
 export async function removeOfflineMutation(id: string) {
+  await deleteRecord(`mutation:${id}`);
+}
+
+export async function removeOfflineBrief(briefId: string) {
+  await deleteRecord(`brief:${briefId}`);
+}
+
+async function deleteRecord(id: string) {
   const db = await openOfflineDb();
   await requestToPromise(
-    db
-      .transaction(storeName, "readwrite")
-      .objectStore(storeName)
-      .delete(`mutation:${id}`),
+    db.transaction(storeName, "readwrite").objectStore(storeName).delete(id),
   );
   db.close();
 }

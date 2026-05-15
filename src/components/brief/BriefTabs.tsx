@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { FileText, Sparkles } from "lucide-react";
+import { FileText, Sparkles, List } from "lucide-react";
 
 export function BriefTabs({
   briefId,
   activeTab,
 }: {
   briefId: string;
-  activeTab: "brief" | "actions";
+  activeTab: "brief" | "actions" | "generated";
 }) {
   const tabs = [
     {
@@ -16,8 +16,14 @@ export function BriefTabs({
       icon: <FileText size={16} />,
     },
     {
+      id: "generated",
+      label: "Generated Actions",
+      to: "/briefs/$briefId/actions/generated",
+      icon: <List size={16} />,
+    },
+    {
       id: "actions",
-      label: "Actions",
+      label: "Generate Civic Actions",
       to: "/briefs/$briefId/actions",
       icon: <Sparkles size={16} />,
     },
